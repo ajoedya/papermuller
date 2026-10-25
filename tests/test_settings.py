@@ -57,7 +57,8 @@ class StageModelTests(unittest.TestCase):
         steps = pipeline.describe({"MODEL": "base", "WRITER_MODEL": "writer"})
         slots = {slot["key"]: slot for step in steps for slot in step["model_slots"]}
         self.assertEqual(set(slots), {"PLAN_MODEL", "SCREEN_MODEL", "EVIDENCE_MODEL", "OUTLINE_MODEL",
-                                      "WRITER_MODEL", "VERIFIER_MODEL", "REVIEW_MODEL", "REDTEAM_MODEL"})
+                                      "WRITER_MODEL", "VERIFIER_MODEL", "REVIEW_MODEL", "REDTEAM_MODEL",
+                                      "PAPER_MODEL", "PAPER_REVIEW_MODEL"})
         self.assertEqual(slots["OUTLINE_MODEL"]["effective"], "writer")
         self.assertEqual(slots["OUTLINE_MODEL"]["inherits"], "WRITER_MODEL")
         self.assertEqual(steps[1]["model_slots"], [])  # OpenAlex stage has no model

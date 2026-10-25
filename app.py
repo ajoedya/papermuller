@@ -35,6 +35,7 @@ import stages
 import tools
 import sources
 import manuscript
+import paper
 import pipeline
 
 HERE = Path(__file__).parent
@@ -88,6 +89,7 @@ TEXT_FIELDS = {"model": "MODEL", "language": "LANGUAGE", "email": "EMAIL",
                "evidence_model": "EVIDENCE_MODEL", "outline_model": "OUTLINE_MODEL",
                "writer_model": "WRITER_MODEL", "verifier_model": "VERIFIER_MODEL",
                "review_model": "REVIEW_MODEL", "redteam_model": "REDTEAM_MODEL",
+               "paper_model": "PAPER_MODEL", "paper_review_model": "PAPER_REVIEW_MODEL",
                "from_year": "FROM_YEAR", "to_year": "TO_YEAR", "work_type": "WORK_TYPE",
                "min_citations": "MIN_CITATIONS", "candidates": "CANDIDATES",
                "max_papers": "MAX_PAPERS", "min_verified": "MIN_VERIFIED",
@@ -179,7 +181,8 @@ class PageLog(io.TextIOBase):
 
 
 LLM_STAGE_TO_STEP = {"plan": 1, "screen": 4, "matrix": 5, "outline": 6,
-                     "draft": 7, "evidence_audit": 8, "review": 9, "redteam": 9, "check": 0}
+                     "draft": 7, "evidence_audit": 8, "review": 9, "redteam": 9,
+                     "paper_draft": 10, "paper_review": 11, "check": 0}
 
 
 def record_event(kind, step, message, **extra):
@@ -193,7 +196,7 @@ def record_event(kind, step, message, **extra):
 def enter_step(step):
     with LOCK:
         previous = STATE.get("stage", 0)
-        if 1 <= previous <= 10 and previous != step and previous not in STATE["completed_steps"]:
+        if 1 <= previous <= len(pipeline.STEPS) and previous != step and previous not in STATE["completed_steps"]:
             STATE["completed_steps"].append(previous)
         STATE["stage"] = step
         STATE["stage_started"] = datetime.now().isoformat(timespec="seconds")
@@ -290,8 +293,8 @@ def job_research(plan):
     with LOCK:
         if 10 not in STATE["completed_steps"]:
             STATE["completed_steps"].append(10)
-    set_state(phase="done", stage=10)
-    record_event("done", 10, "Manuscript and audit files are available; researcher verification is still required")
+    set_state(phase="done", stage=len(pipeline.STEPS))
+    record_event("done", len(pipeline.STEPS), "Manuscript and audit files are available; researcher verification is still required")
     say("Complete.")
 
 
@@ -336,7 +339,9 @@ def read_results():
     verification = json.loads(verified_file.read_text(encoding='utf-8')) if verified_file.exists() else None
     redteam_file = folder / '7_redteam_review.json'
     section_file = folder / '8_section_status.json'
+    paper_file = folder / '9_paper_review.json'
     return {
+        "paper_review": json.loads(paper_file.read_text(encoding='utf-8')) if paper_file.exists() else None,
         "verification": verification,
         "verification_progress": manuscript.verified_count(verification) if verification else None,
         "redteam": json.loads(redteam_file.read_text(encoding='utf-8')) if redteam_file.exists() else None,
@@ -409,7 +414,7 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 4:
                 run, name = unquote(parts[2]), unquote(parts[3])
                 allowed_run = re.fullmatch(r"\d{8}_\d{6}(?:_\d{6})?", run)
-                allowed_file = re.fullmatch(r"[1-8]_[a-z0-9_]+\.(?:md|csv|json)|log\.txt", name)
+                allowed_file = re.fullmatch(r"[1-9]_[a-z0-9_]+\.(?:md|csv|json|docx)|log\.txt", name)
                 current = Path(STATE["folder"]).name if STATE["folder"] else None
                 if allowed_run and allowed_file and run == current:
                     target = PROJECTS / run / name
@@ -467,7 +472,10 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 return self.send({'error': str(exc)}, 400)
             stages.save_json(folder, '8_human_verification.json', record)
-            return self.send({'ok': True, 'progress': manuscript.verified_count(record)})
+            progress = manuscript.verified_count(record)
+            # The final paper exists only after both the AI gate and the researcher checklist pass.
+            released = progress['all_checked'] and paper.release_final(folder, say=say)
+            return self.send({'ok': True, 'progress': progress, 'released': bool(released)})
         if self.path == "/api/settings":
             if STATE["phase"] in ("planning", "running"):
                 return self.send({"error": "Settings cannot be changed during a research run."}, 409)

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Full paper draft and final review gate
+
+- Two new stages after the critical review. **10 Full paper draft:** the writing model drafts the title, abstract, keywords, introduction, discussion and conclusion around the reviewed literature review, citing only source-matrix IDs. Methods and Results are copied from the author's text unchanged, or stay as placeholders; with no author results, the abstract must say results are pending. **11 Final paper review:** code checks unknown citations, empty sections, leftover placeholders and abstract length; a reviewer model scores six criteria and the score is computed by code. The paper passes only with all checks passed, `no_fabrication` and `scope_fidelity` at 8 or more, and the average at `TARGET_SCORE`. Failing papers are revised up to `REVISION_ROUNDS` times and the best round is kept.
+- Export is now stage 12. The paper is saved as `9_paper_draft.md` and `9_paper_draft.docx`, stamped with its gate result. `9_paper_final.md` and `.docx` are written only when the gate passed, the literature review was accepted, and every item of the researcher checklist is saved as checked.
+- New model keys `PAPER_MODEL` (falls back to `WRITER_MODEL`) and `PAPER_REVIEW_MODEL` (falls back to `REVIEW_MODEL`).
+- New dependency: `python-docx` for Word export. Without it, Markdown is still written and the log says how to install it.
+- The demo scripts a first full paper that invents a result, which the gate catches, and a second that passes.
+
 ## Unreleased — Flowchart workflow, per-stage models, research settings
 
 ### Interface

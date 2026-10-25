@@ -68,10 +68,24 @@ STEPS = [{'id': 1,
   'output': 'Review findings and revision suggestions',
   'role': 'reviewer'},
  {'id': 10,
+  'name': 'Full paper draft',
+  'summary': 'Draft title, abstract, introduction, discussion and conclusion',
+  'engine': 'Writing model',
+  'input': 'Reviewed literature review and author-supplied methods/results',
+  'output': 'Complete draft article',
+  'role': 'paper_writer'},
+ {'id': 11,
+  'name': 'Final paper review',
+  'summary': 'Review the whole article before it can be released',
+  'engine': 'Review model + rules',
+  'input': 'Complete draft article',
+  'output': 'Release decision and revision requests',
+  'role': 'paper_reviewer'},
+ {'id': 12,
   'name': 'Export & review',
-  'summary': 'Save the manuscript, evidence ledger, and checklist',
+  'summary': 'Save the paper (.md, .docx), evidence ledger, and checklist',
   'engine': 'Python',
-  'input': 'Selected draft and audit',
+  'input': 'Reviewed paper and audits',
   'output': 'Local files for researcher review',
   'role': 'system'}]
 
@@ -86,10 +100,13 @@ STAGE_MODEL_SLOTS = {
     8: [{"key": "VERIFIER_MODEL", "label": "Auditor", "chain": ["VERIFIER_MODEL"]}],
     9: [{"key": "REVIEW_MODEL", "label": "Reviewer", "chain": ["REVIEW_MODEL"]},
         {"key": "REDTEAM_MODEL", "label": "Red-team", "chain": ["REDTEAM_MODEL", "REVIEW_MODEL"]}],
+    10: [{"key": "PAPER_MODEL", "label": "Paper writer", "chain": ["PAPER_MODEL", "WRITER_MODEL"]}],
+    11: [{"key": "PAPER_REVIEW_MODEL", "label": "Paper reviewer", "chain": ["PAPER_REVIEW_MODEL", "REVIEW_MODEL"]}],
 }
-SERVICES = {2: "OpenAlex API", 3: "Crossref + pypdf", 10: "Local Python"}
+SERVICES = {2: "OpenAlex API", 3: "Crossref + pypdf", 12: "Local Python"}
 ROLE_KEYS = {"planner": "PLAN_MODEL", "screen": "SCREEN_MODEL", "evidence": "EVIDENCE_MODEL",
-             "writer": "WRITER_MODEL", "verifier": "VERIFIER_MODEL", "reviewer": "REVIEW_MODEL"}
+             "writer": "WRITER_MODEL", "verifier": "VERIFIER_MODEL", "reviewer": "REVIEW_MODEL",
+             "paper_writer": "PAPER_MODEL", "paper_reviewer": "PAPER_REVIEW_MODEL"}
 
 
 def resolve(chain, settings):

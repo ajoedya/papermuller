@@ -11,11 +11,13 @@ The demo is scripted to show you every quality gate in action:
   - draft 1 cites a paper that does not exist  -> citation gate catches it
   - draft 2 gets a low reviewer score           -> it is revised
   - draft 3 passes
+  - full paper 1 invents a result               -> final review gate catches it
+  - full paper 2 passes the gate
 """
 
 import json
 
-_counter = {"draft": 0, "review": 0}
+_counter = {"draft": 0, "review": 0, "paper": 0, "paper_review": 0}
 
 _PAPERS = [
     ("Road infrastructure and rural poverty: evidence from district panels", 2021,
@@ -52,7 +54,7 @@ def fake_verify(doi):
 def fake_llm_answer(stage, prompt):
     import re
     if stage == "plan":
-        _counter.update(draft=0, review=0)  # each new run starts the demo story again
+        _counter.update(draft=0, review=0, paper=0, paper_review=0)  # each new run starts the demo story again
         return json.dumps({
             "title": "Road Infrastructure, Governance Quality and Poverty Outcomes",
             "research_questions": [
@@ -116,4 +118,53 @@ def fake_llm_answer(stage, prompt):
         return json.dumps({"scores": scores, "strengths": ["Clear thematic structure"],
                            "fixes": [] if level >= 8 else ["Compare the methods of P2 and P5 explicitly",
                                                            "Link the research gap to research question 2"]})
+    if stage == "paper_draft":
+        _counter["paper"] += 1
+        invented = ("Using district data we find that roads cut poverty by 12 percent. "
+                    if _counter["paper"] == 1 else "")
+        abstract = (
+            "Public investment in roads is widely expected to reduce poverty, yet the size of that effect "
+            "appears to depend on the institutions that plan, procure and maintain the infrastructure. "
+            "This article reviews fictional demonstration studies on road infrastructure, governance quality "
+            "and poverty outcomes in order to frame a study of governance as a moderator. The literature "
+            "suggests that roads improve market access and that these gains spill over to neighbouring "
+            "regions, while the returns to public investment are weaker where oversight is poor and "
+            "project costs overrun. Evidence on fiscal transfers points in the same direction, and the "
+            "measurement of subnational governance remains contested. " + invented +
+            "The study is designed to test whether governance quality conditions the association between "
+            "road investment and poverty at district level, a relationship that few studies have examined "
+            "directly. Results: [pending author analysis]")
+        return json.dumps({
+            "title": "Road Infrastructure, Governance Quality and Poverty Outcomes: A Review and Research Design",
+            "abstract": abstract,
+            "keywords": ["road infrastructure", "governance quality", "poverty", "public investment", "demo"],
+            "introduction": (
+                "Transport infrastructure is a central instrument of development policy, and road density is "
+                "associated with lower poverty through improved market access [P1]. Investment does not pay "
+                "off equally everywhere, however: returns appear conditional on governance quality [P2].\n\n"
+                "This DEMO article asks how road infrastructure relates to poverty outcomes and how governance "
+                "quality moderates that relationship. Its contribution is to connect the infrastructure and "
+                "governance literatures at district level, where measurement is hardest [P6]."),
+            "discussion": (
+                "Read together, the studies suggest that the poverty effects of roads are real but conditional. "
+                "Spillovers to neighbouring regions [P5] imply that district-level estimates may understate "
+                "total effects, while cost overruns under weak oversight [P3] imply that governance shapes how "
+                "much road is built per unit of spending.\n\n"
+                "Because results are pending, this discussion frames what the planned analysis can test rather "
+                "than what it shows. If governance moderates returns as [P2] and [P4] suggest, the association "
+                "between road investment and poverty should be stronger in high-capacity districts."),
+            "conclusion": (
+                "The demonstration literature points to governance as a plausible moderator of the poverty "
+                "returns to road investment [P2; P4]. The planned study is expected to contribute a direct "
+                "district-level test of that moderation once the author's analysis is complete."),
+        })
+
+    if stage == "paper_review":
+        _counter["paper_review"] += 1
+        first = _counter["paper_review"] == 1
+        scores = {"abstract_consistency": 7 if first else 8, "coherence": 8, "claim_support": 8,
+                  "no_fabrication": 3 if first else 9, "academic_style": 8, "scope_fidelity": 8}
+        return json.dumps({"scores": scores, "strengths": ["DEMO ONLY: scripted review"],
+                           "fixes": ["Abstract: remove the invented 12 percent poverty result; no results exist yet"]
+                                    if first else []})
     return "OK"

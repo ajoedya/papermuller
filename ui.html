@@ -350,6 +350,10 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <div class="actions"><button class="btn primary" data-go="research" data-i18n="startResearch">Start research</button></div></div>
   <div id="resultView" class="hidden">
     <div class="card"><div class="score"><div class="num" id="scoreNum">-</div><div><b data-i18n="aiScore">AI reviewer score</b><br><span class="hint" id="scoreNote"></span></div></div><div id="reviewNotes"></div></div>
+    <div class="card hidden" id="fullPaperCard"><h2 data-i18n="paperTitle">Full paper</h2>
+      <div class="score"><div class="num" id="paperScore">-</div><div><b data-i18n="paperGate">Final AI review gate</b><br><span class="hint" id="paperNote"></span></div></div>
+      <div id="paperNotes"></div>
+      <div class="files" id="paperFiles"></div></div>
     <div class="card"><h2 data-i18n="draftTitle">Literature review draft</h2>
       <p class="hint" data-i18n="draftHint">IDs such as P1 refer to the source matrix. AI scores and matching excerpts do not replace reading the sources.</p>
       <div class="draft" id="draftView"></div></div>
@@ -431,6 +435,12 @@ const T = {
     methods: "Methods", results: "Results", confirmScope: "I have reviewed and approved this research plan and scope.", approveBtn: "Approve and continue", redoBtn: "Regenerate plan",
     progressTitle: "Research run", toFlow: "Open the workflow", again: "Try again",
     noResults: "No results yet", noResultsHint: "Your draft and evidence appear here when the run finishes.", startResearch: "Start research",
+    paperTitle: "Full paper", paperGate: "Final AI review gate",
+    paperPassed: "Passed the AI review gate. Complete and save the researcher checklist below to release the final version.",
+    paperFailed: "Did not pass the AI review gate. The draft is stamped and cannot be released; see the fixes below.",
+    paperReleased: "Released: the final version passed the AI review gate and your checklist.",
+    paperError: "Full paper drafting failed; the literature review files are still available.",
+    paperChecksFailed: "Automated checks", paperReleasedMsg: "Checklist complete: final paper released.",
     aiScore: "AI reviewer score", draftTitle: "Literature review draft", draftHint: "IDs such as P1 refer to the source matrix. AI scores and matching excerpts do not replace reading the sources.",
     matrixTitle: "Source matrix", matrixHint: "DOI and title are checked against Crossref. Matching text alone does not establish scientific support.",
     reviewTitle: "Researcher review", reviewHint: "Tick each item after reading the sources. This records your review; it does not certify validation.",
@@ -497,6 +507,12 @@ const T = {
     methods: "Metode", results: "Hasil", confirmScope: "Saya sudah memeriksa dan menyetujui rencana serta cakupan riset ini.", approveBtn: "Setujui dan lanjutkan", redoBtn: "Buat ulang rencana",
     progressTitle: "Proses riset", toFlow: "Buka alur kerja", again: "Coba lagi",
     noResults: "Belum ada hasil", noResultsHint: "Draf dan bukti akan muncul di sini setelah proses selesai.", startResearch: "Mulai riset",
+    paperTitle: "Naskah lengkap", paperGate: "Gerbang reviu akhir AI",
+    paperPassed: "Lolos gerbang reviu AI. Lengkapi dan simpan daftar periksa peneliti di bawah untuk merilis versi final.",
+    paperFailed: "Tidak lolos gerbang reviu AI. Draf diberi cap dan tidak dapat dirilis; lihat perbaikan di bawah.",
+    paperReleased: "Dirilis: versi final lolos gerbang reviu AI dan daftar periksa Anda.",
+    paperError: "Penyusunan naskah lengkap gagal; berkas tinjauan pustaka tetap tersedia.",
+    paperChecksFailed: "Pemeriksaan otomatis", paperReleasedMsg: "Daftar periksa lengkap: naskah final dirilis.",
     aiScore: "Skor reviewer AI", draftTitle: "Draf tinjauan pustaka", draftHint: "ID seperti P1 merujuk ke matriks sumber. Skor AI dan kutipan yang cocok tidak menggantikan membaca sumber aslinya.",
     matrixTitle: "Matriks sumber", matrixHint: "DOI dan judul dicocokkan dengan Crossref. Teks yang cocok saja belum membuktikan dukungan ilmiah.",
     reviewTitle: "Pemeriksaan peneliti", reviewHint: "Centang setiap butir setelah membaca sumber. Ini mencatat pemeriksaan Anda, bukan sertifikasi validasi.",
@@ -554,10 +570,14 @@ const STAGE_ID = {
   7: ["Penulisan draf", "Menulis dan merevisi tinjauan pustaka", "Kerangka dan bukti", "Draf dengan sitasi sumber"],
   8: ["Audit sitasi & klaim", "Memeriksa ID sitasi dan bukti pendukung", "Draf dan cuplikan sumber", "Laporan audit klaim"],
   9: ["Reviu kritis", "Menilai draf dan menandai masalah metodologis", "Draf dan audit bukti", "Temuan reviu dan saran revisi"],
-  10: ["Ekspor & pemeriksaan", "Menyimpan naskah, catatan bukti, dan daftar periksa", "Draf terpilih dan audit", "Berkas lokal untuk diperiksa peneliti"],
+  10: ["Draf naskah lengkap", "Menyusun judul, abstrak, pendahuluan, pembahasan, dan simpulan", "Tinjauan pustaka yang sudah direviu serta metode/hasil dari penulis", "Draf artikel lengkap"],
+  11: ["Reviu akhir naskah", "Mereviu seluruh artikel sebelum boleh dirilis", "Draf artikel lengkap", "Keputusan rilis dan permintaan revisi"],
+  12: ["Ekspor & pemeriksaan", "Menyimpan naskah (.md, .docx), catatan bukti, dan daftar periksa", "Naskah yang sudah direviu dan audit", "Berkas lokal untuk diperiksa peneliti"],
 };
-const CRIT = { en: {synthesis: "Synthesis across studies", research_gap: "Research gap", coverage: "Research question coverage", evidence_use: "Evidence support", clarity: "Writing clarity", scope_fidelity: "Scope fidelity"},
-               id: {synthesis: "Sintesis antarstudi", research_gap: "Celah riset", coverage: "Cakupan pertanyaan riset", evidence_use: "Dukungan bukti", clarity: "Kejelasan tulisan", scope_fidelity: "Kesetiaan cakupan"} };
+const CRIT = { en: {abstract_consistency: "Abstract matches the paper", coherence: "Argument coherence", claim_support: "Claim support", no_fabrication: "No invented results", academic_style: "Academic style",
+                    synthesis: "Synthesis across studies", research_gap: "Research gap", coverage: "Research question coverage", evidence_use: "Evidence support", clarity: "Writing clarity", scope_fidelity: "Scope fidelity"},
+               id: {abstract_consistency: "Kesesuaian abstrak", coherence: "Koherensi argumen", claim_support: "Dukungan klaim", no_fabrication: "Tanpa fabrikasi", academic_style: "Gaya akademik",
+                    synthesis: "Sintesis antarstudi", research_gap: "Celah riset", coverage: "Cakupan pertanyaan riset", evidence_use: "Dukungan bukti", clarity: "Kejelasan tulisan", scope_fidelity: "Kesetiaan cakupan"} };
 const SLOT_INFO = {
   PLAN_MODEL: {stage: 1, en: "Drafts the research plan", id: "Menyusun rencana riset"},
   SCREEN_MODEL: {stage: 4, en: "Selects relevant papers", id: "Memilih paper yang relevan"},
@@ -567,6 +587,8 @@ const SLOT_INFO = {
   VERIFIER_MODEL: {stage: 8, en: "Audits claims against sources", id: "Mengaudit klaim terhadap sumber"},
   REVIEW_MODEL: {stage: 9, en: "Scores the draft", id: "Menilai draf"},
   REDTEAM_MODEL: {stage: 9, en: "Challenges the final draft (falls back to Reviewer)", id: "Menguji draf akhir (cadangan: Reviewer)"},
+  PAPER_MODEL: {stage: 10, en: "Drafts the full paper (falls back to Writer)", id: "Menyusun naskah lengkap (cadangan: Writer)"},
+  PAPER_REVIEW_MODEL: {stage: 11, en: "Reviews the full paper before release (falls back to Reviewer)", id: "Mereviu naskah lengkap sebelum rilis (cadangan: Reviewer)"},
 };
 let LANG = store.get("pm-lang") === "id" ? "id" : "en";
 function t(key, vars) {
@@ -791,7 +813,9 @@ const ICONS = {
   7: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',
   8: '<circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21M8 11l2 2 4-4"/>',
   9: '<path d="M12 4v16M6 7h12M6 7l-3 6a3 3 0 0 0 6 0zM18 7l-3 6a3 3 0 0 0 6 0zM8 20h8"/>',
-  10: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  10: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/>',
+  11: '<path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  12: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
 };
 const svgIcon = (k, cls = "icon") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>`;
 // col = position along the flow, row = lane (0 = side input, 1 = main line)
@@ -799,10 +823,11 @@ const NODES = [
   {id: "topic", col: 0, row: 1, kind: "start"}, {id: 1, col: 1, row: 1}, {id: 2, col: 2, row: 1},
   {id: "library", col: 2, row: 0, kind: "source"}, {id: 3, col: 3, row: 1}, {id: 4, col: 4, row: 1},
   {id: 5, col: 5, row: 1}, {id: 6, col: 6, row: 1}, {id: 7, col: 7, row: 1}, {id: 8, col: 8, row: 1},
-  {id: 9, col: 9, row: 1}, {id: 10, col: 10, row: 1, kind: "end"},
+  {id: 9, col: 9, row: 1}, {id: 10, col: 10, row: 1}, {id: 11, col: 11, row: 1}, {id: 12, col: 12, row: 1, kind: "end"},
 ];
 const EDGES = [["topic", 1], [1, 2, "approve"], [2, 3], ["library", 3, "side"], [3, 4], [4, 5], ["library", 5, "side"],
-               [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [9, 7, "loop"]];
+               [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [9, 7, "loop"], [11, 10, "loop"]];
+const LAST_COL = Math.max(...NODES.map(n => n.col));
 let selected = null, followActive = true, zoom = 1, userZoomed = false, pdfCount = 0, geo = null;
 
 function nodeStatus(id, s) {
@@ -835,11 +860,11 @@ function geometry() {
   if (!vertical) {
     const N = 76, dx = 124, x0 = 34, rows = [34, 168];
     const pos = {}; NODES.forEach(n => pos[n.id] = {x: x0 + n.col * dx, y: rows[n.row], w: N, h: N});
-    return {vertical, N, pos, width: x0 + 10 * dx + N + 44, height: 360};
+    return {vertical, N, pos, width: x0 + LAST_COL * dx + N + 44, height: 360};
   }
   const N = 56, dy = 108, y0 = 26, pos = {};
   NODES.forEach(n => pos[n.id] = n.row === 1 ? {x: 44, y: y0 + n.col * dy, w: N, h: N} : {x: 262, y: y0 + 1.75 * dy, w: N, h: N});
-  return {vertical, N, pos, width: 340, height: y0 + 10 * dy + N + 40};
+  return {vertical, N, pos, width: 340, height: y0 + LAST_COL * dy + N + 40};
 }
 function port(p, side) {
   return {right: [p.x + p.w, p.y + p.h / 2, 1, 0], left: [p.x, p.y + p.h / 2, -1, 0],
@@ -865,7 +890,8 @@ function edgeEnds(from, to, kind, g) {
 }
 function edgeState(from, to, kind, s) {
   if (kind === "loop") {
-    const active = s.phase === "running" && (s.completed_steps || []).includes(9) && [7, 8].includes(s.stage);
+    // A loop is active while the run is back at its target after visiting its source.
+    const active = s.phase === "running" && (s.completed_steps || []).includes(from) && s.stage >= to && s.stage < from;
     return "loop" + (active ? " active" : "");
   }
   const st = nodeStatus(to, s);
@@ -966,7 +992,7 @@ function renderInspector(s) {
     const step = stepInfo(id, s);
     const usage = (s.usage_by_stage || {})[id] || {};
     const demo = (s.pipeline?.[0]?.model || "").startsWith("Demo simulator");
-    html = head(step.name, `${t("stage")} ${id} ${t("of")} 10`) +
+    html = head(step.name, `${t("stage")} ${id} ${t("of")} ${(s.pipeline || []).length || 12}`) +
       `<div class="insp-sec"><h3>${esc(t("whatHappens"))}</h3><p>${esc(step.summary)}</p></div>
        <div class="insp-sec"><div class="kv"><span>${esc(t("input"))}</span><b>${esc(step.input)}</b></div><div class="kv"><span>${esc(t("output"))}</span><b>${esc(step.output)}</b></div></div>`;
     if (id === 2) {
@@ -1067,14 +1093,28 @@ async function loadResults() {
       (f.length ? `<ul>${f.map(x => `<li><b>${esc(x.severity)}</b>: ${esc(x.issue)} — ${esc(x.action)}</li>`).join("")}</ul>` : "");
   }
   $("draftView").innerHTML = markdown(r.draft || t("noDraft"));
+  renderPaper(r);
   renderHumanChecks(r);
   const cols = [["id", "ID"], ["authors", LANG === "id" ? "Penulis" : "Authors"], ["year", LANG === "id" ? "Tahun" : "Year"], ["title", LANG === "id" ? "Judul" : "Title"],
     ["method", LANG === "id" ? "Metode" : "Method"], ["main_finding", LANG === "id" ? "Temuan utama" : "Main finding"], ["limitation", LANG === "id" ? "Keterbatasan" : "Limitations"],
     ["source_type", LANG === "id" ? "Jenis sumber" : "Source type"], ["source_page", LANG === "id" ? "Halaman (0 = abstrak)" : "Page (0 = abstract)"],
     ["evidence_quote", LANG === "id" ? "Kutipan bukti" : "Evidence quote"], ["quote_verified", LANG === "id" ? "Kutipan cocok?" : "Quote matched?"]];
   $("matrix").innerHTML = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join("")}</tr>` + (r.matrix || []).map(row => `<tr>${cols.map(c => `<td>${esc(row[c[0]])}</td>`).join("")}</tr>`).join("");
-  $("files").innerHTML = (r.files || []).filter(f => /\.(md|csv|json)$|^log\.txt$/.test(f)).map(f =>
-    `<a href="/files/${encodeURIComponent(r.folder_name)}/${encodeURIComponent(f)}">${esc(f)}</a>`).join("");
+  $("files").innerHTML = (r.files || []).filter(f => /\.(md|csv|json|docx)$|^log\.txt$/.test(f)).map(f => fileLink(r, f)).join("");
+}
+const fileLink = (r, f) => `<a href="/files/${encodeURIComponent(r.folder_name)}/${encodeURIComponent(f)}">${esc(f)}</a>`;
+function renderPaper(r) {
+  const pr = r.paper_review, failed = r.review?.paper_status === "paper_stage_failed";
+  $("fullPaperCard").classList.toggle("hidden", !pr && !failed);
+  if (!pr) { $("paperScore").textContent = "-"; $("paperNote").textContent = failed ? t("paperError") : ""; $("paperNotes").innerHTML = ""; $("paperFiles").innerHTML = ""; return; }
+  $("paperScore").textContent = `${pr.score}/10`;
+  $("paperNote").textContent = (pr.status === "released" ? t("paperReleased") : pr.passed && pr.literature_review_accepted ? t("paperPassed") : t("paperFailed"))
+    + (pr.from_round ? " " + t("round", {n: pr.from_round}) : "");
+  const problems = pr.checks?.problems || [], fixes = pr.fixes || [];
+  $("paperNotes").innerHTML = `<div class="bars">${Object.entries(pr.scores || {}).map(([k, v]) => `<div class="bar"><span>${esc(CRIT[LANG][k] || k)}</span><i><b style="width:${v * 10}%"></b></i><em>${v}</em></div>`).join("")}</div>`
+    + (problems.length ? `<p><b>${esc(t("paperChecksFailed"))}</b></p><ul>${problems.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "")
+    + (fixes.length && !pr.passed ? `<p><b>${esc(t("fixes"))}</b></p><ul>${fixes.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "");
+  $("paperFiles").innerHTML = (r.files || []).filter(f => /^9_paper_(draft|final)\.(md|docx)$/.test(f)).sort().reverse().map(f => fileLink(r, f)).join("");
 }
 function renderHumanChecks(r) {
   const v = r.verification || {papers: {}, checks: {}}, progress = r.verification_progress || {done: 0, total: 0};
@@ -1094,7 +1134,8 @@ $("saveVerification").onclick = async () => {
   const papers = {}, checks = {};
   document.querySelectorAll(".hcheck").forEach(el => { (papers[el.dataset.paper] ||= {})[el.dataset.field] = el.checked; });
   document.querySelectorAll(".gcheck").forEach(el => checks[el.dataset.field] = el.checked);
-  try { const r = await api("/api/verification", {papers, checks, notes: $("verificationNotes").value}); note("verificationMsg", t("checklistSaved", {a: r.progress.done, b: r.progress.total}), true); }
+  try { const r = await api("/api/verification", {papers, checks, notes: $("verificationNotes").value}); note("verificationMsg", r.released ? t("paperReleasedMsg") : t("checklistSaved", {a: r.progress.done, b: r.progress.total}), true);
+    if (r.released) loadResults(); }
   catch (e) { note("verificationMsg", e.message, false); }
 };
 

@@ -29,6 +29,8 @@ ROLE_MODELS = {
     "matrix": ("EVIDENCE_MODEL",), "outline": ("OUTLINE_MODEL", "WRITER_MODEL"),
     "draft": ("WRITER_MODEL",), "evidence_audit": ("VERIFIER_MODEL",),
     "review": ("REVIEW_MODEL",), "redteam": ("REDTEAM_MODEL", "REVIEW_MODEL"),
+    "paper_draft": ("PAPER_MODEL", "WRITER_MODEL"),
+    "paper_review": ("PAPER_REVIEW_MODEL", "REVIEW_MODEL"),
 }
 
 
