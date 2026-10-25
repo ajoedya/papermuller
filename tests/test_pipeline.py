@@ -22,6 +22,23 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(desc[7]['model'],'provider/verifier')
         self.assertEqual(desc[8]['model'],'provider/reviewer')
         self.assertEqual(pipeline.model_for_role('writer',{'DEMO_MODE':True,'MODEL':'private/model'}),'Demo simulator (offline)')
+    def test_empty_model_reply_is_retried_not_returned_as_none(self):
+        settings={'DEMO_MODE':False,'MODEL':'m','OPENROUTER_API_KEY':'key'}
+        body={'model':'m','messages':[]}
+        class Reply:
+            def __init__(self,payload): self.payload=payload
+            def __enter__(self): return self
+            def __exit__(self,*a): return False
+            def read(self): return json.dumps(self.payload).encode('utf-8')
+        for payload in ({'choices':[{'message':{'content':None}}]},
+                        {'choices':[{'message':{'content':'  '}}]},
+                        {'choices':[]}):
+            with patch('urllib.request.urlopen',return_value=Reply(payload)):
+                with self.assertRaises(llm._Retry):
+                    llm._send(body,settings)
+        good={'choices':[{'message':{'content':'text'}}]}
+        with patch('urllib.request.urlopen',return_value=Reply(good)):
+            self.assertEqual(llm._send(body,settings),'text')
     def test_llm_model_routing_and_provider_usage_events(self):
         observed=[]
         old_hook=llm.EVENT_HOOK

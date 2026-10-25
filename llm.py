@@ -133,7 +133,11 @@ def _send(body, settings, stage="general"):
         raise _Retry(f"Provider error: {str(data.get('error', data))[:150]}.")
     _report({"stage": stage, "model": str(data.get("model") or body["model"]),
              "simulated": False, "usage": data.get("usage") or {}})
-    return data["choices"][0]["message"]["content"]
+    content = ((data["choices"] or [{}])[0].get("message") or {}).get("content")
+    if not isinstance(content, str) or not content.strip():
+        # Free models sometimes return an empty reply (content is null); retry instead of crashing later.
+        raise _Retry("The model returned an empty reply.")
+    return content
 
 
 MODELS_URL = "https://openrouter.ai/api/v1/models"
