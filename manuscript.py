@@ -7,31 +7,31 @@ def compile_manuscript(plan, draft, matrix, audit):
     author_methods = (plan.get('author_methods') or '').strip()
     author_results = (plan.get('author_results') or '').strip()
     questions = '\n'.join(f'- {q}' for q in plan['research_questions'])
-    methods = (f'**Teks yang diberikan peneliti (belum diverifikasi):**\n\n{author_methods}' if author_methods
-               else '> **[PENELITI PERLU MENGISI]** Desain, sumber data, sampel, variabel, prosedur, serta etika penelitian.')
-    results = (f'**Teks yang diberikan peneliti (belum diverifikasi):**\n\n{author_results}' if author_results
-               else '> **[PENELITI PERLU MENGISI]** Hasil analisis dan tabel/figur yang benar-benar berasal dari data.')
-    status = 'LULUS audit otomatis dan AI; menunggu verifikasi manusia' if audit.get('passed') else 'BELUM LOLOS audit bukti'
+    methods = (f'**Author-supplied text (not verified):**\n\n{author_methods}' if author_methods
+               else '> **[AUTHOR TO COMPLETE]** Design, data sources, sample, variables, procedures, and research ethics.')
+    results = (f'**Author-supplied text (not verified):**\n\n{author_results}' if author_results
+               else '> **[AUTHOR TO COMPLETE]** Analysis results and tables or figures derived from actual data.')
+    status = 'Automated and AI evidence checks passed; awaiting researcher verification' if audit.get('passed') else 'Evidence checks have not passed'
     txt = f'''# {plan['title']}
 
-> **MANUSKRIP KERJA — BUKAN ARTIKEL SIAP SUBMIT.** Tinjauan pustaka: {status}.
-> Bagian yang belum didukung data tidak dibuat secara otomatis. Teks metode/hasil dari peneliti tidak diaudit oleh AI maupun divalidasi secara independen.
+> **WORKING MANUSCRIPT — REQUIRES AUTHOR REVIEW AND COMPLETION.** Literature review: {status}.
+> Sections without supporting data are left unfilled. Author-supplied methods and results have not been audited by AI or independently validated.
 
 ## Abstract
 
-> **[PENELITI PERLU MENGISI SETELAH ANALISIS SELESAI]** Tujuan, metode, hasil utama, implikasi, keterbatasan.
+> **[AUTHOR TO COMPLETE AFTER ANALYSIS]** Objectives, methods, key findings, implications, and limitations.
 
 ## 1. Introduction
 
-**Topik:** {plan['original_topic'] or plan['title']}
+**Topic:** {plan['original_topic'] or plan['title']}
 
-**Pertanyaan penelitian:**
+**Research questions:**
 
 {questions}
 
-**Ruang lingkup yang disetujui:** {plan['scope_note']}
+**Approved scope:** {plan['scope_note']}
 
-> **[PENELITI PERLU MENYUSUN]** Latar belakang, urgensi, kontribusi, dan signifikansi masalah dengan referensi terverifikasi.
+> **[AUTHOR TO WRITE]** Background, motivation, contribution, and significance, supported by checked references.
 
 ## 2. Literature Review
 
@@ -47,11 +47,11 @@ def compile_manuscript(plan, draft, matrix, audit):
 
 ## 5. Discussion
 
-> **[PENELITI PERLU MENYUSUN]** Interpretasikan hasil penelitian yang sesungguhnya, bandingkan dengan sumber terverifikasi, dan periksa klaim serta ketidakpastian. Jangan mengarang hasil.
+> **[AUTHOR TO WRITE]** Interpret actual findings, compare them with checked sources, and assess claims and uncertainty. Do not invent results.
 
 ## 6. Conclusion
 
-> **[PENELITI PERLU MENYUSUN]** Kesimpulan berdasarkan hasil nyata, keterbatasan, dan agenda penelitian lanjutan.
+> **[AUTHOR TO WRITE]** Conclusions based on actual results, limitations, and directions for further research.
 
 ## References
 
@@ -75,16 +75,16 @@ def verification_record(matrix):
 def normalize_verification(update, matrix):
     identifiers = {str(r['id']) for r in matrix}
     if not isinstance(update, dict):
-        raise ValueError('Format verifikasi tidak valid.')
+        raise ValueError('Invalid review record format.')
     record = verification_record(matrix)
     given = update.get('papers') or {}
     checks = update.get('checks') or {}
     if not isinstance(given, dict) or set(given) - identifiers or not isinstance(checks, dict):
-        raise ValueError('ID sumber atau format verifikasi tidak valid.')
+        raise ValueError('Invalid source ID or review record format.')
     for pid in identifiers:
         state = given.get(pid) or {}
         if not isinstance(state, dict):
-            raise ValueError('Status sumber tidak valid.')
+            raise ValueError('Invalid source review status.')
         for key in record['papers'][pid]:
             record['papers'][pid][key] = state.get(key) is True
     for key in record['checks']:

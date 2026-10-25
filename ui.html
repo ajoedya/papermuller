@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Papermuller — Research Pipeline</title>
+<title>Papermuller — Research workspace</title>
 <style>
   :root {
     --bg: #f6f8fb; --ink: #1e293b; --muted: #64748b; --line: rgba(15,23,42,.09);
@@ -107,134 +107,123 @@
   .files a { display: inline-block; margin: 4px 6px 4px 0; padding: 6px 10px; border-radius: 8px;
              background: #fff; border: 1px solid var(--line); color: var(--accent); text-decoration: none; font-size: 14px; }
   @media (max-width: 560px) { .steps button span { display: none; } .card { padding: 18px; } }
-/* Papermuller — pipeline workbench: deliberate dark editorial product UI. */
-:root {color-scheme:dark;--bg:#0a111a;--ink:#e8eef6;--muted:#95a7bd;--line:#25374a;--glass:#101d2c;--accent:#4895ff;--accent-soft:#173458;--ok:#51d3a3;--ok-soft:#153c36;--bad:#ff8994;--bad-soft:#47252f;--warn-soft:#342f21}
-body{background:#08111b;color:var(--ink);font-family:Inter,"Segoe UI",system-ui,sans-serif;line-height:1.55;font-size:14px}
-button,select,input,textarea{font:inherit}button{transition:background .16s,border-color .16s,transform .16s}button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.hidden{display:none!important}
-.topbar{position:sticky;z-index:12;top:0;height:68px;background:#0d1724;border-bottom:1px solid #213248;display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px}
-.brand{display:flex;gap:12px;align-items:center}.brandmark{display:grid;place-items:center;width:38px;height:38px;background:#113f55;border:1px solid #1a768b;color:#66e0e1;border-radius:12px;font-size:22px;font-weight:800}.brand-name{font-size:20px;line-height:1.1;font-weight:770;letter-spacing:-.04em}.brand-sub{font-size:11px;color:var(--muted)}
-.topright{display:flex;align-items:center;gap:12px}.topright .mode{font-size:12px;color:var(--muted);background:#152538;border:1px solid var(--line);padding:5px 10px;border-radius:99px}.topright button{font-size:12px;padding:8px 12px;border:1px solid #325174;background:#132c49;color:#dfefff;border-radius:8px;cursor:pointer}
-.app-shell{min-height:calc(100vh - 68px);display:grid;grid-template-columns:250px minmax(500px,1fr) 300px;max-width:2200px;margin:auto}
-.sidebar{background:#0d1724;border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:18px;min-width:0}.sidebar-label{font-size:10px;font-weight:800;color:#6f91ae;text-transform:uppercase;letter-spacing:.15em;margin:0 8px 9px}
-.project-card{background:#142235;border:1px solid #30435a;padding:15px;border-radius:13px;min-width:0}.project-card strong{display:block;font-size:13px;line-height:1.45;overflow-wrap:anywhere}.project-card p{color:var(--muted);font-size:12px;margin:7px 0 0}.project-status{font-size:11px;font-weight:700;display:inline-block;color:#72e4c1;background:#173f38;border-radius:99px;padding:3px 9px;margin-top:12px}
-.sidebar-nav{display:grid;gap:6px}.sidebar-nav button{display:flex;align-items:center;text-align:left;gap:10px;width:100%;background:transparent;border:1px solid transparent;border-radius:9px;color:#adbbca;padding:10px 12px;cursor:pointer}.sidebar-nav button.active,.sidebar-nav button:hover{background:#18314c;border-color:#284b70;color:#7dbaff;font-weight:650}.sidebar-nav .symbol{width:21px;text-align:center;font-size:16px}
-.side-actions{display:grid;gap:9px}.side-actions button{cursor:pointer;padding:11px 12px;border:1px solid #37516c;color:#e1eaf6;border-radius:9px;background:#15273c;text-align:center}.side-actions button.primary{background:#2679e7;border-color:#2679e7;color:white;font-weight:750}
-.sidebar-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.sidebar-stats .stat{padding:12px 10px;border:1px solid var(--line);border-radius:10px;background:#132132}.stat b{display:block;font-size:21px;line-height:1.15;font-variant-numeric:tabular-nums}.stat small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
-.sidebar-footer{font-size:11px;color:#668099;margin-top:auto;padding:10px 8px}
-.workspace{min-width:0;padding:16px 18px 30px;overflow:hidden}.workspace-nav{display:flex;gap:5px;border-bottom:1px solid var(--line);margin-bottom:14px;padding-bottom:9px;align-items:center}.workspace-nav button{border:0;border-radius:8px;color:var(--muted);padding:8px 15px;background:transparent;cursor:pointer}.workspace-nav button.active{background:#18324e;color:#82baff;font-weight:750}.workspace-nav .navhint{margin-left:auto;font-size:11px;color:#7087a0}
-.pipeline-header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin:16px 0 18px}.pipeline-header h1{font-size:19px;letter-spacing:-.03em;margin:0}.pipeline-header p{color:var(--muted);font-size:12px;margin:4px 0 0}.live-mark{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #285a58;border-radius:8px;color:#72d9bc;font-size:11px;white-space:nowrap}.live-mark i{width:6px;height:6px;background:currentColor;border-radius:50%}
-.diagram{border:1px solid #23364b;border-radius:14px;background-color:#0c1927;background-image:radial-gradient(#294159 0.8px,transparent 0.8px);background-size:20px 20px;box-shadow:0 15px 50px #0002;padding:28px 24px 26px;overflow:auto}
-.pipeline-grid{display:grid;grid-template-columns:repeat(4,minmax(135px,1fr));column-gap:30px;row-gap:47px;min-width:710px;position:relative}
-.node{position:relative;z-index:1;min-height:166px;border:1px solid #344b62;border-radius:12px;background:linear-gradient(150deg,#142538,#101d2c);color:var(--ink);cursor:pointer;padding:14px 12px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:7px}.node:hover{border-color:#679ada;transform:translateY(-2px)}.node.done{background:linear-gradient(145deg,#112d32,#14202b);border-color:#226956}.node.current{background:linear-gradient(155deg,#173d65,#142740);border:2px solid #48a1ff;box-shadow:0 0 0 4px #3279b822,0 0 28px #2076ee30}.node.failed{border-color:#c06570}.node.selected:not(.current){outline:2px solid #527cad;outline-offset:3px}
-.node-number{position:absolute;top:10px;left:10px;background:#31465c;color:#d3e4f8;font-size:10px;width:23px;height:23px;display:grid;place-items:center;border-radius:50%;font-weight:800}.node-state{position:absolute;top:9px;right:9px;font-size:11px;color:#6a7e96}.node.done .node-state{color:var(--ok)}.node.current .node-state{color:#83bcff}.node-icon{font-size:24px;color:#76b8ee;line-height:1.2;margin-top:8px}.node.done .node-icon{color:var(--ok)}.node strong{font-size:12px;line-height:1.25}.node .description{font-size:10px;color:var(--muted);line-height:1.35;min-height:26px}.model-chip{max-width:100%;font-size:10px;color:#accef8;background:#203856;border-radius:99px;padding:4px 8px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.node.done .model-chip{background:#194236;color:#a6e7d1}.node.current .model-chip{background:#215b8d;color:#fff}
-.node:not(:nth-child(4)):not(:nth-child(7)):not(:nth-child(10))::after{content:'→';position:absolute;left:calc(100% + 7px);width:16px;top:calc(50% - 12px);font-size:22px;color:#4da4ed;font-weight:300;pointer-events:none}.node:nth-child(4)::after,.node:nth-child(7)::after{content:'↓';position:absolute;top:calc(100% + 8px);left:calc(50% - 7px);font-size:23px;color:#4da4ed;pointer-events:none}
-.node:nth-child(5){grid-column:4;grid-row:2}.node:nth-child(6){grid-column:3;grid-row:2}.node:nth-child(7){grid-column:2;grid-row:2}.node:nth-child(8){grid-column:2;grid-row:3}.node:nth-child(9){grid-column:3;grid-row:3}.node:nth-child(10){grid-column:4;grid-row:3}
-.pipeline-grid .node:nth-child(5)::after,.pipeline-grid .node:nth-child(6)::after{content:'←' !important;left:auto !important;right:calc(100% + 7px) !important}.node:nth-child(7)::after{content:'↓'}
-.activity{margin-top:17px;background:#101d2c;border:1px solid var(--line);border-radius:13px;overflow:hidden}.activity-head{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.activity h2{font-size:13px;margin:0}.activity small{color:var(--muted)}.activity-list{max-height:240px;overflow:auto}.activity-row{display:flex;gap:12px;align-items:baseline;padding:9px 16px;border-bottom:1px solid #1a3045;font-size:11px}.activity-row time{font-variant-numeric:tabular-nums;color:#7b9bb7;flex:none}.activity-row em{font-style:normal;color:var(--muted);overflow-wrap:anywhere}.activity-row .dot{width:8px;height:8px;border-radius:50%;background:#66809a;flex:none}.activity-row .dot.stage{background:#4895ff}.activity-row .dot.model{background:#60d4bd}.activity-row .dot.done{background:#60d4bd}.activity-row .dot.approval{background:#dcac69}.activity-empty{padding:20px;color:var(--muted);font-size:12px}
-.detail{background:#101b2a;border-left:1px solid var(--line);padding:24px 18px;min-width:0}.detail h2{font-size:15px;margin:0 0 22px}.detail-top{display:flex;gap:12px;align-items:center}.detail-icon{display:grid;place-items:center;background:#20579b;border-radius:12px;font-size:23px;width:45px;height:45px}.detail-top strong{font-size:17px}.detail-top small{display:block;color:var(--muted);font-size:11px}.detail-section{margin-top:24px}.detail-section h3{font-size:11px;margin:0 0 8px;color:#9bbbe0;letter-spacing:.05em;text-transform:uppercase}.detail-section p{font-size:12px;margin:0;line-height:1.7;color:#c9d6e5;overflow-wrap:anywhere}.detail-section .metric-line{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #243749;font-size:12px}.detail-section .metric-line span{color:var(--muted)}.detail-section code{white-space:normal;overflow-wrap:anywhere;color:#a9daff;font-size:11px}.detail .divider{height:1px;background:var(--line);margin-top:20px}.detail button{border:1px solid #335779;background:#143251;border-radius:8px;color:#a8d8ff;cursor:pointer;padding:8px 11px;margin-top:14px;font-size:11px}
-.forms-container{min-width:0}.forms-container main{max-width:none;margin:0;padding:0 2px 28px}.forms-container main>header,.forms-container main>.steps{display:none}.forms-container .card{background:#121f2e;border:1px solid #2a4159;box-shadow:none;margin-bottom:14px;padding:24px}.forms-container .card h2{color:var(--ink)}.forms-container label,.forms-container summary{color:#d4e1ee}.forms-container small,.forms-container .hint{color:var(--muted)}.forms-container input[type=text],.forms-container input[type=password],.forms-container select,.forms-container textarea{background:#0b1725;border-color:#35506b;color:#ecf4ff}.forms-container .switch{background:#202b37;border-color:#4b503f}.forms-container button.main{background:#2679e7}.forms-container button.plain,.forms-container .files a{background:#152b40;border-color:#385673;color:#bfdfff}.forms-container ul.checks li,.forms-container .draft,.forms-container .table-wrap,.forms-container pre.log{background:#0b1725;border-color:#33495d}.forms-container th{background:#17273a}.forms-container td,.forms-container th{border-color:#2b3d50}.forms-container .bar i{background:#22384e}.forms-container .notice.ok{background:#1c3f35;color:#92e2c4}.forms-container .notice.bad{background:#452732;color:#ffc2c6}.forms-container .bars .bar i b{background:#509af8}
-.model-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}.model-roles label{margin:0}.model-roles input{margin-top:5px}.model-roles small{font-size:11px}
-@media(max-width:1170px){.app-shell{grid-template-columns:205px minmax(400px,1fr)}.detail{grid-column:2;grid-row:2;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}.detail h2,.detail-top{grid-column:1/-1}.sidebar{grid-row:1/3}}
-@media(max-width:780px){.topbar{height:auto;padding:12px}.brand-name{font-size:17px}.brand-sub{font-size:10px}.app-shell{display:block}.sidebar{border-right:none;border-bottom:1px solid var(--line);padding:12px}.sidebar-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.sidebar-nav button{font-size:11px;display:block;padding:8px 3px;text-align:center}.sidebar-nav .symbol{display:block;margin:auto}.side-actions,.sidebar-stats,.sidebar-footer{display:none}.workspace{padding:12px}.diagram{padding:18px;overflow:auto}.detail{display:block;padding:18px;border-top:1px solid var(--line)}.topright .mode{display:none}}
-@media(max-width:520px){.workspace-nav{overflow:auto}.workspace-nav .navhint{display:none}.model-roles{grid-template-columns:1fr}.pipeline-header{display:block}.live-mark{margin-top:10px}}
-@media(prefers-reduced-motion:reduce){button,.node{transition:none}}
+/* Research workspace */
+:root{--bg:#f5f4f0;--ink:#263b34;--muted:#617169;--line:#d9dfd9;--glass:#fff;--accent:#22604b;--accent-soft:#e7f0e9;--ok:#22604b;--ok-soft:#e7f0e9;--bad:#a52b35;--bad-soft:#fbecee}
+body{background:var(--bg);font:14px/1.6 system-ui,sans-serif;color:var(--ink)}
+button,a,input,textarea,select{touch-action:manipulation}button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}button:disabled{cursor:not-allowed}
+.topbar{min-height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:16px 28px;gap:16px}
+.brand{display:flex;gap:12px;align-items:center}.brandmark{font-family:Georgia,serif;font-size:28px;color:var(--accent);border-right:1px solid var(--line);padding-right:16px}.brand-name{font-family:Georgia,serif;font-size:24px;line-height:1.2}.brand-sub{font-size:12px;color:var(--muted)}
+.topright{display:flex;gap:12px;align-items:center}.topright .mode{font-size:12px;color:var(--accent)}.topright button,.detail button{background:white;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 12px;cursor:pointer}
+.app-shell{display:grid;grid-template-columns:210px minmax(0,1fr) 285px;max-width:1700px;margin:auto;min-height:calc(100vh - 76px)}
+.sidebar{padding:28px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:26px}.sidebar-label{font-size:11px;color:var(--muted);margin:0 0 10px}.project-card strong{display:block;font-size:14px}.project-card p{font-size:12px;color:var(--muted);margin:8px 0}.project-status{display:inline-block;background:var(--accent-soft);color:var(--accent);padding:3px 8px;margin-top:12px;border-radius:4px;font-size:11px}
+.sidebar-nav{display:grid;gap:4px}.sidebar-nav button{border:0;background:transparent;color:var(--muted);text-align:left;padding:10px;border-radius:5px;cursor:pointer}.sidebar-nav button.active{background:var(--accent-soft);color:var(--accent);font-weight:650}.symbol{display:none}.side-actions{display:grid;gap:8px}.side-actions button{padding:10px;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink);cursor:pointer}.side-actions .primary{background:var(--accent);color:#fff;border-color:var(--accent)}.sidebar-stats{display:flex;gap:24px}.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}.stat small{display:block;font-size:11px;color:var(--muted)}.sidebar-footer{margin-top:auto;font-size:11px;color:var(--muted)}
+.app-shell.form-view{grid-template-columns:210px minmax(0,1fr)}.app-shell.form-view .detail{display:none}.score .num{font-size:26px}
+.workspace{min-width:0;padding:26px 30px}.workspace-nav{display:none}.pipeline-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:0 0 24px}.pipeline-header h1{font:30px/1.2 Georgia,serif;margin:0 0 10px}.pipeline-header p{color:var(--muted);margin:0;max-width:55ch}.live-mark{font-size:11px;white-space:nowrap;border:1px solid var(--line);padding:5px 8px;border-radius:4px}.live-mark i{display:none}
+.next-action{background:#e7f0e9;border:1px solid #cbded0;border-radius:7px;padding:20px;margin-bottom:24px}.next-action h2{font-size:17px;margin:0 0 5px}.next-action p{margin:0;color:var(--muted)}.next-action button{margin-top:14px}.diagram{background:#fff;border:1px solid var(--line);border-radius:7px;overflow:hidden}.pipeline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.node{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:4px 10px;position:relative;text-align:left;min-width:0;padding:16px;background:white;color:var(--ink);border:0;border-bottom:1px solid var(--line);border-right:1px solid var(--line);cursor:pointer}.node:hover{background:#f6f8f5}.node.selected{box-shadow:inset 3px 0 var(--accent);background:#f1f6f1}.node.current{background:var(--accent-soft)}.node.failed{background:var(--bad-soft)}.node-number{grid-row:1/3;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}.node strong{font-size:13px;font-weight:600}.node-state{grid-column:3;grid-row:1;color:var(--muted)}.node.done .node-state{color:var(--ok)}.node .description{grid-column:2/4;font-size:12px;color:var(--muted);line-height:1.5}.node-icon,.model-chip{display:none}
+.activity{margin-top:24px;border-top:1px solid var(--line)}.activity-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 0}.activity h2{font-size:14px;margin:0}.activity small{color:var(--muted);font-size:11px}.activity-list{max-height:240px;overflow:auto}.activity-row{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.activity-row time{color:var(--muted);flex:none}.activity-row em{font-style:normal;color:var(--muted)}.activity-row b{font-weight:500}.activity-empty{padding:8px 0;color:var(--muted);font-size:12px}
+.detail{background:#fafbf8;border-left:1px solid var(--line);padding:26px 20px;min-width:0}.detail h2{font-size:13px;margin:0 0 24px}.detail button{font-size:11px}.detail-top{display:flex;gap:10px;align-items:center}.detail-icon{display:none}.detail-top strong{font:22px/1.3 Georgia,serif}.detail-top small{display:block;color:var(--muted);font-size:12px;margin-top:5px}.detail-section{margin-top:24px}.detail-section h3{font-size:11px;color:var(--muted);font-weight:500;margin:0 0 6px}.detail-section p{font-size:12px;margin:0;overflow-wrap:anywhere}.detail-section code{font-size:11px;overflow-wrap:anywhere}.metric-line{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)}.metric-line span{color:var(--muted)}
+.forms-container main{max-width:none;margin:0;padding:0}.forms-container main>header,.forms-container main>.steps{display:none}.card{box-shadow:none;backdrop-filter:none;border-radius:7px}.model-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.model-roles label{margin:12px 0 0}.model-roles small{font-size:11px}.notice{font-size:13px}input:not([type]),input[type=email]{width:100%;padding:11px 13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;color:var(--ink)}
+@media(min-width:1101px){.detail:not(.hidden){position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto}}
+@media(max-width:1100px){.app-shell.form-view{grid-template-columns:180px minmax(0,1fr)}.app-shell{grid-template-columns:180px minmax(0,1fr)}.detail{grid-column:2;border-top:1px solid var(--line)}.sidebar{grid-row:1/3}.workspace{padding:24px}}
+@media(max-width:700px){.app-shell.form-view{display:block}.topbar{padding:16px;align-items:flex-start}.brand-sub{max-width:190px}.topright{display:grid;gap:6px;text-align:right}.app-shell{display:block}.sidebar{padding:12px 16px;border-right:0;border-bottom:1px solid var(--line);gap:0}.sidebar>div:first-child,.sidebar-stats,.sidebar-footer,.side-actions,.sidebar-label{display:none}.sidebar-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.sidebar-nav button{font-size:12px;text-align:center;padding:10px 3px}.workspace{padding:24px 16px}.pipeline-header{display:block}.live-mark{display:inline-block;margin-top:12px}.pipeline-grid{grid-template-columns:1fr}.node{border-right:0}.detail{border-left:0;padding:24px 16px}.model-roles{grid-template-columns:1fr}.activity-head{align-items:flex-start}.activity small{max-width:135px;text-align:right}}
 </style>
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><div class="brandmark" aria-hidden="true">◉</div><div><div class="brand-name">Papermuller</div><div class="brand-sub">Evidence-first Research & Writing Lab</div></div></div>
-  <div class="topright"><span class="mode" id="modeLabel">Memuat mode...</span><button id="settingsShortcut">⚙ Pengaturan</button></div>
+  <div class="brand"><div class="brandmark" aria-hidden="true">P</div><div><div class="brand-name">Papermuller</div><div class="brand-sub">Literature reviews with traceable sources</div></div></div>
+  <div class="topright"><span class="mode" id="modeLabel">Loading mode...</span><button id="settingsShortcut">Settings</button></div>
 </header>
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Navigasi proyek">
-    <div><p class="sidebar-label">Proyek Aktif</p><div class="project-card"><strong id="projectName">Belum ada topik penelitian</strong><span class="project-status" id="projectStatus">Belum dimulai</span><p id="sidebarMode">Mode latihan · offline</p></div></div>
+  <aside class="sidebar" aria-label="Project navigation">
+    <div><p class="sidebar-label">Project</p><div class="project-card"><strong id="projectName">No research topic yet</strong><span class="project-status" id="projectStatus">Not started</span><p id="sidebarMode">Demo mode · offline</p></div></div>
     <div><p class="sidebar-label">Workspace</p><nav class="sidebar-nav">
-       <button data-panel="pipeline" class="active"><span class="symbol">⌘</span>Pipeline Riset</button>
-       <button data-panel="research"><span class="symbol">▤</span>Topik & PDF</button>
-       <button data-panel="results"><span class="symbol">▥</span>Hasil & Bukti</button>
-       <button data-panel="setup"><span class="symbol">⚙</span>Model & API</button>
+       <button data-panel="pipeline" class="active"><span class="symbol">⌘</span>Research workflow</button>
+       <button data-panel="research"><span class="symbol">▤</span>Topic & sources</button>
+       <button data-panel="results"><span class="symbol">▥</span>Draft & evidence</button>
+       <button data-panel="setup"><span class="symbol">⚙</span>Settings</button>
     </nav></div>
-    <div class="side-actions"><button class="primary" id="startResearch">▶ Riset baru / lanjutkan</button><button class="hidden" id="approvalShortcut">✓ Tinjau rencana</button><button id="openResultsShortcut" disabled>↥ Lihat hasil</button><button id="newResearch">＋ Reset untuk riset baru</button></div>
-    <div><p class="sidebar-label">Statistik run sebenarnya</p><div class="sidebar-stats"><div class="stat"><b id="sidebarStage">0/10</b><small>Tahap selesai</small></div><div class="stat"><b id="sidebarCalls">0</b><small>Request OpenRouter</small></div></div></div>
-    <div class="sidebar-footer">PDF dan artefak disimpan di komputer lokal. Jangan masukkan API key ke repository publik.</div>
+    <div class="side-actions"><button class="primary" id="startResearch">Open research</button><button class="hidden" id="approvalShortcut">Review plan</button><button id="openResultsShortcut" disabled>View results</button><button id="newResearch">New research</button></div>
+    <div><p class="sidebar-label">Run summary</p><div class="sidebar-stats"><div class="stat"><b id="sidebarStage">0/10</b><small>Stages completed</small></div><div class="stat"><b id="sidebarCalls">0</b><small>API requests</small></div></div></div>
+    <div class="sidebar-footer">PDFs and results are stored on the machine running the app.</div>
   </aside>
   <div class="workspace">
-    <nav class="workspace-nav" aria-label="Tab workspace"><button class="active" data-panel="pipeline">Pipeline</button><button data-panel="research">Sumber & Rencana</button><button data-panel="results">Manuskrip & Audit</button><button data-panel="setup">Konfigurasi</button><span class="navhint">Flowchart interaktif · klik setiap node</span></nav>
-    <section id="pipelinePage"><div class="pipeline-header"><div><h1>Pipeline Riset</h1><p>Jejak riset dari rancangan hingga manuskrip kerja. Warna node mencerminkan progres aktual.</p></div><span class="live-mark" id="liveMark"><i></i>Belum dimulai</span></div>
+    <nav class="workspace-nav" aria-label="Workspace tabs"><button class="active" data-panel="pipeline">Pipeline</button><button data-panel="research">Sources & plan</button><button data-panel="results">Manuscript & audit</button><button data-panel="setup">Configuration</button><span class="navhint">Select a stage to inspect its details</span></nav>
+    <section id="pipelinePage"><div class="pipeline-header"><div><h1>Research workflow</h1><p>Plan your research, select sources, then review the draft and its supporting evidence.</p></div><span class="live-mark" id="liveMark"><i></i>Not started</span></div>
       <div id="errorBanner" class="notice bad hidden" role="alert"></div>
-      <div class="diagram"><div id="pipelineGraph" class="pipeline-grid" aria-label="Tahapan riset"></div></div>
-      <section class="activity" aria-label="Log aktivitas"><div class="activity-head"><h2>Log Aktivitas</h2><small>Event aktual; tidak ada estimasi progres buatan</small></div><div class="activity-list" id="activityList"></div></section>
+      <section class="next-action" id="nextAction" aria-labelledby="nextTitle"><h2 id="nextTitle">Start with a research question</h2><p id="nextDescription">Enter a topic and review the plan before searching. Demo mode uses fictional sample data.</p><button class="main" id="nextActionBtn">Enter a research topic</button></section>
+      <div class="diagram"><div id="pipelineGraph" class="pipeline-grid" aria-label="Research stages"></div></div>
+      <section class="activity" aria-label="Activity log"><div class="activity-head"><h2>Activity log</h2><small>Recent stages and responses</small></div><div class="activity-list" id="activityList"></div></section>
     </section>
+    <div id="requestError" class="notice bad hidden" role="alert"></div>
     <div id="formsContainer" class="forms-container hidden">
 <main>
   <header>
-    <h1>Asisten Riset</h1>
-    <p>Dari topik kasar menjadi tinjauan pustaka yang referensinya sudah diperiksa.</p>
+    <h1>Research assistant</h1>
+    <p>Develop a literature review and inspect its references.</p>
   </header>
 
   <nav class="steps">
-    <button data-go="setup"><b>1</b><span>Pengaturan</span></button>
-    <button data-go="research"><b>2</b><span>Riset</span></button>
-    <button data-go="results"><b>3</b><span>Hasil</span></button>
+    <button data-go="setup"><b>1</b><span>Settings</span></button>
+    <button data-go="research"><b>2</b><span>Research</span></button>
+    <button data-go="results"><b>3</b><span>Results</span></button>
   </nav>
 
-  <!-- ============ 1. PENGATURAN ============ -->
+  <!-- ============ 1. SETTINGS ============ -->
   <section id="setup" class="card">
-    <h2>Pengaturan</h2>
-    <p class="hint">Cukup diisi sekali. Kunci disimpan hanya di komputer ini.</p>
+    <h2>Settings</h2>
+    <p class="hint">Settings and API keys are stored on the machine running the app.</p>
 
     <label class="switch">
       <input type="checkbox" id="demo">
-      <div>Mode latihan
-        <span><br>Memakai data contoh, gratis dan tanpa internet. Matikan kalau ingin riset sungguhan.</span></div>
+      <div>Demo mode
+        <span><br>Uses fictional sample data without API calls or charges. Turn off to use live APIs.</span></div>
     </label>
 
     <div id="realFields">
-      <label for="orKey">Kunci OpenRouter
-        <small>Dari openrouter.ai, menu Keys. Diawali sk-or-</small></label>
+      <label for="orKey">OpenRouter API key
+        <small>Get a key from openrouter.ai → Keys. Starts with sk-or-</small></label>
       <input type="password" id="orKey" autocomplete="off">
 
-      <label for="oaKey">Kunci OpenAlex
-        <small>Dari openalex.org/settings/api. Gratis.</small></label>
+      <label for="oaKey">OpenAlex API key
+        <small>Get a key from openalex.org/settings/api.</small></label>
       <input type="password" id="oaKey" autocomplete="off">
 
-      <label for="model">Model AI
-        <small>Pilihan pertama dicoba lebih dulu, berikutnya menjadi cadangan.</small></label>
+      <label for="model">AI model
+        <small>The first model is tried first; subsequent models are fallbacks.</small></label>
       <select id="model">
-        <option value="openrouter/auto">OpenRouter Auto (biaya tergantung model terpilih)</option>
-        <option value="openrouter/free">OpenRouter Free (tergantung ketersediaan)</option>
-        <option value="custom">Tulis sendiri...</option>
+        <option value="openrouter/auto">OpenRouter Auto (cost depends on the selected model)</option>
+        <option value="openrouter/free">OpenRouter Free (subject to availability)</option>
+        <option value="custom">Enter a model ID...</option>
       </select>
-      <input type="text" id="modelCustom" class="hidden" placeholder="contoh: penyedia/nama-model:free" style="margin-top:8px">
+      <input type="text" id="modelCustom" class="hidden" placeholder="e.g. provider/model-name:free" style="margin-top:8px">
 
       <div class="model-roles">
-        <label for="evidenceModel">Evidence model <small>Ekstraksi dari abstrak/PDF</small><input type="text" id="evidenceModel" placeholder="Kosong = model utama"></label>
-        <label for="writerModel">Writer model <small>Outline dan drafting</small><input type="text" id="writerModel" placeholder="Kosong = model utama"></label>
-        <label for="verifierModel">Verifier model <small>Audit dukungan klaim</small><input type="text" id="verifierModel" placeholder="Kosong = model utama"></label>
-        <label for="reviewModel">Reviewer model <small>Rubrik dan adversarial review</small><input type="text" id="reviewModel" placeholder="Kosong = model utama"></label>
+        <label for="evidenceModel">Extraction model <small>Extract evidence from abstracts or PDFs</small><input type="text" id="evidenceModel" placeholder="Leave blank to use the main model"></label>
+        <label for="writerModel">Writing model <small>Outline and draft</small><input type="text" id="writerModel" placeholder="Leave blank to use the main model"></label>
+        <label for="verifierModel">Audit model <small>Check evidence supporting claims</small><input type="text" id="verifierModel" placeholder="Leave blank to use the main model"></label>
+        <label for="reviewModel">Review model <small>Scoring and critical review</small><input type="text" id="reviewModel" placeholder="Leave blank to use the main model"></label>
       </div>
-      <label for="email">Email <small>Opsional, untuk akses OpenAlex.</small></label>
-      <input type="text" id="email" autocomplete="off">
+      <label for="email">Email <small>Optional, for OpenAlex access.</small></label>
+      <input type="email" id="email" autocomplete="off">
     </div>
 
-    <label for="target">Target nilai minimal
-      <small>Draf direvisi otomatis sampai nilai penelaah mencapai target ini, maksimal 4 putaran.</small></label>
+    <label for="target">AI review threshold
+      <small>Target for automatic revisions. This score does not measure scientific accuracy. The revision limit follows your configuration.</small></label>
     <select id="target">
-      <option value="7">7 dari 10 (lebih cepat, hemat kuota)</option>
-      <option value="8">8 dari 10 (disarankan)</option>
-      <option value="9">9 dari 10 (sangat ketat, jarang tercapai model gratis)</option>
+      <option value="7">7 out of 10 (fewer revisions)</option>
+      <option value="8">8 out of 10</option>
+      <option value="9">9 out of 10 (may require more revisions)</option>
     </select>
 
-    <label for="language">Bahasa draf</label>
+    <label for="language">Draft language</label>
     <select id="language">
-      <option value="Indonesian">Bahasa Indonesia</option>
       <option value="English">English</option>
+      <option value="Indonesian">Indonesian</option>
     </select>
 
     <div class="actions">
-      <button class="main" id="saveBtn">Simpan pengaturan</button>
-      <button class="plain" id="checkBtn">Cek koneksi</button>
+      <button class="main" id="saveBtn">Save settings</button>
+      <button class="plain" id="checkBtn">Test connections</button>
     </div>
     <div id="setupMsg"></div>
     <ul class="checks" id="checkList"></ul>
@@ -243,132 +232,139 @@ button,select,input,textarea{font:inherit}button{transition:background .16s,bord
   <!-- ============ 2. RISET ============ -->
   <section id="research" class="hidden">
     <div class="card" id="topicCard">
-      <h2>Topik penelitian</h2>
-      <p class="hint">Tulis topikmu dengan kalimat biasa. Bahasa Inggris memberi hasil pencarian paling banyak.</p>
-      <label for="topic">Topik</label>
-      <textarea id="topic" placeholder="contoh: road infrastructure, governance quality and poverty"></textarea>
-      <div class="actions"><button class="main" id="planBtn">Buat rencana penelitian</button></div>
+      <h2>Research topic</h2>
+      <p class="hint">Describe what you want to investigate. Use English search terms when possible.</p>
+      <label for="topic">Topic</label>
+      <textarea id="topic" placeholder="e.g. road infrastructure, governance quality and poverty"></textarea>
+      <div class="actions"><button class="main" id="planBtn">Create research plan</button></div>
       <details>
-        <summary>Unggah full-text PDF (opsional, sebelum proses dimulai)</summary>
-        <p class="hint">Masukkan DOI yang persis sama dengan artikel. PDF harus punya lapisan teks (maksimal 12 MB / 150 halaman). File tetap disimpan lokal. Cuplikan terpilih akan dikirim ke model AI ketika mode nyata digunakan.</p>
-        <label for="paperDoi">DOI artikel</label>
+        <summary>Add full-text PDFs (optional, before starting)</summary>
+        <p class="hint">Enter the article’s exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). Files stay on the server; selected excerpts are sent to your AI provider in live mode.</p>
+        <label for="paperDoi">Article DOI</label>
         <input type="text" id="paperDoi" placeholder="10.xxxx/identifier">
-        <label for="paperFile">Pilih PDF yang kamu berhak gunakan</label>
+        <label for="paperFile">Choose a PDF you have permission to use</label>
         <input type="file" id="paperFile" accept=".pdf,application/pdf">
-        <div class="actions"><button class="plain" id="uploadPdfBtn">Impor PDF</button></div>
+        <div class="actions"><button class="plain" id="uploadPdfBtn">Import PDF</button></div>
         <div id="pdfMsg"></div>
         <ul class="checks" id="uploadedPdfs"></ul>
       </details>
     </div>
 
     <div class="card hidden" id="approveCard">
-      <h2>Periksa rencana</h2>
-      <p class="hint">Tinjau dan edit judul, pertanyaan, asumsi dan ruang lingkup. AI bisa menambahkan negara atau periode yang tidak kamu minta.</p>
+      <h2>Review the plan</h2>
+      <p class="hint">Review the title, questions, assumptions, and scope. Remove any location or time period you did not request.</p>
       <div class="plan" id="planView"></div>
-      <label for="approvedTitle">Judul kerja</label><input id="approvedTitle" maxlength="350">
-      <label for="approvedQuestions">Pertanyaan penelitian <small>Satu per baris.</small></label>
+      <label for="approvedTitle">Working title</label><input id="approvedTitle" maxlength="350">
+      <label for="approvedQuestions">Research questions <small>One per line.</small></label>
       <textarea id="approvedQuestions" style="min-height:85px"></textarea>
-      <label for="approvedScope">Ruang lingkup yang disetujui</label>
+      <label for="approvedScope">Approved scope</label>
       <textarea id="approvedScope" style="min-height:75px"></textarea>
       <details>
-        <summary>Informasi manuskrip dari peneliti (opsional)</summary>
-        <p class="hint">Methods dan Results yang kamu ketik akan disalin apa adanya ke manuskrip kerja. AI tidak akan menganggap informasi ini telah diverifikasi. Jika kosong, manuskrip akan menampilkan placeholder.</p>
-        <label for="authorMethods">Methods — rancangan, data, sampel, dan teknik analisis</label>
+        <summary>Author-supplied manuscript sections (optional)</summary>
+        <p class="hint">Your Methods and Results are copied into the working manuscript as supplied, without verification. Empty sections remain marked as missing.</p>
+        <label for="authorMethods">Methods — design, data, sample, and analysis</label>
         <textarea id="authorMethods" style="min-height:100px" maxlength="12000"></textarea>
-        <label for="authorResults">Results — hasil penelitian yang benar-benar diperoleh</label>
+        <label for="authorResults">Results — findings from your actual research</label>
         <textarea id="authorResults" style="min-height:100px" maxlength="12000"></textarea>
       </details>
       <label style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;">
         <input type="checkbox" id="confirmScope" style="width:auto;margin-top:5px;">
-        <span>Saya sudah meninjau dan menyetujui rencana serta ruang lingkup penelitian ini.</span>
+        <span>I have reviewed and approved this research plan and scope.</span>
       </label>
-      <label for="keywords">Kata kunci pencarian <small>Pisahkan dengan koma.</small></label>
+      <label for="keywords">Search terms <small>Separate with commas.</small></label>
       <textarea id="keywords" style="min-height:64px"></textarea>
       <div class="actions">
-        <button class="main" id="approveBtn">Setujui dan lanjutkan</button>
-        <button class="plain" id="redoBtn">Buat ulang rencana</button>
+        <button class="main" id="approveBtn">Approve and continue</button>
+        <button class="plain" id="redoBtn">Regenerate plan</button>
       </div>
     </div>
 
     <div class="card hidden" id="progressCard">
-      <h2>Proses berjalan</h2>
-      <p class="hint" id="progressHint">Biarkan halaman ini terbuka. Model gratis bisa memerlukan beberapa menit.</p>
+      <h2>Research in progress</h2>
+      <p class="hint" id="progressHint">Research runs on the server. You can reload this page to see the latest status.</p>
       <ol class="progress" id="progress"></ol>
       <div id="runMsg"></div>
-      <details><summary>Lihat catatan proses</summary><pre class="log" id="log"></pre></details>
-      <div class="actions hidden" id="failActions"><button class="main" id="againBtn">Mulai lagi</button></div>
+      <details><summary>View run log</summary><pre class="log" id="log"></pre></details>
+      <div class="actions hidden" id="failActions"><button class="main" id="againBtn">Try again</button></div>
     </div>
   </section>
 
   <!-- ============ 3. HASIL ============ -->
   <section id="results" class="hidden">
     <div class="card" id="emptyResults">
-      <h2>Belum ada hasil</h2>
-      <p class="hint">Hasil muncul di sini setelah proses riset selesai.</p>
-      <div class="actions"><button class="main" data-go="research">Mulai riset</button></div>
+      <h2>No results yet</h2>
+      <p class="hint">Your draft and evidence will appear here when the research run finishes.</p>
+      <div class="actions"><button class="main" data-go="research">Start research</button></div>
     </div>
     <div id="resultView" class="hidden">
       <div class="card">
         <div class="score"><div class="num" id="scoreNum">-</div>
-          <div><b>Nilai dari penelaah AI</b><br><span class="hint" id="scoreNote"></span></div></div>
+          <div><b>AI reviewer score</b><br><span class="hint" id="scoreNote"></span></div></div>
         <div id="reviewNotes"></div>
       </div>
       <div class="card">
-        <h2>Draf akhir tinjauan pustaka</h2>
-        <p class="hint">Kode <span class="cite">P1</span> merujuk ke matriks. Penilaian AI dan keberadaan kutipan di abstrak tidak menggantikan pembacaan artikel asli.</p>
+        <h2>Literature review draft</h2>
+        <p class="hint">ID <span class="cite">P1</span> refers to the source matrix. AI scores and matching excerpts do not replace reading the original sources.</p>
         <div class="draft" id="draftView"></div>
       </div>
       <div class="card">
-        <h2>Matriks literatur</h2>
-        <p class="hint">Metadata DOI dan judul diperiksa ke Crossref. Kolom bukti mencatat asal abstrak atau nomor halaman PDF yang diunggah; kecocokan teks belum membuktikan dukungan ilmiah.</p>
+        <h2>Source matrix</h2>
+        <p class="hint">DOI and title metadata are checked against Crossref. Evidence records the abstract or uploaded PDF page; matching text alone does not establish scientific support.</p>
         <div class="table-wrap"><table id="matrix"></table></div>
       </div>
       <div class="card">
-        <h2>Validasi manusia</h2>
-        <p class="hint">Audit AI bukan pengganti telaah asli. Centang hanya setelah kamu membaca sumber dan memeriksa klaimnya. Status ini mencatat deklarasi peneliti, bukan bukti bahwa pemeriksaan independen terjadi.</p>
+        <h2>Researcher review</h2>
+        <p class="hint">Check each item after reading the sources and reviewing the claims. This records your review; it does not certify independent validation.</p>
         <div id="humanProgress" class="hint"></div>
         <div id="paperChecks"></div>
         <div id="globalChecks"></div>
-        <label for="verificationNotes">Catatan verifikasi</label>
+        <label for="verificationNotes">Review notes</label>
         <textarea id="verificationNotes" style="min-height:70px"></textarea>
-        <div class="actions"><button class="plain" id="saveVerification">Simpan checklist verifikasi</button></div>
+        <div class="actions"><button class="plain" id="saveVerification">Save review checklist</button></div>
         <div id="verificationMsg"></div>
       </div>
       <div class="card">
-        <h2>Unduh berkas</h2>
+        <h2>Download files</h2>
         <div class="files" id="files"></div>
         <div class="actions">
-          <button class="plain" id="openFolderBtn">Buka folder hasil</button>
-          <button class="main" id="newBtn">Riset topik baru</button>
+          <button class="plain" id="openFolderBtn">Open results folder (Windows)</button>
+          <button class="main" id="newBtn">Research a new topic</button>
         </div>
       </div>
     </div>
   </section>
 </main></div>
   </div>
-  <aside class="detail" aria-label="Inspektor tahap"><h2>Detail Tahap <button type="button" id="liveStepBtn" style="float:right;margin:0">Ikuti tahap aktif</button></h2>
-    <div class="detail-top"><span class="detail-icon" id="detailIcon">◇</span><div><strong id="detailName">Setup Riset</strong><small id="detailCounter">Tahap 1 dari 10</small></div></div>
-    <div class="detail-section"><h3>Yang dikerjakan</h3><p id="detailDesc">Menyiapkan pertanyaan dan persetujuan penelitian.</p></div>
-    <div class="detail-section"><h3>Input</h3><p id="detailInput">Topik penelitian</p></div>
-    <div class="detail-section"><h3>Output</h3><p id="detailOutput">Rencana riset yang disetujui</p></div>
-    <div class="detail-section"><h3>Model / Engine aktual atau dikonfigurasi</h3><p><code id="detailModel">—</code></p></div>
-    <div class="detail-section"><h3>Status</h3><p id="detailStatus">Belum dimulai</p><p style="font-size:11px;color:var(--muted)">Mulai: <span id="detailSince">—</span></p></div>
-    <div class="detail-section"><h3>Model Activity Inspector</h3><div class="metric-line"><span>Respons LLM</span><b id="detailCalls">—</b></div><div class="metric-line"><span>Token API</span><b id="detailTokens">Tidak dilaporkan</b></div><div class="metric-line"><span>Biaya API (USD)</span><b id="detailCost">Tidak dilaporkan</b></div><p style="color:var(--muted);font-size:11px;margin-top:9px">Biaya dan token hanya tampil jika dilaporkan penyedia. Mode demo tidak menghabiskan token API.</p></div>
+  <aside class="detail" aria-label="Stage inspector"><h2>Stage details <button type="button" id="liveStepBtn" style="float:right;margin:0">Follow active stage</button></h2>
+    <div class="detail-top"><span class="detail-icon" id="detailIcon">◇</span><div><strong id="detailName">Research plan</strong><small id="detailCounter">Stage 1 of 10</small></div></div>
+    <div class="detail-section"><h3>What happens</h3><p id="detailDesc">Prepare research questions and approve the plan.</p></div>
+    <div class="detail-section"><h3>Input</h3><p id="detailInput">Research topic</p></div>
+    <div class="detail-section"><h3>Output</h3><p id="detailOutput">Approved research plan</p></div>
+    <div class="detail-section"><h3>Model or service</h3><p><code id="detailModel">—</code></p></div>
+    <div class="detail-section"><h3>Status</h3><p id="detailStatus">Not started</p><p style="font-size:11px;color:var(--muted)">Started: <span id="detailSince">—</span></p></div>
+    <div class="detail-section"><h3>Model usage</h3><div class="metric-line"><span>Model responses</span><b id="detailCalls">—</b></div><div class="metric-line"><span>API tokens</span><b id="detailTokens">Not reported</b></div><div class="metric-line"><span>API cost (USD)</span><b id="detailCost">Not reported</b></div><p style="color:var(--muted);font-size:11px;margin-top:9px">Cost and token counts appear when reported by the provider. Demo mode makes no API calls.</p></div>
   </aside>
 </div>
 <script>
 const $ = (id) => document.getElementById(id);
-const STAGES = ["Setup Riset", "Discovery Literatur", "Verifikasi & PDF", "Screening", "Ekstraksi Bukti", "Sintesis Literatur", "Draft Manuskrip", "Audit Sitasi & Klaim", "Adversarial Review", "Ekspor & Verifikasi"];
-const CRITERIA = {synthesis: "Sintesis antarpenelitian", research_gap: "Celah penelitian",
-                  coverage: "Menjawab pertanyaan penelitian", evidence_use: "Dukungan bukti", clarity: "Kejelasan tulisan", scope_fidelity: "Kesesuaian ruang lingkup"};
+const STAGES = ["Research plan", "Literature discovery", "Metadata & PDF", "Source selection", "Evidence extraction", "Literature synthesis", "Draft writing", "Citation & claim audit", "Critical review", "Export & review"];
+const CRITERIA = {synthesis: "Synthesis across studies", research_gap: "Research gap",
+                  coverage: "Research question coverage", evidence_use: "Evidence support", clarity: "Writing clarity", scope_fidelity: "Scope fidelity"};
 let poller = null, lastPhase = "";
 
 async function api(path, data) {
+  try {
   const res = await fetch(path, data === undefined ? {} :
     { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data) });
   const payload = await res.json();
-  if (!res.ok) { alert(payload.error || `Permintaan gagal (${res.status})`); throw Error(payload.error || `HTTP ${res.status}`); }
+  if (!res.ok) throw Error(payload.error || `Request failed (${res.status})`);
+  $('requestError').classList.add('hidden');
   return payload;
+  } catch (error) {
+    $('requestError').textContent = error.message || 'Cannot reach the server. Check your connection and try again.';
+    $('requestError').classList.remove('hidden');
+    throw error;
+  }
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -377,13 +373,13 @@ function show(view) {
   showPipelineStatus(view);
   for (const id of ["setup", "research", "results"]) $(id).classList.toggle("hidden", id !== view);
   document.querySelectorAll(".steps button").forEach(b => b.classList.toggle("active", b.dataset.go === view));
-  if (view === "results") loadResults();
+
 }
 document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dataset.go));
 
 function note(el, text, ok) { $(el).innerHTML = text ? `<div class="notice ${ok ? "ok" : "bad"}">${esc(text)}</div>` : ""; }
 
-/* ---------- Pengaturan ---------- */
+/* ---------- Settings ---------- */
 function toggleReal() { $("realFields").classList.toggle("hidden", $("demo").checked); }
 $("demo").onchange = toggleReal;
 $("model").onchange = () => $("modelCustom").classList.toggle("hidden", $("model").value !== "custom");
@@ -392,8 +388,8 @@ async function loadSettings() {
   const s = await api("/api/settings");
   $("demo").checked = s.demo;
   for (const [id,key] of [['writerModel','writer_model'],['evidenceModel','evidence_model'],['verifierModel','verifier_model'],['reviewModel','review_model']]) $(id).value=s[key]||'';
-  $("orKey").placeholder = s.has_openrouter_key ? "Sudah tersimpan. Isi hanya kalau ingin mengganti." : "sk-or-...";
-  $("oaKey").placeholder = s.has_openalex_key ? "Sudah tersimpan. Isi hanya kalau ingin mengganti." : "tempel kunci OpenAlex";
+  $("orKey").placeholder = s.has_openrouter_key ? "Already saved. Enter a value only to replace it." : "sk-or-...";
+  $("oaKey").placeholder = s.has_openalex_key ? "Already saved. Enter a value only to replace it." : "Paste your OpenAlex key";
   const preset = [...$("model").options].find(o => o.value === s.model);
   if (preset) $("model").value = s.model; else { $("model").value = "custom"; $("modelCustom").value = s.model; }
   $("modelCustom").classList.toggle("hidden", $("model").value !== "custom");
@@ -413,29 +409,31 @@ $("saveBtn").onclick = async () => {
     language: $("language").value, email: $("email").value, target: $("target").value });
   $("orKey").value = ""; $("oaKey").value = "";
   const s = await loadSettings();
-  note("setupMsg", s.problem ? s.problem : "Pengaturan tersimpan. Klik Cek koneksi untuk memastikan semuanya siap.", !s.problem);
+  note("setupMsg", s.problem ? s.problem : "Settings saved. Test connections to check your API services.", !s.problem);
 };
 
 $("checkBtn").onclick = async () => {
-  $("checkBtn").disabled = true; $("checkBtn").textContent = "Memeriksa...";
+  $("checkBtn").disabled = true; $("checkBtn").textContent = "Checking...";
   $("checkList").innerHTML = ""; note("setupMsg", "");
+  try {
   const results = await api("/api/check", {});
   $("checkList").innerHTML = results.map(r =>
     `<li><b style="color:${r.ok ? "var(--ok)" : "var(--bad)"}">${r.ok ? "✓" : "✗"}</b>${esc(r.name)}<br><small>${esc(r.note)}</small></li>`).join("");
-  $("checkBtn").disabled = false; $("checkBtn").textContent = "Cek koneksi";
+  } catch (_) { /* api displays the error */ }
+  finally { $("checkBtn").disabled = false; $("checkBtn").textContent = "Test connections"; }
 };
 
-/* ---------- Riset ---------- */
+/* ---------- Research ---------- */
 $("planBtn").onclick = async () => {
   const topic = $("topic").value.trim();
-  if (!topic) return alert("Tulis topik penelitian dulu.");
+  if (!topic) return alert("Enter a research topic first.");
   await api("/api/plan", { topic });
   startPolling();
 };
 
 $("approveBtn").onclick = async () => {
   const status = await api("/api/status");
-  if (!$("confirmScope").checked) return alert("Periksa dan konfirmasi ruang lingkup dahulu.");
+  if (!$("confirmScope").checked) return alert("Review and confirm the scope first.");
   const plan = { ...status.plan,
     title: $("approvedTitle").value.trim(),
     research_questions: $("approvedQuestions").value.split("\n").map(q => q.trim()).filter(Boolean),
@@ -444,12 +442,19 @@ $("approveBtn").onclick = async () => {
     author_results: $("authorResults").value.trim(),
     keywords: $("keywords").value.split(",").map(k => k.trim()).filter(Boolean) };
   if (!plan.title || !plan.scope_note || !plan.research_questions.length || !plan.keywords.length)
-    return alert("Isi judul, pertanyaan penelitian, ruang lingkup, dan kata kunci.");
+    return alert("Enter a title, research questions, scope, and search terms.");
   await api("/api/approve", { plan, approved_scope: true });
   lastPhase = "running";
   startPolling();
 };
-$("redoBtn").onclick = $("planBtn").onclick;
+$("redoBtn").onclick = async () => {
+  const topic = latestStatus?.topic || $('topic').value.trim();
+  await api('/api/reset', {});
+  $('topic').value = topic;
+  await api('/api/plan', {topic});
+  lastPhase = '';
+  startPolling();
+};
 $("againBtn").onclick = async () => { await api("/api/reset", {}); render(await api("/api/status")); };
 $("newBtn").onclick = async () => { await api("/api/reset", {}); $("topic").value = ""; render(await api("/api/status")); show("research"); };
 $("openFolderBtn").onclick = () => api("/api/open-folder", {});
@@ -457,9 +462,11 @@ $("openFolderBtn").onclick = () => api("/api/open-folder", {});
 function startPolling() {
   clearInterval(poller);
   const tick = async () => {
+    try {
     const s = await api("/api/status");
     render(s);
     if (!["planning", "running"].includes(s.phase)) clearInterval(poller);
+    } catch (_) { /* Keep polling so a temporary connection failure can recover. */ }
   };
   tick(); poller = setInterval(tick, 1500);
 }
@@ -472,22 +479,22 @@ function render(s) {
   $("failActions").classList.toggle("hidden", s.phase !== "failed");
 
   $("progress").innerHTML = STAGES.map((name, i) => {
-    const n = i + 1, state = s.stage > n || s.phase === "done" ? "done" : (s.stage === n && busy ? "now" : "");
+    const n = i + 1, state = (s.completed_steps || []).includes(n) || s.phase === "done" ? "done" : (s.stage === n && busy ? "now" : "");
     return `<li class="${state}"><span class="dot">${state === "done" ? "✓" : n}</span>${name}</li>`;
   }).join("");
   $("log").textContent = (s.log || []).join("\n");
-  $("progressHint").textContent = s.phase === "done" ? "Semua tahap selesai." :
-    "Biarkan halaman ini terbuka. Model gratis bisa memerlukan beberapa menit.";
+  $("progressHint").textContent = s.phase === "done" ? "All stages completed." :
+    "Research runs on the server. You can reload this page to see the latest status.";
 
-  if (s.phase === "failed") note("runMsg", "Proses berhenti.\n" + s.error, false);
+  if (s.phase === "failed") note("runMsg", "The run stopped.\n" + s.error, false);
   else if (s.phase === "done") $("runMsg").innerHTML =
-    `<div class="notice ok">Selesai. Permintaan ke model AI terpakai: ${s.requests}.</div>`;
+    `<div class="notice ok">Complete. AI API requests used: ${s.requests}.</div>`;
   else note("runMsg", "");
 
   if (s.phase === "approve" && s.plan && lastPhase !== "approve") {
-    $("planView").innerHTML = `<b>Topik asli pengguna</b><p>${esc(s.topic)}</p>
-      <b>Asumsi yang perlu ditinjau</b><ul>${(s.plan.assumptions || []).length ?
-        s.plan.assumptions.map(a => `<li>${esc(a)}</li>`).join("") : "<li>Tidak dilaporkan.</li>"}</ul>`;
+    $("planView").innerHTML = `<b>Your original topic</b><p>${esc(s.topic)}</p>
+      <b>Assumptions to review</b><ul>${(s.plan.assumptions || []).length ?
+        s.plan.assumptions.map(a => `<li>${esc(a)}</li>`).join("") : "<li>Not reported.</li>"}</ul>`;
     $("approvedTitle").value = s.plan.title || "";
     $("approvedQuestions").value = (s.plan.research_questions || []).join("\n");
     $("approvedScope").value = s.plan.scope_note || "";
@@ -501,11 +508,11 @@ function render(s) {
   lastPhase = s.phase;
   renderPipeline(s);
   $("failActions").classList.toggle("hidden", !["failed", "done"].includes(s.phase));
-  $("againBtn").textContent = s.phase === "done" ? "Riset topik baru" : "Mulai lagi";
+  $("againBtn").textContent = s.phase === "done" ? "Research a new topic" : "Try again";
   $("planBtn").disabled = busy;
 }
 
-/* ---------- Hasil ---------- */
+/* ---------- Results ---------- */
 function markdown(md) {
   return esc(md).split(/\n\s*\n/).map(block => {
     let b = block.trim()
@@ -527,60 +534,60 @@ async function loadResults() {
   $("scoreNum").textContent = rv ? `${rv.score}/10` : "-";
   const ev = r.evidence;
   $("scoreNote").textContent = rv ?
-    (rv.evidence_gate_passed && rv.scope_gate_passed ? "Audit bukti dan kesesuaian scope lolos menurut AI; tetap perlu verifikasi peneliti. " :
-      "DRAF SEMENTARA: audit bukti atau kesesuaian scope belum lolos; jangan gunakan sebagai hasil terverifikasi. ")
-    + (ev ? `Paragraf yang dinilai didukung: ${ev.supported}/${ev.total}. ` : "")
-    + (rv.redteam_high_risk ? ` Peringatan: ${rv.redteam_high_risk} temuan berisiko tinggi dari penelaah skeptis menunggu keputusan peneliti.` : '')
-    + (rv.status === 'redteam_check_incomplete' ? ' Pemeriksaan skeptis gagal dijalankan.' : '')
-    + (rv.from_round ? `Putaran ${rv.from_round}.` : "") : "";
+    (rv.evidence_gate_passed && rv.scope_gate_passed ? "Evidence and scope checks passed the AI review; researcher verification is still required. " :
+      "PROVISIONAL DRAFT: evidence or scope checks have not passed. Do not treat this as verified research. ")
+    + (ev ? `Paragraphs assessed as supported: ${ev.supported}/${ev.total}. ` : "")
+    + (rv.redteam_high_risk ? ` Warning: ${rv.redteam_high_risk} high-risk findings await researcher review.` : '')
+    + (rv.status === 'redteam_check_incomplete' ? ' The critical review did not complete.' : '')
+    + (rv.from_round ? `Round ${rv.from_round}.` : "") : "";
   const fixes = rv ? (rv.fixes || rv.problems || []) : [];
   $("reviewNotes").innerHTML = rv ? `
     ${rv.scores ? `<div class="bars">${Object.entries(rv.scores).map(([k, v]) =>
       `<div class="bar"><span>${esc(CRITERIA[k] || k)}</span><i><b style="width:${v * 10}%"></b></i><em>${v}</em></div>`).join("")}</div>` : ""}
-    ${rv.strengths?.length ? `<p><b>Kekuatan</b></p><ul>${rv.strengths.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-    ${fixes.length ? `<p><b>Saran perbaikan lanjutan</b></p><ul>${fixes.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}` : "";
-  $("draftView").innerHTML = markdown(r.draft || "Draf belum tersedia.");
+    ${rv.strengths?.length ? `<p><b>Strengths</b></p><ul>${rv.strengths.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    ${fixes.length ? `<p><b>Suggested improvements</b></p><ul>${fixes.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}` : "";
+  $("draftView").innerHTML = markdown(r.draft || "Draft not yet available.");
   if (r.redteam) {
     const findings = (r.redteam.findings || []);
-    $("reviewNotes").innerHTML += `<p><b>Uji skeptis kedua (AI)</b>: ${findings.length} temuan${r.redteam.error ? '; audit tidak selesai' : ''}. Ini sinyal pemeriksaan, bukan verifikasi fakta.</p>` +
+    $("reviewNotes").innerHTML += `<p><b>Additional critical review (AI)</b>: ${findings.length} findings${r.redteam.error ? '; review incomplete' : ''}. These are review signals, not verified facts.</p>` +
       (findings.length ? `<ul>${findings.map(x => `<li><b>${esc(x.severity)}</b>: ${esc(x.issue)} — ${esc(x.action)}</li>`).join('')}</ul>` : '');
   }
   renderHumanChecks(r);
-  const cols = [["id","Kode"],["authors","Penulis"],["year","Tahun"],["title","Judul"],["method","Metode"],["main_finding","Temuan utama"],["limitation","Keterbatasan"],["source_type","Tipe sumber"],["source_page","Halaman PDF (0=abstrak)"],["evidence_quote","Kutipan bukti"],["quote_verified","Kutipan cocok?"]];
+  const cols = [["id","ID"],["authors","Authors"],["year","Year"],["title","Title"],["method","Method"],["main_finding","Main finding"],["limitation","Limitations"],["source_type","Source type"],["source_page","PDF page (0 = abstract)"],["evidence_quote","Evidence quote"],["quote_verified","Quote matched?"]];
   $("matrix").innerHTML = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join("")}</tr>` +
     (r.matrix || []).map(row => `<tr>${cols.map(c => `<td>${esc(row[c[0]])}</td>`).join("")}</tr>`).join("");
-  const labels = {"8_manuscript_working.md": "Manuskrip kerja IMRaD (bagian belum ada ditandai)",
-                  "8_evidence_ledger.csv": "Ledger bukti dengan halaman sumber", "8_human_verification.json": "Checklist validasi manusia", "8_section_status.json": "Status kelengkapan manuskrip",
-                  "8_ai_disclosure_template.md": "Draf deklarasi penggunaan AI", "7_redteam_review.json": "Telaah skeptis AI",
-                  "4_source_manifest.json": "Asal sumber PDF/abstrak",
-                  "7_final_draft.md": "Draf akhir + daftar pustaka", "7_final_review.json": "Nilai penelaah",
-                  "3_screening.json": "Hasil penyaringan", "4_literature_matrix.csv": "Matriks literatur (Excel)", "3_verification_report.csv": "Laporan verifikasi",
-                  "2_papers_found.csv": "Semua artikel ditemukan", "log.txt": "Catatan proses", "1_plan.json": "Rencana",
-                  "1_plan_approved.json": "Ruang lingkup disetujui", "7_final_evidence_audit.json": "Audit bukti"};
+  const labels = {"8_manuscript_working.md": "Working IMRaD manuscript (missing sections marked)",
+                  "8_evidence_ledger.csv": "Evidence ledger with source pages", "8_human_verification.json": "Researcher review checklist", "8_section_status.json": "Manuscript completeness",
+                  "8_ai_disclosure_template.md": "AI disclosure template", "7_redteam_review.json": "AI critical review",
+                  "4_source_manifest.json": "PDF/abstract source provenance",
+                  "7_final_draft.md": "Selected draft + references", "7_final_review.json": "Reviewer score",
+                  "3_screening.json": "Source selection results", "4_literature_matrix.csv": "Source matrix (CSV)", "3_verification_report.csv": "Metadata check report",
+                  "2_papers_found.csv": "All discovered articles", "log.txt": "Run log", "1_plan.json": "Plan",
+                  "1_plan_approved.json": "Approved scope", "7_final_evidence_audit.json": "Evidence audit"};
   $("files").innerHTML = (r.files || []).filter(f => labels[f]).map(f =>
-    `<a href="/files/${encodeURIComponent(r.folder_name)}/${encodeURIComponent(f)}">${esc(labels[f] || "Draf terakhir (" + f + ")")}</a>`).join("");
+    `<a href="/files/${encodeURIComponent(r.folder_name)}/${encodeURIComponent(f)}">${esc(labels[f] || "Latest draft (" + f + ")")}</a>`).join("");
 }
 
-/* ---------- Perpustakaan PDF & verifikasi manusia ---------- */
+/* ---------- PDF library & researcher review ---------- */
 async function refreshLibrary() {
   const r = await api('/api/library');
   const list = r.pdfs || [];
   $("uploadedPdfs").innerHTML = list.length ? list.map(x =>
-    `<li><b>${esc(x.doi)}</b> — ${esc(x.filename)} (${x.pages} halaman)</li>`).join('') :
-    '<li>Belum ada PDF di perpustakaan lokal.</li>';
+    `<li><b>${esc(x.doi)}</b> — ${esc(x.filename)} (${x.pages} pages)</li>`).join('') :
+    '<li>No PDFs in the source library yet.</li>';
 }
 $("uploadPdfBtn").onclick = async () => {
   const file = $("paperFile").files[0], doi = $("paperDoi").value.trim();
-  if (!file || !doi) return note("pdfMsg", "Pilih PDF dan masukkan DOI.", false);
-  if (file.size > 12 * 1024 * 1024) return note("pdfMsg", "Maksimal 12 MB.", false);
+  if (!file || !doi) return note("pdfMsg", "Choose a PDF and enter its DOI.", false);
+  if (file.size > 12 * 1024 * 1024) return note("pdfMsg", "Maximum file size: 12 MB.", false);
   $("uploadPdfBtn").disabled = true;
   try {
     const res = await fetch('/api/upload-pdf', {method: 'POST',
       headers: {'Content-Type': 'application/pdf', 'X-Paper-DOI': doi, 'X-Filename': encodeURIComponent(file.name.slice(0,140))},
       body: await file.arrayBuffer()});
     const r = await res.json();
-    if (!res.ok) throw Error(r.error || 'Impor gagal');
-    note('pdfMsg', `PDF dihubungkan oleh pengguna ke DOI ${r.pdf.doi}; ${r.pdf.pages} halaman tersimpan lokal. Pastikan DOI dan isi PDF benar-benar cocok.`, true);
+    if (!res.ok) throw Error(r.error || 'Import failed');
+    note('pdfMsg', `PDF linked by you to DOI ${r.pdf.doi}; ${r.pdf.pages} pages stored on the server. Check that the DOI matches the PDF contents.`, true);
     await refreshLibrary();
   } catch (error) { note('pdfMsg', error.message, false); }
   finally { $("uploadPdfBtn").disabled = false; }
@@ -588,19 +595,19 @@ $("uploadPdfBtn").onclick = async () => {
 function renderHumanChecks(r) {
   const v = r.verification || {papers:{}, checks:{}};
   const progress = r.verification_progress || {done:0,total:0};
-  $("humanProgress").textContent = `Dicatat: ${progress.done}/${progress.total} pemeriksaan. Tidak sama dengan validasi independen.`;
+  $("humanProgress").textContent = `Recorded: ${progress.done}/${progress.total} checks. This records your review, not independent validation.`;
   const rows = r.matrix || [];
   $("paperChecks").innerHTML = rows.map(item => {
     const flags = v.papers?.[item.id] || {};
     return `<div style="padding:9px 0;border-bottom:1px solid var(--line)">
       <b>${esc(item.id)}: ${esc(item.title)}</b><small> (${esc(item.source_type || 'abstract_only')})</small>
-      <label style="display:block"><input class="hcheck" type="checkbox" data-paper="${esc(item.id)}" data-field="read_full_text" ${flags.read_full_text ? 'checked' : ''}> Sudah membaca sumber lengkap</label>
-      <label style="display:block"><input class="hcheck" type="checkbox" data-paper="${esc(item.id)}" data-field="claims_checked" ${flags.claims_checked ? 'checked' : ''}> Klaim, metode dan kutipan telah diperiksa</label></div>`;
+      <label style="display:block"><input class="hcheck" type="checkbox" data-paper="${esc(item.id)}" data-field="read_full_text" ${flags.read_full_text ? 'checked' : ''}> I have read the full source</label>
+      <label style="display:block"><input class="hcheck" type="checkbox" data-paper="${esc(item.id)}" data-field="claims_checked" ${flags.claims_checked ? 'checked' : ''}> I have checked the claims, methods, and quotations</label></div>`;
   }).join('');
-  const fields = {methods_checked:'Saya memvalidasi metode dengan data/protokol asli',
-                  results_checked:'Saya memvalidasi seluruh hasil dan angka',
-                  journal_policy_checked:'Saya meninjau kebijakan jurnal/institusi',
-                  ai_disclosure_checked:'Saya memeriksa dan menyesuaikan deklarasi AI'};
+  const fields = {methods_checked:'I checked the methods against the original data or protocol',
+                  results_checked:'I checked all results and figures',
+                  journal_policy_checked:'I reviewed the journal or institution policy',
+                  ai_disclosure_checked:'I reviewed and edited the AI disclosure'};
   $("globalChecks").innerHTML = Object.entries(fields).map(([key, label]) =>
     `<label style="display:block"><input type="checkbox" class="gcheck" data-field="${key}" ${v.checks?.[key] ? 'checked' : ''}> ${esc(label)}</label>`).join('');
   $("verificationNotes").value = v.notes || '';
@@ -614,7 +621,7 @@ $("saveVerification").onclick = async () => {
   document.querySelectorAll('.gcheck').forEach(el => checks[el.dataset.field] = el.checked);
   try {
     const r = await api('/api/verification', {papers, checks, notes:$("verificationNotes").value});
-    note('verificationMsg', `Checklist tersimpan: ${r.progress.done}/${r.progress.total}.`, true);
+    note('verificationMsg', `Checklist saved: ${r.progress.done}/${r.progress.total}.`, true);
   } catch(error) { note('verificationMsg', error.message, false); }
 };
 
@@ -627,11 +634,12 @@ $("saveVerification").onclick = async () => {
   if (["planning","running"].includes(status.phase)) startPolling();
   refreshLibrary().catch(() => {});
 })();
-/* Interactive diagram — deliberately renders provider facts, never fake progress. */
+/* Stage details and navigation */
 const STEP_ICONS = ['◇','⌕','▤','▽','▥','◈','≡','⬡','◎','↥'];
 let selectedStep = 1, manuallySelected = false, latestStatus = null, currentView = 'pipeline';
 function showPipelineStatus(view){
   currentView = view;
+  document.querySelector('.app-shell').classList.toggle('form-view', view !== 'pipeline');
   $('pipelinePage').classList.toggle('hidden', view !== 'pipeline');
   $('formsContainer').classList.toggle('hidden', view === 'pipeline');
   for(const id of ['setup','research','results']) $(id).classList.toggle('hidden', id !== view);
@@ -659,50 +667,64 @@ function renderPipeline(s){
   const steps = s.pipeline||[];
   if(!manuallySelected && s.stage >=1 && s.stage <=10) selectedStep=s.stage;
   const graph=$('pipelineGraph');
+  const focusedStep = graph.contains(document.activeElement) ? document.activeElement.dataset.step : null;
   graph.innerHTML=steps.map((step,i)=>{
     const status=safeStatus(step.id,s), model=modelForStep(step,s);
-    return `<button type="button" class="node ${status} ${selectedStep===step.id?'selected':''}" data-step="${step.id}" aria-pressed="${selectedStep===step.id}" aria-label="Tahap ${step.id}: ${esc(step.name)}, ${status}">
+    const statusLabel={done:'Completed',current:s.phase==='approve'?'Awaiting approval':'Running',failed:'Failed',pending:'Not started'}[status];
+    return `<button type="button" class="node ${status} ${selectedStep===step.id?'selected':''}" data-step="${step.id}" aria-pressed="${selectedStep===step.id}" aria-label="Stage ${step.id}: ${esc(step.name)}, ${statusLabel}">
       <span class="node-number">${step.id}</span><span class="node-state">${status==='done'?'✓':status==='current'?'●':status==='failed'?'!':'○'}</span>
       <span class="node-icon" aria-hidden="true">${STEP_ICONS[i]}</span><strong>${esc(step.name)}</strong><span class="description">${esc(step.summary)}</span>
       <span class="model-chip" title="${esc(model)}">${esc(shortModel(model))}</span></button>`
   }).join('');
   graph.querySelectorAll('[data-step]').forEach(el=>el.onclick=()=>setSelectedStep(Number(el.dataset.step),true));
+  if (focusedStep) graph.querySelector(`[data-step="${focusedStep}"]`)?.focus({preventScroll:true});
   const selected = steps.find(x=>x.id===selectedStep);
   if(selected){
     const status=safeStatus(selected.id,s);
-    const labels={current:'Sedang berjalan / menunggu persetujuan',done:'Tahap selesai',failed:'Gagal',pending:'Belum dimulai'};
+    const labels={current:s.phase==='approve'?'Awaiting approval':'Running',done:'Stage completed',failed:'Failed',pending:'Not started'};
     $('detailIcon').textContent=STEP_ICONS[selected.id-1];
     $('detailName').textContent=selected.name;
-    $('detailCounter').textContent=`Tahap ${selected.id} dari 10`;
-    $('detailStatus').textContent=labels[status] || 'Belum dimulai';
+    $('detailCounter').textContent=`Stage ${selected.id} of 10`;
+    $('detailStatus').textContent=labels[status] || 'Not started';
     $('detailDesc').textContent=selected.summary;
     $('detailInput').textContent=selected.input;
     $('detailOutput').textContent=selected.output;
     $('detailModel').textContent=modelForStep(selected,s);
     const usage=(s.usage_by_stage||{})[selected.id] || {};
     $('detailCalls').textContent=usage.calls === undefined ? '—' : String(usage.calls);
-    $('detailTokens').textContent=usage.has_tokens ? (usage.total_tokens || (usage.prompt_tokens+usage.completion_tokens)).toLocaleString('id-ID') : 'Tidak dilaporkan';
-    $('detailCost').textContent=usage.has_cost ? '$'+Number(usage.cost).toFixed(5) : 'Tidak dilaporkan';
+    $('detailTokens').textContent=usage.has_tokens ? (usage.total_tokens || (usage.prompt_tokens+usage.completion_tokens)).toLocaleString('en-US') : 'Not reported';
+    $('detailCost').textContent=usage.has_cost ? '$'+Number(usage.cost).toFixed(5) : 'Not reported';
     $('detailSince').textContent=status==='current' ? (s.stage_started?.replace('T',' ')||'—') : '—';
   }
   const events=(s.events||[]).slice(-35).reverse();
   $('activityList').innerHTML=events.length ? events.map(e=>
     `<div class="activity-row"><span class="dot ${esc(e.kind)}"></span><time>${esc(e.time)}</time><div><b>${esc(e.message)}</b>${e.model?`<br><em>${esc(e.model)}</em>`:''}</div></div>`).join('') :
-    '<div class="activity-empty">Belum ada aktivitas. Buat rencana untuk memulai.</div>';
-  const phaseText={idle:'Belum dimulai',planning:'Menyusun rencana',approve:'Menunggu persetujuan',running:'Sedang berjalan',done:'Selesai (perlu validasi peneliti)',failed:'Proses gagal'};
+    '<div class="activity-empty">No activity yet. Create a research plan to begin.</div>';
+  const phaseText={idle:'Not started',planning:'Preparing plan',approve:'Awaiting approval',running:'Running',done:'Draft available',failed:'Run failed'};
   $('projectStatus').textContent=phaseText[s.phase] || s.phase;
-  $('projectName').textContent=s.plan?.title || s.topic || 'Belum ada topik penelitian';
+  $('projectName').textContent=s.plan?.title || s.topic || 'No research topic yet';
   $('sidebarStage').textContent=String((s.completed_steps||[]).length) + '/10';
   $('sidebarCalls').textContent=String(s.requests||0);
-  $('sidebarMode').textContent=(steps[0]?.model||'').startsWith('Simulator') ? 'Mode latihan · offline' : 'Mode riset nyata';
+  $('sidebarMode').textContent=(steps[0]?.model||'').startsWith('Demo simulator') ? 'Demo mode · offline' : 'Live API mode';
   $('modeLabel').textContent=$('sidebarMode').textContent;
   $('liveMark').innerHTML='<i></i>'+esc(phaseText[s.phase]||s.phase);
+  const next = {
+    idle:['Start with a research question','Enter a topic and review the plan before searching. Demo mode uses fictional sample data.','Enter a research topic','research'],
+    planning:['Preparing your research plan','Review the title, questions, and scope when the plan is ready.','View research','research'],
+    approve:['Your plan is ready to review','Check the scope and search terms before starting the search.','Review plan','research'],
+    running:['Research is running','Follow the stages and run log below. Your draft will be available when the run finishes.','View progress','research'],
+    done:['Your draft and evidence are ready','Review the audit findings and original sources before using the draft.','Review draft & evidence','results'],
+    failed:['Research stopped','Read the error message and run log before trying again.','View details','research']
+  }[s.phase];
+  if(next && s.phase==='idle' && !(steps[0]?.model||'').startsWith('Demo simulator')) next[1]='Enter a topic and review the plan before searching. Live mode uses provider services and quotas.';
+  if(next){$('nextTitle').textContent=next[0];$('nextDescription').textContent=next[1];$('nextActionBtn').textContent=next[2];$('nextActionBtn').onclick=()=>show(next[3]);}
+  $('startResearch').textContent=s.phase==='approve'?'Review plan':s.phase==='idle'?'Enter a research topic':'Open research';
   $('newResearch').disabled=['planning','running'].includes(s.phase);
   $('openResultsShortcut').disabled=s.phase!=='done';
   // Approval and errors are actionable, not merely decorative status badges.
   $('approvalShortcut').classList.toggle('hidden',s.phase!=='approve');
   $('errorBanner').classList.toggle('hidden',s.phase!=='failed');
-  $('errorBanner').textContent=s.phase==='failed'?s.error||'Terjadi kegagalan. Lihat log.':'';
+  $('errorBanner').textContent=s.phase==='failed'?s.error||'The run failed. Check the run log.':'';
 }
 document.querySelectorAll('[data-panel]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.panel)));
 $('liveStepBtn').onclick=()=>{manuallySelected=false;if(latestStatus)setSelectedStep(latestStatus.stage||1)};

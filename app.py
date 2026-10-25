@@ -121,7 +121,7 @@ def enter_step(step):
         STATE["stage"] = step
         STATE["stage_started"] = datetime.now().isoformat(timespec="seconds")
         STATE["active_model"] = ""
-    record_event("stage", step, f"Memulai: {pipeline.STEPS[step - 1]['name']}")
+    record_event("stage", step, f"Starting: {pipeline.STEPS[step - 1]['name']}")
 
 
 def on_llm_event(event):
@@ -144,8 +144,8 @@ def on_llm_event(event):
             if "cost" in values:
                 old["cost"] += values["cost"]
                 old["has_cost"] = True
-    record_event("model", step, "Respons model diterima" if not event.get("simulated")
-                 else "Respons simulasi demo", model=model, simulated=bool(event.get("simulated")),
+    record_event("model", step, "Model response received" if not event.get("simulated")
+                 else "Demo response received", model=model, simulated=bool(event.get("simulated")),
                  usage=values)
 
 
@@ -169,7 +169,7 @@ def run_in_background(job):
         try:
             job()
         except SystemExit as stop:
-            set_state(phase="failed", error=str(stop).strip() or "Proses berhenti.")
+            set_state(phase="failed", error=str(stop).strip() or "The run stopped.")
         except Exception as error:  # unexpected problem: show it instead of crashing
             set_state(phase="failed", error=f"{type(error).__name__}: {error}")
         finally:
@@ -191,12 +191,12 @@ def job_plan(topic):
     set_state(folder=str(folder))
     enter_step(1)
     sys.stdout.folder = folder
-    say(f"Topik: {topic}")
-    say(f"Mode: {'LATIHAN (data contoh)' if settings['DEMO_MODE'] else 'NYATA'}")
-    say("Tahap 1: menyusun rencana penelitian...")
+    say(f"Topic: {topic}")
+    say(f"Mode: {'DEMO (fictional sample data)' if settings['DEMO_MODE'] else 'LIVE'}")
+    say("Stage 1: preparing the research plan...")
     plan = stages.stage_plan(topic, settings, folder)
     set_state(phase="approve", plan=plan, stage=1)
-    say("Rencana siap. Silakan periksa lalu setujui.")
+    say("Plan ready. Review it before approving.")
 
 
 def job_research(plan):
@@ -207,37 +207,37 @@ def job_research(plan):
     plan = stages.validate_plan(plan, STATE["topic"])
     (folder / "1_plan.json").write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
     (folder / "1_plan_approved.json").write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
-    say("Rencana disetujui pengguna.")
+    say("Plan approved by the researcher.")
     # The whole cycle is shared with the terminal version (stages.run_research)
     stages.run_research(plan, settings, folder, say=say, on_stage=enter_step)
     with LOCK:
         if 10 not in STATE["completed_steps"]:
             STATE["completed_steps"].append(10)
     set_state(phase="done", stage=10)
-    record_event("done", 10, "Artefak manuskrip dan audit tersedia; verifikasi manusia tetap diperlukan")
-    say("Selesai.")
+    record_event("done", 10, "Manuscript and audit files are available; researcher verification is still required")
+    say("Complete.")
 
 
 def run_checks():
     """Test every connection quickly, so problems show up before research starts."""
     settings, problem = read_settings()
     if problem:
-        return [{"name": "Berkas pengaturan", "ok": False, "note": problem}]
+        return [{"name": "Settings file", "ok": False, "note": problem}]
     if settings["DEMO_MODE"]:
-        return [{"name": "Mode latihan", "ok": True,
-                 "note": "Mode latihan aktif, jadi tidak perlu koneksi. Matikan untuk riset nyata."}]
+        return [{"name": "Demo mode", "ok": True,
+                 "note": "Demo mode uses fictional sample data without network requests. Turn it off to test live APIs."}]
     results = []
     try:
         reply = llm.ask("Reply with the single word: OK", settings, stage="check")
-        results.append({"name": "Model AI (OpenRouter)", "ok": True, "note": f"Menjawab: {reply.strip()[:40]}"})
+        results.append({"name": "AI model (OpenRouter)", "ok": True, "note": f"Response: {reply.strip()[:40]}"})
     except SystemExit as stop:
-        results.append({"name": "Model AI (OpenRouter)", "ok": False, "note": str(stop).strip()})
+        results.append({"name": "AI model (OpenRouter)", "ok": False, "note": str(stop).strip()})
     found = tools.search_papers("public policy", settings, how_many=2)
-    results.append({"name": "Pencarian artikel (OpenAlex)", "ok": bool(found),
-                    "note": f"{len(found)} artikel contoh ditemukan" if found else "Tidak ada jawaban. Periksa kunci OpenAlex."})
+    results.append({"name": "Literature search (OpenAlex)", "ok": bool(found),
+                    "note": f"{len(found)} articles found" if found else "No results received. Check the service connection and OpenAlex credentials."})
     if found:
         ok, note = tools.verify_doi(found[0]["doi"], found[0]["title"], settings)
-        results.append({"name": "Verifikasi artikel (Crossref)", "ok": ok, "note": note})
+        results.append({"name": "Metadata check (Crossref)", "ok": ok, "note": note})
     set_state()
     return results
 
@@ -295,10 +295,10 @@ class Handler(BaseHTTPRequestHandler):
     def body(self):
         length = int(self.headers.get("Content-Length") or 0)
         if not 0 <= length <= 128_000:
-            raise ValueError("Ukuran permintaan tidak valid (maksimum 128 KB).")
+            raise ValueError("Invalid request size (maximum 128 KB).")
         data = json.loads(self.rfile.read(length) or b"{}")
         if not isinstance(data, dict):
-            raise ValueError("Isi permintaan harus objek JSON.")
+            raise ValueError("The request body must be a JSON object.")
         return data
 
     def safe_host(self):
@@ -310,7 +310,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if not self.safe_host():
-            return self.send({'error': 'Host tidak diizinkan.'}, 403)
+            return self.send({'error': 'Host not allowed.'}, 403)
         if self.path == '/api/library':
             return self.send({'pdfs': sources.list_pdfs(sources.library_path())})
         if self.path in ("/", "/index.html"):
@@ -367,20 +367,20 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if not self.safe_host():
-            return self.send({'error': 'Host tidak diizinkan.'}, 403)
+            return self.send({'error': 'Host not allowed.'}, 403)
         # Malicious sites must not be able to submit cross-origin forms to a
         # loopback service holding users' API credentials.
         if not self.same_origin():
-            return self.send({"error": "Origin tidak diizinkan."}, 403)
+            return self.send({"error": "Origin not allowed."}, 403)
         if self.path == '/api/upload-pdf':
             if STATE['phase'] in ('planning', 'running'):
-                return self.send({'error': 'Unggah PDF sebelum riset berjalan.'}, 409)
+                return self.send({'error': 'Upload PDFs before starting the research run.'}, 409)
             if self.headers.get('Content-Type', '').split(';')[0].strip().lower() != 'application/pdf':
-                return self.send({'error': 'Berkas harus application/pdf.'}, 415)
+                return self.send({'error': 'Content-Type must be application/pdf.'}, 415)
             try:
                 length = int(self.headers.get('Content-Length') or 0)
                 if not 20 <= length <= sources.MAX_PDF_BYTES:
-                    raise ValueError('Maksimal 12 MB per PDF.')
+                    raise ValueError('Maximum file size: 12 MB per PDF.')
                 doi = self.headers.get('X-Paper-DOI', '')
                 name = unquote(self.headers.get('X-Filename', 'artikel.pdf')[:300])
                 result = sources.import_pdf(sources.library_path(), doi, name, self.rfile.read(length))
@@ -388,18 +388,18 @@ class Handler(BaseHTTPRequestHandler):
             except (ValueError, RuntimeError) as exc:
                 return self.send({'error': str(exc)[:250]}, 400)
         if self.headers.get("Content-Type", "").split(";")[0].strip().lower() != "application/json":
-            return self.send({"error": "Gunakan application/json."}, 415)
+            return self.send({"error": "Content-Type must be application/json."}, 415)
         try:
             data = self.body()
         except (ValueError, json.JSONDecodeError) as exc:
             return self.send({"error": str(exc)[:200]}, 400)
         if self.path == '/api/verification':
             if STATE['phase'] != 'done':
-                return self.send({'error': 'Checklist tersedia setelah hasil selesai.'}, 409)
+                return self.send({'error': 'The checklist is available after the run finishes.'}, 409)
             folder = Path(STATE['folder'])
             csv_path = folder / '4_literature_matrix.csv'
             if not csv_path.exists():
-                return self.send({'error': 'Matriks belum tersedia.'}, 409)
+                return self.send({'error': 'The source matrix is not available yet.'}, 409)
             with csv_path.open(encoding='utf-8-sig', newline='') as stream:
                 matrix = list(csv.DictReader(stream))
             try:
@@ -410,7 +410,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send({'ok': True, 'progress': manuscript.verified_count(record)})
         if self.path == "/api/settings":
             if STATE["phase"] in ("planning", "running"):
-                return self.send({"error": "Pengaturan terkunci saat riset berjalan."}, 409)
+                return self.send({"error": "Settings cannot be changed during a research run."}, 409)
             updates = {"DEMO_MODE": "true" if data.get("demo") else "false",
                        "MODEL": str(data.get("model", "openrouter/auto")).strip(),
                        "WRITER_MODEL": str(data.get("writer_model", "")).strip(),
@@ -425,28 +425,28 @@ class Handler(BaseHTTPRequestHandler):
                 if not 1 <= target <= 10:
                     raise ValueError()
             except ValueError:
-                return self.send({"error": "Target harus antara 1 sampai 10."}, 400)
+                return self.send({"error": "The review threshold must be between 1 and 10."}, 400)
             if any("\n" in v or "\r" in v or len(v) > 300 for v in updates.values()):
-                return self.send({"error": "Nilai pengaturan tidak valid."}, 400)
+                return self.send({"error": "Invalid settings value."}, 400)
             # Keys are only replaced when the user typed a new one
             for field, key in (("openrouter_key", "OPENROUTER_API_KEY"), ("openalex_key", "OPENALEX_API_KEY")):
                 value = str(data.get(field, "")).strip()
                 if value:
                     if len(value) > 300 or any(c.isspace() for c in value):
-                        return self.send({"error": "Format API key tidak valid."}, 400)
+                        return self.send({"error": "Invalid API key format."}, 400)
                     updates[key] = value
             update_env(updates)
             return self.send({"ok": True})
         if self.path == "/api/check":
             if STATE["phase"] in ("planning", "running"):
-                return self.send({"error": "Ada riset aktif."}, 409)
+                return self.send({"error": "A research run is already active."}, 409)
             return self.send(run_checks())
         if self.path == "/api/plan":
             topic = data.get("topic", "").strip()
             if not topic:
-                return self.send({"error": "Topik masih kosong."}, 400)
+                return self.send({"error": "Enter a research topic."}, 400)
             if STATE["phase"] not in ("idle", "failed", "done"):
-                return self.send({"error": "Selesaikan atau tolak rencana yang sedang aktif."}, 409)
+                return self.send({"error": "Finish or reset the current plan before starting another."}, 409)
             llm.REQUESTS_USED[0] = 0
             set_state(phase="planning", stage=1, log=[], plan=None, topic=topic, folder="", error="",
                       completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
@@ -454,18 +454,18 @@ class Handler(BaseHTTPRequestHandler):
             return self.send({"ok": True})
         if self.path == "/api/approve":
             if STATE["phase"] != "approve" or not data.get("approved_scope"):
-                return self.send({"error": "Periksa dan setujui ruang lingkup terlebih dahulu."}, 409)
+                return self.send({"error": "Review and approve the scope first."}, 409)
             try:
                 plan = stages.validate_plan(data.get("plan") or STATE["plan"], STATE["topic"])
             except ValueError as exc:
                 return self.send({"error": str(exc)}, 400)
             set_state(phase="running", plan=plan)
-            record_event("approval", 1, "Ruang lingkup disetujui oleh peneliti")
+            record_event("approval", 1, "Scope approved by the researcher")
             run_in_background(lambda: job_research(plan))
             return self.send({"ok": True})
         if self.path == "/api/reset":
             if STATE["phase"] in ("planning", "running"):
-                return self.send({"error": "Proses berjalan, tidak dapat di-reset."}, 409)
+                return self.send({"error": "Cannot reset an active research run."}, 409)
             set_state(phase="idle", stage=0, log=[], plan=None, topic="", folder="", error="",
                       completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
             return self.send({"ok": True})
@@ -480,8 +480,8 @@ def main():
     PROJECTS.mkdir(exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     url = f"http://localhost:{PORT}"
-    print(f"\n  Asisten Riset sudah berjalan di {url}")
-    print("  Biarkan jendela hitam ini terbuka. Tutup jendela ini untuk berhenti.\n")
+    print(f"\n  Papermuller is running at {url}")
+    print("  Keep this terminal open while using the app. Press Ctrl+C to stop.\n")
     if "--no-browser" not in sys.argv:
         webbrowser.open(url)
     try:

@@ -42,19 +42,19 @@ def import_pdf(folder, doi, filename, content):
     """
     doi = normalize_doi(doi)
     if not re.fullmatch(r'10\.\d{4,9}/[^\s?#]+', doi, re.I):
-        raise ValueError('Masukkan DOI lengkap agar PDF tersambung ke artikel yang tepat.')
+        raise ValueError('Enter a complete DOI to link the PDF to its article.')
     if not content.startswith(b'%PDF-') or len(content) > MAX_PDF_BYTES:
-        raise ValueError('Berkas harus PDF berukuran maksimal 12 MB.')
+        raise ValueError('Choose a PDF no larger than 12 MB.')
     try:
         from pypdf import PdfReader
     except ImportError as exc:
-        raise RuntimeError('Pembaca PDF belum terpasang. Jalankan: pip install -r requirements.txt') from exc
+        raise RuntimeError('PDF reader not installed. Run: pip install -r requirements.txt') from exc
     try:
         reader = PdfReader(io.BytesIO(content), strict=True)
         if reader.is_encrypted:
-            raise ValueError('PDF terenkripsi tidak dapat diproses; gunakan salinan yang boleh dibaca.')
+            raise ValueError('Encrypted PDFs cannot be processed. Use an accessible copy you have permission to read.')
         if not 1 <= len(reader.pages) <= MAX_PAGES:
-            raise ValueError('PDF harus memiliki 1–150 halaman.')
+            raise ValueError('PDFs must contain 1–150 pages.')
         pages = []
         total = 0
         for i, page in enumerate(reader.pages, 1):
@@ -63,14 +63,14 @@ def import_pdf(folder, doi, filename, content):
                 value = value[:MAX_PAGE_CHARS]
             total += len(value)
             if total > MAX_TOTAL_CHARS:
-                raise ValueError('PDF terlalu panjang untuk batas pemrosesan lokal.')
+                raise ValueError('The PDF exceeds the local text processing limit.')
             pages.append({'page': i, 'text': value})
     except ValueError:
         raise
     except Exception as exc:
-        raise ValueError(f'Gagal membaca struktur PDF: {type(exc).__name__}') from exc
+        raise ValueError(f'Could not read the PDF structure: {type(exc).__name__}') from exc
     if total < 180:
-        raise ValueError('PDF hampir tidak mempunyai lapisan teks. Jalankan OCR dulu lalu unggah kembali.')
+        raise ValueError('This PDF has too little selectable text. Run OCR before uploading it again.')
     digest = hashlib.sha256(content).hexdigest()
     base = Path(folder)
     base.mkdir(parents=True, exist_ok=True)

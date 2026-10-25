@@ -21,7 +21,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(desc[6]['model'],'provider/writer')
         self.assertEqual(desc[7]['model'],'provider/verifier')
         self.assertEqual(desc[8]['model'],'provider/reviewer')
-        self.assertEqual(pipeline.model_for_role('writer',{'DEMO_MODE':True,'MODEL':'private/model'}),'Simulator demo (offline)')
+        self.assertEqual(pipeline.model_for_role('writer',{'DEMO_MODE':True,'MODEL':'private/model'}),'Demo simulator (offline)')
     def test_llm_model_routing_and_provider_usage_events(self):
         observed=[]
         old_hook=llm.EVENT_HOOK
@@ -42,6 +42,37 @@ class PipelineTests(unittest.TestCase):
                 llm.EVENT_HOOK=old_hook
         self.assertTrue(observed[-1]['simulated'])
         self.assertEqual(observed[-1]['usage'],{})
+    def test_interface_stays_english_with_indonesian_drafts(self):
+        # Output-language preferences must not change application navigation or errors.
+        from urllib.error import HTTPError
+        from urllib.request import Request
+        settings = {'DEMO_MODE': True, 'LANGUAGE': 'Indonesian'}
+        with patch.object(app, 'read_settings', return_value=(settings, '')):
+            with ThreadingHTTPServer(('127.0.0.1', 0), app.Handler) as server:
+                old_port = app.PORT
+                app.PORT = server.server_address[1]
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                try:
+                    base = f'http://127.0.0.1:{app.PORT}'
+                    with urlopen(base + '/') as response:
+                        html = response.read().decode()
+                    self.assertIn('<html lang="en">', html)
+                    self.assertIn('Create research plan', html)
+                    with urlopen(base + '/api/status') as response:
+                        status = json.load(response)
+                    self.assertEqual(status['pipeline'][0]['name'], 'Research plan')
+                    request = Request(base + '/api/plan', data=b'{"topic":""}',
+                                      headers={'Content-Type': 'application/json'})
+                    with self.assertRaises(HTTPError) as failed:
+                        urlopen(request)
+                    self.assertEqual(failed.exception.code, 400)
+                    self.assertEqual(json.load(failed.exception)['error'], 'Enter a research topic.')
+                finally:
+                    server.shutdown()
+                    thread.join()
+                    app.PORT = old_port
+
     def test_events_and_web_status(self):
         old_state=dict(app.STATE)
         try:

@@ -156,4 +156,4 @@ def validate_evidence_audit(raw, citation_report, papers, sources=None):
     return {"passed": passed, "paragraphs": assessments,
             "supported": sum(x["status"] == "supported" for x in assessments),
             "total": len(assessments),
-            "note": "Audit AI dengan jejak kutipan abstrak atau halaman PDF; bukan verifikasi ilmiah penuh."}
+            "note": "AI audit with quotes traced to abstracts or PDF pages; not full scientific verification."}

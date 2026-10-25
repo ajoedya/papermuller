@@ -80,19 +80,19 @@ def with_model(settings, model):
 def validate_plan(plan, topic=""):
     """Keep approved research constraints explicit, rather than implicit AI guesses."""
     if not isinstance(plan, dict):
-        raise ValueError("Rencana riset harus berupa objek JSON.")
+        raise ValueError("The research plan must be a JSON object.")
     title = str(plan.get("title", "")).strip()[:350]
     questions = plan.get("research_questions", [])
     keywords = plan.get("keywords", [])
     scope = str(plan.get("scope_note", "")).strip()[:1500]
     if not title or not scope or not isinstance(questions, list) or not 1 <= len(questions) <= 5:
-        raise ValueError("Rencana perlu judul, 1–5 pertanyaan penelitian, dan ruang lingkup.")
+        raise ValueError("The plan needs a title, 1–5 research questions, and a scope statement.")
     if not isinstance(keywords, list) or not 1 <= len(keywords) <= 10:
-        raise ValueError("Rencana perlu 1–10 kata kunci pencarian.")
+        raise ValueError("The plan needs 1–10 search terms.")
     questions = [str(q).strip()[:500] for q in questions]
     keywords = [str(k).strip()[:150] for k in keywords]
     if not all(questions) or not all(keywords):
-        raise ValueError("Pertanyaan dan kata kunci tidak boleh kosong.")
+        raise ValueError("Research questions and search terms cannot be empty.")
     assumptions = plan.get("assumptions", [])
     if not isinstance(assumptions, list):
         assumptions = []
@@ -131,7 +131,7 @@ Return JSON with keys:
 def stage_search(plan, settings, folder):
     per_keyword = []
     for keyword in plan["keywords"]:
-        print(f"   mencari: {keyword}")
+        print(f"   searching: {keyword}")
         per_keyword.append(search_papers(keyword, settings, how_many=15))
 
     # Take result #1 of every keyword, then #2 of every keyword, and so on.
@@ -200,7 +200,7 @@ Include at most {settings['MAX_PAPERS']} papers, best first.
             chosen.append(by_id[pid])
     decision["validated_include"] = [p["id"] for p in chosen]
     save_json(folder, "3_screening.json", decision)
-    print(f"   dipilih {len(chosen)} dari {len(verified)} artikel yang relevan")
+    print(f"   selected {len(chosen)} of {len(verified)} relevant articles")
     return chosen
 
 
@@ -266,7 +266,7 @@ Return JSON: {{"rows": [{{"id": "P1", "method": "...", "main_finding": "...",
             manifest.append({'id': p['id'], 'doi': p['doi'], 'type': src['source_type'],
                              'sha256': src.get('sha256', ''), 'pages': len(src['pages']),
                              'evidence_page': actual_page})
-        print(f"   dirangkum {', '.join(p['id'] for p in batch)}")
+        print(f"   extracted evidence for {', '.join(p['id'] for p in batch)}")
     save_csv(folder, '4_literature_matrix.csv', rows)
     save_json(folder, '4_source_manifest.json', manifest)
     return rows
@@ -488,7 +488,7 @@ Do not confuse absence of full-text access with proven falsehood; describe it as
             findings.append({k: str(item.get(k, ''))[:600] for k in ('severity', 'issue', 'location', 'action')})
     report = {'findings': findings[:8], 'limitations': raw.get('limitations', []),
               'summary': str(raw.get('summary', ''))[:1000],
-              'note': 'Temuan ini berasal dari AI; perlu penilaian peneliti. Tidak membuktikan adanya kesalahan.'}
+              'note': 'These AI findings require researcher review and do not establish that an error occurred.'}
     save_json(folder, '7_redteam_review.json', report)
     return report
 
@@ -503,57 +503,57 @@ def references(matrix):
 # ---------------------------------------------------------------------------
 def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
     on_stage(2)
-    say("Tahap 2: mencari artikel di OpenAlex...")
+    say("Stage 2: searching OpenAlex...")
     papers = stage_search(plan, settings, folder)
-    say(f"Ditemukan {len(papers)} artikel kandidat.")
+    say(f"Found {len(papers)} candidate articles.")
 
     on_stage(3)
-    say("Tahap 3: memeriksa DOI di Crossref dan sumber PDF lokal...")
+    say("Stage 3: checking Crossref metadata and local PDF sources...")
     verified = stage_verify(papers, settings, folder)
-    say(f"Lolos verifikasi: {len(verified)} dari {len(papers)}.")
+    say(f"Metadata matches: {len(verified)} of {len(papers)}.")
     on_stage(4)
-    say("Tahap 4: menyaring relevansi artikel...")
+    say("Stage 4: selecting relevant articles...")
     chosen = stage_screen(verified, plan, settings, folder) if verified else []
     if len(chosen) < settings["MIN_VERIFIED"]:
-        raise SystemExit(f"Artikel relevan yang lolos verifikasi kurang dari {settings['MIN_VERIFIED']}. "
-                         "Coba kata kunci yang lebih umum atau tahun yang lebih awal, lalu mulai lagi.")
+        raise SystemExit(f"Fewer relevant articles with matching metadata than required: {settings['MIN_VERIFIED']}. "
+                         "Try broader search terms or an earlier start year, then start again.")
 
     on_stage(5)
-    say("Tahap 5: mengekstraksi bukti ke matriks literatur...")
+    say("Stage 5: extracting evidence into the source matrix...")
     extracted_matrix = stage_matrix(chosen, plan, settings, folder)
     matrix = [row for row in extracted_matrix if row["quote_verified"] == "yes"]
-    say(f"Cuplikan bukti tervalidasi: {len(matrix)}/{len(extracted_matrix)} artikel; "
-        "hanya artikel dengan kutipan abstrak cocok yang boleh menjadi sumber draf.")
+    say(f"Matching source excerpts: {len(matrix)}/{len(extracted_matrix)} articles; "
+        "only articles with matching source quotes can be used in the draft.")
     if len(matrix) < settings["MIN_VERIFIED"]:
-        raise SystemExit("Terlalu sedikit cuplikan abstrak yang berhasil diverifikasi. "
-                         "Lihat 4_literature_matrix.csv; perbaiki pencarian atau ekstraksi.")
+        raise SystemExit("Too few source excerpts matched. "
+                         "Review 4_literature_matrix.csv and refine the search or extraction.")
 
     on_stage(6)
-    say("Tahap 6: menyusun kerangka tema...")
+    say("Stage 6: preparing a thematic outline...")
     outline = stage_outline(matrix, plan, settings, folder)
 
     best, previous, fixes = None, "", ""
     for attempt in range(1, settings["REVISION_ROUNDS"] + 2):
         on_stage(7)
-        say(f"Tahap 7: {'menulis' if attempt == 1 else 'merevisi'} draf (putaran {attempt})...")
+        say(f"Stage 7: {'writing' if attempt == 1 else 'revising'} draft (round {attempt})...")
         draft = stage_draft(matrix, plan, outline, settings, folder, attempt, previous, fixes)
 
         on_stage(8)
         audit = stage_evidence_audit(draft, chosen, matrix, settings, folder, attempt)
         cite = audit["citation_audit"]
-        say(f"Sitasi: {len(cite['used_ids'])}/{len(matrix)} artikel; "
-            f"ID asing {cite['unknown_ids']}; paragraf tanpa sitasi {cite['uncited_paragraphs']}.")
-        say(f"Bukti: {audit['supported']}/{audit['total']} paragraf didukung menurut audit AI, "
-            f"dengan cuplikan abstrak yang cocok.")
+        say(f"Citations: {len(cite['used_ids'])}/{len(matrix)} articles; "
+            f"unknown IDs {cite['unknown_ids']}; uncited paragraphs {cite['uncited_paragraphs']}.")
+        say(f"Evidence: {audit['supported']}/{audit['total']} paragraphs assessed as supported by the AI audit, "
+            f"with matching source excerpts.")
 
         on_stage(9)
         if not cite["passed"]:
-            say("Tahap 9: audit sitasi gagal; reviewer AI dilewati agar hemat token.")
+            say("Stage 9: citation audit failed; skipping AI scoring to avoid unnecessary calls.")
             review = {"scores": {key: 1 for key in CRITERIA}, "score": 1.0,
                       "strengths": [], "fixes": ["Repair citation audit failures first."],
                       "review_skipped": "deterministic citation gate failed"}
         else:
-            say(f"Tahap 9: penelaah menilai draf (putaran {attempt})...")
+            say(f"Stage 9: reviewing the draft (round {attempt})...")
             review = stage_review(draft, plan, settings, folder, attempt, matrix=matrix, evidence_audit=audit)
         # An attractive writing score is never allowed to bypass evidence gates.
         review["evidence_gate_passed"] = audit["passed"]
@@ -563,9 +563,9 @@ def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
                                             review["score"] >= settings["TARGET_SCORE"]) else "revise"
         review["status"] = "ready_for_human_verification" if review["verdict"] == "accept" else "needs_scope_or_evidence_review"
         save_json(folder, f"6_review_v{attempt}.json", review)
-        say(f"Skor reviewer: {review['score']}/10; gerbang bukti: "
-            f"{'LOLOS' if audit['passed'] else 'BELUM LOLOS'}; "
-            f"kesetiaan scope: {'LOLOS' if scope_passed else 'BELUM LOLOS'}.")
+        say(f"Reviewer score: {review['score']}/10; evidence gate: "
+            f"{'PASSED' if audit['passed'] else 'NOT PASSED'}; "
+            f"scope fidelity: {'PASSED' if scope_passed else 'NOT PASSED'}.")
 
         # A passing evidence audit outranks an unsupported but fluent draft.
         priority = (int(audit["passed"] and scope_passed), int(audit["passed"]),
@@ -573,7 +573,7 @@ def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
         if best is None or priority > best[0]:
             best = (priority, attempt, draft, review, audit)
         if review["verdict"] == "accept":
-            say("Ambang reviewer dan gerbang bukti tercapai; verifikasi peneliti tetap wajib.")
+            say("Review threshold and evidence gates passed; researcher verification is still required.")
             break
         previous = draft
         problems = []
@@ -593,7 +593,7 @@ def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
             fixes += "\n- Use the relevant verified research more comprehensively."
 
     if best is None:
-        raise SystemExit("Tidak ada draf yang dihasilkan.")
+        raise SystemExit("No draft was generated.")
     _, attempt, draft, review, audit = best
     on_stage(9)
     review["from_round"] = attempt
@@ -611,18 +611,18 @@ def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
         review['verdict'] = 'revise'
         review['status'] = 'redteam_check_incomplete'
     review["limitations"] = [
-        "Sumber berbasis abstrak dan cuplikan PDF yang diunggah; tidak semua artikel dibaca utuh oleh AI.",
-        "Verifikasi kesesuaian klaim berbantuan AI tidak setara peer review.",
-        "Semua kutipan, metodologi dan kesimpulan harus diverifikasi manusia."
+        "Sources include abstracts and selected PDF excerpts; the AI has not read every complete article.",
+        "AI-assisted claim checks are not scientific peer review.",
+        "Researchers must verify quotations, methods, and conclusions."
     ]
     if review["verdict"] != "accept":
-        warning = ("> **DRAF SEMENTARA — BELUM LOLOS AUDIT BUKTI DAN/ATAU KESESUAIAN SCOPE.** "
-                   "Jangan digunakan sebagai tinjauan pustaka terverifikasi. "
-                   "Lihat `7_final_evidence_audit.json` dan periksa semua klaim.\n\n")
-        say("PERINGATAN: kriteria penerimaan belum lolos; draf disimpan sebagai sementara.")
+        warning = ("> **PROVISIONAL DRAFT — EVIDENCE AND/OR SCOPE CHECKS HAVE NOT PASSED.** "
+                   "Do not treat this as a verified literature review. "
+                   "See `7_final_evidence_audit.json` and check every claim.\n\n")
+        say("WARNING: acceptance criteria have not passed; the draft is saved as provisional.")
     else:
-        warning = ("> **DRAF UNTUK VERIFIKASI PENELITI.** "
-                   "Bukti berbasis abstrak dan audit AI tetap perlu dicek terhadap artikel lengkap.\n\n")
+        warning = ("> **DRAFT FOR RESEARCHER VERIFICATION.** "
+                   "Check abstract-based evidence and AI assessments against the full articles.\n\n")
     on_stage(10)
     save_text(folder, "7_final_draft.md", warning + draft + references(matrix))
     save_json(folder, "7_final_review.json", review)
@@ -645,7 +645,7 @@ def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
                            'verbatim_quote': item['quote'], 'reason': para.get('reason', '')})
     if ledger:
         save_csv(folder, '8_evidence_ledger.csv', ledger)
-    say('Manuskrip kerja, daftar verifikasi peneliti, dan disclosure AI dibuat.')
-    say('Status akhir tetap memerlukan validasi peneliti; metode/hasil tidak dikarang.')
-    say(f"Draf disimpan (putaran {attempt}, skor {review['score']}/10, status {review['status']}).")
+    say('Working manuscript, researcher checklist, and AI disclosure template created.')
+    say('Researcher verification is still required; missing methods and results remain unfilled.')
+    say(f"Draft saved (round {attempt}, score {review['score']}/10, status {review['status']}).")
     return review

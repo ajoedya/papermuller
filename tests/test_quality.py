@@ -87,7 +87,7 @@ class QualityTests(unittest.TestCase):
                 result = stages.run_research(plan, config, folder, say=lambda _x: None)
             self.assertEqual(result['verdict'], 'revise')
             self.assertEqual(result['status'], 'needs_scope_or_evidence_review')
-            self.assertIn('DRAF SEMENTARA', (folder / '7_final_draft.md').read_text())
+            self.assertIn('PROVISIONAL DRAFT', (folder / '7_final_draft.md').read_text())
 
     def test_demo_full_workflow(self):
         config = {'DEMO_MODE': True, 'MAX_PAPERS': 12, 'MIN_VERIFIED': 5, 'REVISION_ROUNDS': 3,
@@ -101,7 +101,7 @@ class QualityTests(unittest.TestCase):
             self.assertTrue((folder / '7_final_evidence_audit.json').exists())
             audit1 = json.loads((folder / '6_citation_audit_v1.json').read_text())
             self.assertEqual(audit1['unknown_ids'], ['P99'])
-            self.assertIn('DRAF UNTUK VERIFIKASI PENELITI', (folder / '7_final_draft.md').read_text())
+            self.assertIn('DRAFT FOR RESEARCHER VERIFICATION', (folder / '7_final_draft.md').read_text())
 
 
 if __name__ == '__main__':

@@ -93,7 +93,7 @@ class FullTextTests(unittest.TestCase):
         plan = {'title':'Fiscal governance', 'original_topic':'budget governance', 'scope_note':'No geography chosen',
                 'research_questions':['What is known?'], 'author_methods':'', 'author_results':''}
         result, status = manuscript.compile_manuscript(plan, 'Findings discussed [P1].', [], {'passed':True})
-        self.assertIn('[PENELITI PERLU MENGISI]', result)
+        self.assertIn('[AUTHOR TO COMPLETE]', result)
         self.assertNotIn('500 participants', result)
         self.assertEqual(status['results'], 'missing')
         plan['author_results'] = 'Regression output supplied directly by the researcher.'

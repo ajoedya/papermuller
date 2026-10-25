@@ -69,7 +69,7 @@ def load_settings():
         settings["MIN_VERIFIED"] > settings["MAX_PAPERS"] or
         settings["REVISION_ROUNDS"] < 0 or settings["REVISION_ROUNDS"] > 10 or
         not 1 <= settings["TARGET_SCORE"] <= 10):
-        sys.exit("Pengaturan tidak masuk akal: periksa batas artikel, putaran revisi, dan target skor.")
+        sys.exit("Invalid settings: check source limits, revision rounds, and review threshold.")
     return settings
 
 

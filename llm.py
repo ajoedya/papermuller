@@ -44,7 +44,7 @@ def ask(prompt, settings, stage="general", system="You are a careful academic re
     if settings["DEMO_MODE"]:
         from demo_data import fake_llm_answer
         answer = fake_llm_answer(stage, prompt)
-        _report({"stage": stage, "model": "Simulator demo (offline)", "simulated": True, "usage": {}})
+        _report({"stage": stage, "model": "Demo simulator (offline)", "simulated": True, "usage": {}})
         return answer
 
     # ---- Build the message in the format OpenRouter expects ----

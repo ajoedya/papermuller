@@ -105,7 +105,7 @@ def fake_llm_answer(stage, prompt):
         return json.dumps({"items": results})
 
     if stage == 'redteam':
-        return json.dumps({'findings': [], 'limitations': ['Demo menggunakan literatur fiktif'],
+        return json.dumps({'findings': [], 'limitations': ['Demo uses fictional literature'],
                            'summary': 'DEMO ONLY: not a genuine adversarial review'})
 
     if stage == "review":

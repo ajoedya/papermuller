@@ -136,7 +136,7 @@ The project currently uses a lightweight Python backend (`app.py`, `harness.py`,
 - Literature selection may omit important studies, and AI review scores do **not** guarantee publishable academic quality.
 - Empirical study design, data collection, analysis, methods, and results remain the researcher's responsibility.
 - Real-model pricing, quotas, and availability depend on the provider. Check them before live use.
-- The v5 flowchart interface is currently in **Bahasa Indonesia**. The older UI's language switch has not yet been fully migrated; the manuscript's output language remains configurable. `i18n.py` is retained for future localization.
+- The interface, status messages, and review controls are in **English**. Draft output language is configured separately (English by default; Indonesian is also available). Existing draft-language preferences are preserved. `i18n.py` is retained for future localization.
 
 ## License
 
