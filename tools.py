@@ -20,7 +20,7 @@ import urllib.error
 
 def _get_json(url):
     """Download a web address and read it as JSON. Returns None on failure."""
-    request = urllib.request.Request(url, headers={"User-Agent": "riset-harness/1.0"})
+    request = urllib.request.Request(url, headers={"User-Agent": "papermuller/1.0 (+https://github.com/ajoedya/papermuller)"})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             return json.loads(response.read().decode("utf-8"))

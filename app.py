@@ -308,7 +308,7 @@ def main():
     PROJECTS.mkdir(exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     url = f"http://localhost:{PORT}"
-    print(f"\n  Research Harness is running at {url}")
+    print(f"\n  Papermuller is running at {url}")
     print("  Keep this window open while you use it. Close it to stop.\n")
     if "--no-browser" not in sys.argv:
         webbrowser.open(url)

@@ -1,5 +1,5 @@
 @echo off
-title Research Harness
+title Papermuller
 cd /d "%~dp0"
 where python >nul 2>nul
 if errorlevel 1 (

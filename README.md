@@ -1,4 +1,4 @@
-# Research Harness
+# Papermuller
 
 A small, beginner-friendly AI research assistant that turns a rough topic into a
 **literature review draft whose references are verified to exist**.
@@ -75,7 +75,8 @@ code before moving on. The AI may only cite papers that a real database confirme
 
 1. Install **Python 3.11+** from [python.org](https://www.python.org/downloads/) and tick
    **"Add Python to PATH"** during installation.
-2. Download this repository (green **Code** button → **Download ZIP**) and unzip it.
+2. Download this repository (green **Code** button → **Download ZIP**) and unzip it,
+   or clone it: `git clone https://github.com/ajoedya/papermuller.git`
 3. Double-click **`Start.bat`**. A black window opens and your browser shows the app
    at `http://localhost:8765`. Keep the black window open while you use it.
 4. **Settings:** leave *Demo mode* ticked for a first try, or untick it and paste your keys
