@@ -1,6 +1,6 @@
 # Papermuller
 
-**Papermuller is an evidence-first AI Research & Writing Lab** that runs locally on your computer. It helps researchers discover and screen academic literature, inspect text-based PDF sources, build an auditable evidence ledger, draft a literature review, and assemble a working manuscript—all through a visual, interactive research pipeline.
+**Papermuller is an evidence AI Research & Writing Lab** that runs locally on your computer. It helps researchers discover and screen academic literature, inspect text-based PDF sources, build an auditable evidence ledger, draft a literature review, and assemble a working manuscript—all through a visual, interactive research pipeline.
 
 > **Research prototype, not an autonomous researcher.** AI-generated claims, citations, methods, results, and interpretations require human verification. An AI review score is not a substitute for peer review or the requirements of your institution or journal.
 
