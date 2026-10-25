@@ -3,739 +3,1111 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Papermuller — Research workspace</title>
+<title>Papermuller — Research workflow</title>
 <style>
-  :root {
-    --bg: #f6f8fb; --ink: #1e293b; --muted: #64748b; --line: rgba(15,23,42,.09);
-    --glass: rgba(255,255,255,.72); --accent: #2563eb; --accent-soft: #e8f0fe;
-    --ok: #15803d; --ok-soft: #e7f6ec; --bad: #b91c1c; --bad-soft: #fdecec; --warn-soft: #fff7e6;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; color: var(--ink); font: 16px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    background-image: radial-gradient(circle at 12% 8%, #dbe7ff 0, transparent 38%),
-                      radial-gradient(circle at 90% 30%, #e3f4ff 0, transparent 35%);
-    background-attachment: fixed; min-height: 100vh;
-  }
-  main { max-width: 780px; margin: 0 auto; padding: 32px 16px 64px; }
-  header h1 { margin: 0; font-size: 28px; }
-  header p { margin: 4px 0 24px; color: var(--muted); }
+:root, [data-theme="dark"] {
+  --bg: #141414; --canvas: #181818; --dot: #2e2e2e; --panel: #1f1f1f; --panel-2: #262626;
+  --node: #2a2a2a; --node-hover: #313131; --line: #383838; --edge: #6b6b6b; --edge-dim: #3f3f3f;
+  --ink: #ececec; --muted: #a3a3a3; --faint: #7a7a7a; --field: #1a1a1a; --field-line: #444;
+  --accent: #8ab4ff; --accent-ink: #0d1a33;
+  --run: #f2b84b; --ok: #5fd39a; --bad: #ff7b7b; --ok-soft: rgba(95,211,154,.12); --bad-soft: rgba(255,123,123,.12);
+  --run-soft: rgba(242,184,75,.14); --shadow: 0 10px 30px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  --bg: #f4f4f1; --canvas: #fafaf8; --dot: #d6d6d0; --panel: #ffffff; --panel-2: #f3f3f0;
+  --node: #ffffff; --node-hover: #f6f6f3; --line: #dcdcd6; --edge: #9a9a94; --edge-dim: #d4d4ce;
+  --ink: #1f2420; --muted: #5d625e; --faint: #8a8e8a; --field: #ffffff; --field-line: #c9c9c3;
+  --accent: #1f5fd1; --accent-ink: #ffffff;
+  --run: #b97800; --ok: #1d8a55; --bad: #c0343c; --ok-soft: #e6f4ec; --bad-soft: #fbecee;
+  --run-soft: #fbf1dc; --shadow: 0 10px 30px rgba(20,20,20,.08);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; min-height: 100vh; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hidden { display: none !important; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 
-  .steps { display: flex; gap: 8px; margin-bottom: 20px; }
-  .steps button {
-    flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 12px;
-    background: var(--glass); backdrop-filter: blur(10px); font: inherit; color: var(--muted); cursor: pointer;
-  }
-  .steps button.active { color: var(--accent); border-color: var(--accent); background: #fff; font-weight: 600; }
-  .steps b { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
-             background: var(--accent-soft); color: var(--accent); font-size: 13px; margin-right: 6px; }
+/* ---------- top bar ---------- */
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px;
+  border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 20; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--ink); color: var(--bg);
+  display: grid; place-items: center; font-weight: 700; font-family: Georgia, serif; flex: none; }
+.brand b { display: block; font-size: 15px; }
+.brand small { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabs { display: flex; gap: 2px; background: var(--panel-2); padding: 3px; border-radius: 9px; }
+.tabs button { border: 0; background: transparent; color: var(--muted); padding: 7px 12px; border-radius: 7px; white-space: nowrap; }
+.tabs button.active { background: var(--node); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.2); font-weight: 600; }
+.top-tools { display: flex; align-items: center; gap: 8px; }
+.pill { font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.pill.live { color: var(--run); border-color: var(--run); }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: transparent; color: var(--muted); padding: 5px 9px; font-size: 12px; font-weight: 600; }
+.seg button.on { background: var(--ink); color: var(--bg); }
+.icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); }
+.icon-btn:hover { color: var(--ink); background: var(--panel-2); }
+.icon-btn svg { width: 16px; height: 16px; }
 
-  .card {
-    background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-bottom: 16px;
-    box-shadow: 0 8px 30px rgba(15,23,42,.05);
-  }
-  .card h2 { margin: 0 0 4px; font-size: 20px; }
-  .card > p.hint { margin: 0 0 18px; color: var(--muted); }
-  .hidden { display: none !important; }
+main { max-width: 1680px; margin: 0 auto; padding: 18px 20px 48px; }
 
-  label { display: block; font-weight: 600; margin: 16px 0 6px; }
-  label small { display: block; font-weight: 400; color: var(--muted); }
-  input[type=text], input[type=password], select, textarea {
-    width: 100%; padding: 11px 13px; border: 1px solid #cbd5e1; border-radius: 10px;
-    font: inherit; background: #fff; color: var(--ink);
-  }
-  textarea { min-height: 96px; resize: vertical; }
-  input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent-soft); border-color: var(--accent); }
+/* ---------- workflow ---------- */
+.flow-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+.flow-head h1 { margin: 0; font-size: 20px; }
+.flow-head p { margin: 2px 0 0; color: var(--muted); max-width: 70ch; }
+.next { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+.next b { display: block; }
+.next span { color: var(--muted); font-size: 13px; }
+.notice { padding: 10px 12px; border-radius: 9px; margin: 10px 0; font-size: 13px; white-space: pre-wrap; }
+.notice.ok { background: var(--ok-soft); color: var(--ok); }
+.notice.bad { background: var(--bad-soft); color: var(--bad); }
+.notice.info { background: var(--panel-2); color: var(--muted); }
 
-  .switch { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 12px;
-            background: var(--warn-soft); border: 1px solid #f5deb0; cursor: pointer; }
-  .switch input { width: 20px; height: 20px; margin-top: 3px; }
-  .switch span { font-weight: 400; }
+.flow-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (min-width: 1500px) { .flow-wrap { grid-template-columns: minmax(0, 1fr) 340px; } .flow-wrap.closed { grid-template-columns: minmax(0, 1fr); } }
+.canvas-card { position: relative; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--canvas); }
+.viewport { overflow: auto; height: 380px; cursor: grab; touch-action: pan-x pan-y;
+  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.3px); background-size: 22px 22px; }
+.viewport.dragging { cursor: grabbing; user-select: none; }
+.spacer { position: relative; }
+.board { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.board svg.edges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.edge { fill: none; stroke: var(--edge-dim); stroke-width: 2; }
+.edge.done { stroke: var(--edge); }
+.edge.active { stroke: var(--run); stroke-dasharray: 6 6; animation: flow 1s linear infinite; }
+.edge.loop { stroke-dasharray: 4 5; }
+.edge.loop.active { stroke: var(--run); }
+@keyframes flow { to { stroke-dashoffset: -12; } }
+.edge-tag { position: absolute; transform: translate(-50%, -50%); font-size: 11px; padding: 2px 7px; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; pointer-events: none; }
+.edge-tag.wait { color: var(--run); border-color: var(--run); background: var(--run-soft); }
 
-  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
-  button.main, button.plain {
-    padding: 11px 20px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer;
-  }
-  button.main { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
-  button.main:hover { background: #1d4ed8; }
-  button.plain { background: #fff; color: var(--ink); border: 1px solid #cbd5e1; }
-  button:disabled { opacity: .55; cursor: wait; }
+.node { position: absolute; display: grid; place-items: center; background: var(--node); border: 1.5px solid var(--line);
+  border-radius: 14px; color: var(--ink); padding: 0; transition: background .15s, border-color .15s; }
+.node:hover { background: var(--node-hover); }
+.node svg.icon { width: 40%; height: 40%; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.node.start { border-radius: 50px 14px 14px 50px; }
+.node.end { border-radius: 14px 50px 50px 14px; }
+.node.optional { border-style: dashed; color: var(--muted); }
+.node.selected { border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 18%, transparent); }
+.node.done { border-color: color-mix(in srgb, var(--ok) 55%, var(--line)); }
+.node.current { border-color: var(--run); box-shadow: 0 0 0 4px var(--run-soft); }
+.node.current.selected { box-shadow: 0 0 0 4px var(--run-soft), 0 0 0 1px var(--ink); }
+.node.failed { border-color: var(--bad); box-shadow: 0 0 0 4px var(--bad-soft); }
+.port { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--edge); border: 2px solid var(--canvas); }
+.badge { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; border: 2px solid var(--canvas); }
+.badge.done { background: var(--ok); color: #06210f; }
+.badge.failed { background: var(--bad); color: #2a0606; }
+.badge.current { background: var(--run); color: #2a1c00; }
+.badge.current::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #2a1c00; animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.ai-tag { position: absolute; left: 7px; top: 6px; font-size: 9px; font-weight: 700; letter-spacing: .04em; color: var(--faint); }
+.label { position: absolute; text-align: center; pointer-events: none; line-height: 1.3; }
+.label b { display: block; font-size: 12.5px; font-weight: 600; }
+.label i { display: block; font-style: normal; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vertical .label { text-align: left; }
+.zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
+.zoom button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.legend { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 12px; font-size: 11px; color: var(--muted);
+  background: color-mix(in srgb, var(--canvas) 85%, transparent); padding: 4px 8px; border-radius: 8px; }
+.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--edge-dim); }
+.legend .l-run::before { background: var(--run); } .legend .l-ok::before { background: var(--ok); } .legend .l-bad::before { background: var(--bad); }
 
-  .notice { padding: 12px 14px; border-radius: 10px; margin-top: 14px; }
-  .notice.ok { background: var(--ok-soft); color: var(--ok); }
-  .notice.bad { background: var(--bad-soft); color: var(--bad); white-space: pre-wrap; }
+/* inspector */
+.inspector { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 16px; }
+@media (min-width: 1500px) { .inspector { position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow: auto; } }
+@media (min-width: 900px) and (max-width: 1499px) { .insp-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; } }
+.insp-head { display: flex; gap: 12px; align-items: center; }
+.insp-icon { width: 42px; height: 42px; border-radius: 10px; background: var(--node); border: 1px solid var(--line); display: grid; place-items: center; flex: none; }
+.insp-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.insp-head strong { display: block; font-size: 16px; }
+.insp-head small { color: var(--muted); }
+.insp-close { margin-left: auto; }
+.insp-sec { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.insp-sec h3 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 600; }
+.insp-sec p { margin: 0; }
+.kv { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 13px; border-bottom: 1px dashed var(--line); }
+.kv span { color: var(--muted); }
+.kv b { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.status-chip { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); }
+.status-chip.done { background: var(--ok-soft); color: var(--ok); } .status-chip.current { background: var(--run-soft); color: var(--run); }
+.status-chip.failed { background: var(--bad-soft); color: var(--bad); }
+.slot { margin-top: 10px; }
+.slot label { margin-top: 0; }
+.slot .row { display: flex; gap: 6px; }
+.slot .row input { flex: 1; min-width: 0; }
+.slot .eff { font-size: 12px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
 
-  ul.checks { list-style: none; padding: 0; margin: 14px 0 0; }
-  ul.checks li { padding: 10px 12px; border-radius: 10px; margin-bottom: 6px; background: #fff; border: 1px solid var(--line); }
-  ul.checks li b { margin-right: 6px; }
+/* activity */
+.activity { margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.activity summary { padding: 12px 14px; cursor: pointer; font-weight: 600; }
+.activity-list { max-height: 260px; overflow: auto; padding: 0 14px 10px; }
+.act { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+.act time { color: var(--faint); flex: none; font-variant-numeric: tabular-nums; }
+.act em { font-style: normal; color: var(--muted); }
+pre.log { margin: 0 14px 14px; padding: 10px; background: var(--field); border: 1px solid var(--line); border-radius: 9px; max-height: 260px; overflow: auto; font-size: 12px; white-space: pre-wrap; }
 
-  .plan h3 { margin: 0 0 10px; font-size: 18px; }
-  .plan ol { margin: 0 0 8px 20px; padding: 0; }
+/* ---------- forms & cards ---------- */
+.page { max-width: 900px; margin: 0 auto; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 14px; }
+.card h2 { margin: 0 0 4px; font-size: 17px; }
+.card .hint, .hint { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
+label { display: block; font-weight: 600; margin: 14px 0 6px; font-size: 13px; }
+label small { display: block; font-weight: 400; color: var(--muted); }
+input[type=text], input[type=password], input[type=email], input[type=number], input:not([type]), select, textarea {
+  width: 100%; padding: 9px 11px; border: 1px solid var(--field-line); border-radius: 9px; background: var(--field); color: var(--ink); }
+textarea { min-height: 90px; resize: vertical; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 14px; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; margin-top: 14px; }
+.check input { width: 18px; height: 18px; margin-top: 2px; flex: none; }
+.switch { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); font-weight: 600; margin: 0; }
+.switch input { width: 18px; height: 18px; margin-top: 2px; }
+.switch span { display: block; font-weight: 400; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.btn { padding: 9px 16px; border-radius: 9px; border: 1px solid var(--field-line); background: var(--panel-2); color: var(--ink); font-weight: 600; }
+.btn:hover { background: var(--node-hover); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.small { padding: 6px 10px; font-size: 12px; }
+.checks { list-style: none; padding: 0; margin: 12px 0 0; }
+.checks li { padding: 9px 11px; border-radius: 9px; margin-bottom: 6px; background: var(--panel-2); border: 1px solid var(--line); }
+.slots-table { display: grid; gap: 10px; }
+.slots-table .slot-row { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 12px; align-items: center; }
+.slots-table .slot-row span { font-size: 13px; }
+.slots-table .slot-row small { display: block; color: var(--muted); font-size: 11px; }
+details.more { margin-top: 12px; }
+details.more summary { cursor: pointer; color: var(--accent); }
 
-  ol.progress { list-style: none; padding: 0; margin: 0; }
-  ol.progress li { display: flex; gap: 12px; align-items: center; padding: 9px 0; color: var(--muted); }
-  ol.progress li .dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-                        background: #eef2f7; font-size: 13px; flex: none; }
-  ol.progress li.now { color: var(--ink); font-weight: 600; }
-  ol.progress li.now .dot { background: var(--accent); color: #fff; animation: pulse 1.4s infinite; }
-  ol.progress li.done .dot { background: var(--ok-soft); color: var(--ok); }
-  @keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--accent-soft); } }
-  @media (prefers-reduced-motion: reduce) { ol.progress li.now .dot { animation: none; } }
+/* results */
+.score { display: flex; align-items: center; gap: 14px; }
+.score .num { font-size: 32px; font-weight: 700; }
+.bars { margin: 14px 0 4px; }
+.bar { display: grid; grid-template-columns: 190px 1fr 26px; gap: 10px; align-items: center; margin: 5px 0; font-size: 13px; }
+.bar i { height: 7px; border-radius: 6px; background: var(--panel-2); overflow: hidden; }
+.bar i b { display: block; height: 100%; background: var(--ink); }
+.bar em { font-style: normal; font-weight: 600; text-align: right; }
+.draft { background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+.draft h3 { margin-top: 0; }
+.cite { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px; font-size: .9em; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--panel-2); position: sticky; top: 0; }
+.files a { display: inline-block; margin: 4px 6px 4px 0; padding: 6px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 13px; }
+.plan-view p { margin: 4px 0 10px; }
 
-  details { margin-top: 14px; }
-  summary { cursor: pointer; color: var(--accent); }
-  pre.log { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px;
-            max-height: 260px; overflow: auto; font-size: 13px; white-space: pre-wrap; margin: 8px 0 0; }
+@media (prefers-reduced-motion: reduce) { .edge.active, .badge.current::after { animation: none; } }
+@media (max-width: 1100px) {
+  .tabs button { padding: 7px 9px; }
+}
+@media (max-width: 760px) {
+  .topbar { flex-wrap: wrap; padding: 10px 16px; }
+  .brand small { display: none; }
+  .tabs { order: 3; width: 100%; overflow-x: auto; }
+  .tabs button { flex: 1; font-size: 12.5px; }
+  main { padding: 14px 16px 40px; }
 
-  .score { display: flex; align-items: center; gap: 16px; }
-  .score .num { font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1; }
-  .draft { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
-  .draft h3 { margin-top: 0; }
-  .cite { background: var(--accent-soft); color: var(--accent); border-radius: 5px; padding: 0 4px; font-size: .9em; }
-  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
-  table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { background: #f8fafc; position: sticky; top: 0; }
-  .bars { margin: 16px 0 6px; }
-  .bar { display: grid; grid-template-columns: 210px 1fr 28px; gap: 10px; align-items: center; margin: 6px 0; font-size: 14px; }
-  .bar i { height: 8px; border-radius: 6px; background: #eef2f7; overflow: hidden; }
-  .bar i b { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
-  .bar em { font-style: normal; font-weight: 600; text-align: right; }
-  @media (max-width: 560px) { .bar { grid-template-columns: 1fr 1fr 24px; } }
-  .files a { display: inline-block; margin: 4px 6px 4px 0; padding: 6px 10px; border-radius: 8px;
-             background: #fff; border: 1px solid var(--line); color: var(--accent); text-decoration: none; font-size: 14px; }
-  @media (max-width: 560px) { .steps button span { display: none; } .card { padding: 18px; } }
-/* Research workspace */
-:root{--bg:#f5f4f0;--ink:#263b34;--muted:#617169;--line:#d9dfd9;--glass:#fff;--accent:#22604b;--accent-soft:#e7f0e9;--ok:#22604b;--ok-soft:#e7f0e9;--bad:#a52b35;--bad-soft:#fbecee}
-body{background:var(--bg);font:14px/1.6 system-ui,sans-serif;color:var(--ink)}
-button,a,input,textarea,select{touch-action:manipulation}button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}button:disabled{cursor:not-allowed}
-.topbar{min-height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:16px 28px;gap:16px}
-.brand{display:flex;gap:12px;align-items:center}.brandmark{font-family:Georgia,serif;font-size:28px;color:var(--accent);border-right:1px solid var(--line);padding-right:16px}.brand-name{font-family:Georgia,serif;font-size:24px;line-height:1.2}.brand-sub{font-size:12px;color:var(--muted)}
-.topright{display:flex;gap:12px;align-items:center}.topright .mode{font-size:12px;color:var(--accent)}.topright button,.detail button{background:white;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 12px;cursor:pointer}
-.app-shell{display:grid;grid-template-columns:210px minmax(0,1fr) 285px;max-width:1700px;margin:auto;min-height:calc(100vh - 76px)}
-.sidebar{padding:28px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:26px}.sidebar-label{font-size:11px;color:var(--muted);margin:0 0 10px}.project-card strong{display:block;font-size:14px}.project-card p{font-size:12px;color:var(--muted);margin:8px 0}.project-status{display:inline-block;background:var(--accent-soft);color:var(--accent);padding:3px 8px;margin-top:12px;border-radius:4px;font-size:11px}
-.sidebar-nav{display:grid;gap:4px}.sidebar-nav button{border:0;background:transparent;color:var(--muted);text-align:left;padding:10px;border-radius:5px;cursor:pointer}.sidebar-nav button.active{background:var(--accent-soft);color:var(--accent);font-weight:650}.symbol{display:none}.side-actions{display:grid;gap:8px}.side-actions button{padding:10px;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink);cursor:pointer}.side-actions .primary{background:var(--accent);color:#fff;border-color:var(--accent)}.sidebar-stats{display:flex;gap:24px}.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}.stat small{display:block;font-size:11px;color:var(--muted)}.sidebar-footer{margin-top:auto;font-size:11px;color:var(--muted)}
-.app-shell.form-view{grid-template-columns:210px minmax(0,1fr)}.app-shell.form-view .detail{display:none}.score .num{font-size:26px}
-.workspace{min-width:0;padding:26px 30px}.workspace-nav{display:none}.pipeline-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:0 0 24px}.pipeline-header h1{font:30px/1.2 Georgia,serif;margin:0 0 10px}.pipeline-header p{color:var(--muted);margin:0;max-width:55ch}.live-mark{font-size:11px;white-space:nowrap;border:1px solid var(--line);padding:5px 8px;border-radius:4px}.live-mark i{display:none}
-.next-action{background:#e7f0e9;border:1px solid #cbded0;border-radius:7px;padding:20px;margin-bottom:24px}.next-action h2{font-size:17px;margin:0 0 5px}.next-action p{margin:0;color:var(--muted)}.next-action button{margin-top:14px}.diagram{background:#fff;border:1px solid var(--line);border-radius:7px;overflow:hidden}.pipeline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.node{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:4px 10px;position:relative;text-align:left;min-width:0;padding:16px;background:white;color:var(--ink);border:0;border-bottom:1px solid var(--line);border-right:1px solid var(--line);cursor:pointer}.node:hover{background:#f6f8f5}.node.selected{box-shadow:inset 3px 0 var(--accent);background:#f1f6f1}.node.current{background:var(--accent-soft)}.node.failed{background:var(--bad-soft)}.node-number{grid-row:1/3;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}.node strong{font-size:13px;font-weight:600}.node-state{grid-column:3;grid-row:1;color:var(--muted)}.node.done .node-state{color:var(--ok)}.node .description{grid-column:2/4;font-size:12px;color:var(--muted);line-height:1.5}.node-icon,.model-chip{display:none}
-.activity{margin-top:24px;border-top:1px solid var(--line)}.activity-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 0}.activity h2{font-size:14px;margin:0}.activity small{color:var(--muted);font-size:11px}.activity-list{max-height:240px;overflow:auto}.activity-row{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.activity-row time{color:var(--muted);flex:none}.activity-row em{font-style:normal;color:var(--muted)}.activity-row b{font-weight:500}.activity-empty{padding:8px 0;color:var(--muted);font-size:12px}
-.detail{background:#fafbf8;border-left:1px solid var(--line);padding:26px 20px;min-width:0}.detail h2{font-size:13px;margin:0 0 24px}.detail button{font-size:11px}.detail-top{display:flex;gap:10px;align-items:center}.detail-icon{display:none}.detail-top strong{font:22px/1.3 Georgia,serif}.detail-top small{display:block;color:var(--muted);font-size:12px;margin-top:5px}.detail-section{margin-top:24px}.detail-section h3{font-size:11px;color:var(--muted);font-weight:500;margin:0 0 6px}.detail-section p{font-size:12px;margin:0;overflow-wrap:anywhere}.detail-section code{font-size:11px;overflow-wrap:anywhere}.metric-line{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)}.metric-line span{color:var(--muted)}
-.forms-container main{max-width:none;margin:0;padding:0}.forms-container main>header,.forms-container main>.steps{display:none}.card{box-shadow:none;backdrop-filter:none;border-radius:7px}.model-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.model-roles label{margin:12px 0 0}.model-roles small{font-size:11px}.notice{font-size:13px}input:not([type]),input[type=email]{width:100%;padding:11px 13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;color:var(--ink)}
-@media(min-width:1101px){.detail:not(.hidden){position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto}}
-@media(max-width:1100px){.app-shell.form-view{grid-template-columns:180px minmax(0,1fr)}.app-shell{grid-template-columns:180px minmax(0,1fr)}.detail{grid-column:2;border-top:1px solid var(--line)}.sidebar{grid-row:1/3}.workspace{padding:24px}}
-@media(max-width:700px){.app-shell.form-view{display:block}.topbar{padding:16px;align-items:flex-start}.brand-sub{max-width:190px}.topright{display:grid;gap:6px;text-align:right}.app-shell{display:block}.sidebar{padding:12px 16px;border-right:0;border-bottom:1px solid var(--line);gap:0}.sidebar>div:first-child,.sidebar-stats,.sidebar-footer,.side-actions,.sidebar-label{display:none}.sidebar-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.sidebar-nav button{font-size:12px;text-align:center;padding:10px 3px}.workspace{padding:24px 16px}.pipeline-header{display:block}.live-mark{display:inline-block;margin-top:12px}.pipeline-grid{grid-template-columns:1fr}.node{border-right:0}.detail{border-left:0;padding:24px 16px}.model-roles{grid-template-columns:1fr}.activity-head{align-items:flex-start}.activity small{max-width:135px;text-align:right}}
+  .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+  .slots-table .slot-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .bar { grid-template-columns: 1fr 1fr 24px; }
+  .legend { display: none; }
+  .card { padding: 16px; }
+}
 </style>
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><div class="brandmark" aria-hidden="true">P</div><div><div class="brand-name">Papermuller</div><div class="brand-sub">Literature reviews with traceable sources</div></div></div>
-  <div class="topright"><span class="mode" id="modeLabel">Loading mode...</span><button id="settingsShortcut">Settings</button></div>
-</header>
-<div class="app-shell">
-  <aside class="sidebar" aria-label="Project navigation">
-    <div><p class="sidebar-label">Project</p><div class="project-card"><strong id="projectName">No research topic yet</strong><span class="project-status" id="projectStatus">Not started</span><p id="sidebarMode">Demo mode · offline</p></div></div>
-    <div><p class="sidebar-label">Workspace</p><nav class="sidebar-nav">
-       <button data-panel="pipeline" class="active"><span class="symbol">⌘</span>Research workflow</button>
-       <button data-panel="research"><span class="symbol">▤</span>Topic & sources</button>
-       <button data-panel="results"><span class="symbol">▥</span>Draft & evidence</button>
-       <button data-panel="setup"><span class="symbol">⚙</span>Settings</button>
-    </nav></div>
-    <div class="side-actions"><button class="primary" id="startResearch">Open research</button><button class="hidden" id="approvalShortcut">Review plan</button><button id="openResultsShortcut" disabled>View results</button><button id="newResearch">New research</button></div>
-    <div><p class="sidebar-label">Run summary</p><div class="sidebar-stats"><div class="stat"><b id="sidebarStage">0/10</b><small>Stages completed</small></div><div class="stat"><b id="sidebarCalls">0</b><small>API requests</small></div></div></div>
-    <div class="sidebar-footer">PDFs and results are stored on the machine running the app.</div>
-  </aside>
-  <div class="workspace">
-    <nav class="workspace-nav" aria-label="Workspace tabs"><button class="active" data-panel="pipeline">Pipeline</button><button data-panel="research">Sources & plan</button><button data-panel="results">Manuscript & audit</button><button data-panel="setup">Configuration</button><span class="navhint">Select a stage to inspect its details</span></nav>
-    <section id="pipelinePage"><div class="pipeline-header"><div><h1>Research workflow</h1><p>Plan your research, select sources, then review the draft and its supporting evidence.</p></div><span class="live-mark" id="liveMark"><i></i>Not started</span></div>
-      <div id="errorBanner" class="notice bad hidden" role="alert"></div>
-      <section class="next-action" id="nextAction" aria-labelledby="nextTitle"><h2 id="nextTitle">Start with a research question</h2><p id="nextDescription">Enter a topic and review the plan before searching. Demo mode uses fictional sample data.</p><button class="main" id="nextActionBtn">Enter a research topic</button></section>
-      <div class="diagram"><div id="pipelineGraph" class="pipeline-grid" aria-label="Research stages"></div></div>
-      <section class="activity" aria-label="Activity log"><div class="activity-head"><h2>Activity log</h2><small>Recent stages and responses</small></div><div class="activity-list" id="activityList"></div></section>
-    </section>
-    <div id="requestError" class="notice bad hidden" role="alert"></div>
-    <div id="formsContainer" class="forms-container hidden">
-<main>
-  <header>
-    <h1>Research assistant</h1>
-    <p>Develop a literature review and inspect its references.</p>
-  </header>
-
-  <nav class="steps">
-    <button data-go="setup"><b>1</b><span>Settings</span></button>
-    <button data-go="research"><b>2</b><span>Research</span></button>
-    <button data-go="results"><b>3</b><span>Results</span></button>
+  <div class="brand"><div class="brand-mark" aria-hidden="true">P</div>
+    <div><b>Papermuller</b><small data-i18n="tagline">Literature reviews with traceable sources</small></div></div>
+  <nav class="tabs" aria-label="Views">
+    <button data-view="workflow" class="active" data-i18n="tabWorkflow">Workflow</button>
+    <button data-view="research" data-i18n="tabResearch">Topic &amp; sources</button>
+    <button data-view="results" data-i18n="tabResults">Draft &amp; evidence</button>
+    <button data-view="setup" data-i18n="tabSettings">Settings</button>
   </nav>
-
-  <!-- ============ 1. SETTINGS ============ -->
-  <section id="setup" class="card">
-    <h2>Settings</h2>
-    <p class="hint">Settings and API keys are stored on the machine running the app.</p>
-
-    <label class="switch">
-      <input type="checkbox" id="demo">
-      <div>Demo mode
-        <span><br>Uses fictional sample data without API calls or charges. Turn off to use live APIs.</span></div>
-    </label>
-
-    <div id="realFields">
-      <label for="orKey">OpenRouter API key
-        <small>Get a key from openrouter.ai → Keys. Starts with sk-or-</small></label>
-      <input type="password" id="orKey" autocomplete="off">
-
-      <label for="oaKey">OpenAlex API key
-        <small>Get a key from openalex.org/settings/api.</small></label>
-      <input type="password" id="oaKey" autocomplete="off">
-
-      <label for="model">AI model
-        <small>The first model is tried first; subsequent models are fallbacks.</small></label>
-      <select id="model">
-        <option value="openrouter/auto">OpenRouter Auto (cost depends on the selected model)</option>
-        <option value="openrouter/free">OpenRouter Free (subject to availability)</option>
-        <option value="custom">Enter a model ID...</option>
-      </select>
-      <input type="text" id="modelCustom" class="hidden" placeholder="e.g. provider/model-name:free" style="margin-top:8px">
-
-      <div class="model-roles">
-        <label for="evidenceModel">Extraction model <small>Extract evidence from abstracts or PDFs</small><input type="text" id="evidenceModel" placeholder="Leave blank to use the main model"></label>
-        <label for="writerModel">Writing model <small>Outline and draft</small><input type="text" id="writerModel" placeholder="Leave blank to use the main model"></label>
-        <label for="verifierModel">Audit model <small>Check evidence supporting claims</small><input type="text" id="verifierModel" placeholder="Leave blank to use the main model"></label>
-        <label for="reviewModel">Review model <small>Scoring and critical review</small><input type="text" id="reviewModel" placeholder="Leave blank to use the main model"></label>
-      </div>
-      <label for="email">Email <small>Optional, for OpenAlex access.</small></label>
-      <input type="email" id="email" autocomplete="off">
-    </div>
-
-    <label for="target">AI review threshold
-      <small>Target for automatic revisions. This score does not measure scientific accuracy. The revision limit follows your configuration.</small></label>
-    <select id="target">
-      <option value="7">7 out of 10 (fewer revisions)</option>
-      <option value="8">8 out of 10</option>
-      <option value="9">9 out of 10 (may require more revisions)</option>
-    </select>
-
-    <label for="language">Draft language</label>
-    <select id="language">
-      <option value="English">English</option>
-      <option value="Indonesian">Indonesian</option>
-    </select>
-
-    <div class="actions">
-      <button class="main" id="saveBtn">Save settings</button>
-      <button class="plain" id="checkBtn">Test connections</button>
-    </div>
-    <div id="setupMsg"></div>
-    <ul class="checks" id="checkList"></ul>
-  </section>
-
-  <!-- ============ 2. RISET ============ -->
-  <section id="research" class="hidden">
-    <div class="card" id="topicCard">
-      <h2>Research topic</h2>
-      <p class="hint">Describe what you want to investigate. Use English search terms when possible.</p>
-      <label for="topic">Topic</label>
-      <textarea id="topic" placeholder="e.g. road infrastructure, governance quality and poverty"></textarea>
-      <div class="actions"><button class="main" id="planBtn">Create research plan</button></div>
-      <details>
-        <summary>Add full-text PDFs (optional, before starting)</summary>
-        <p class="hint">Enter the article’s exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). Files stay on the server; selected excerpts are sent to your AI provider in live mode.</p>
-        <label for="paperDoi">Article DOI</label>
-        <input type="text" id="paperDoi" placeholder="10.xxxx/identifier">
-        <label for="paperFile">Choose a PDF you have permission to use</label>
-        <input type="file" id="paperFile" accept=".pdf,application/pdf">
-        <div class="actions"><button class="plain" id="uploadPdfBtn">Import PDF</button></div>
-        <div id="pdfMsg"></div>
-        <ul class="checks" id="uploadedPdfs"></ul>
-      </details>
-    </div>
-
-    <div class="card hidden" id="approveCard">
-      <h2>Review the plan</h2>
-      <p class="hint">Review the title, questions, assumptions, and scope. Remove any location or time period you did not request.</p>
-      <div class="plan" id="planView"></div>
-      <label for="approvedTitle">Working title</label><input id="approvedTitle" maxlength="350">
-      <label for="approvedQuestions">Research questions <small>One per line.</small></label>
-      <textarea id="approvedQuestions" style="min-height:85px"></textarea>
-      <label for="approvedScope">Approved scope</label>
-      <textarea id="approvedScope" style="min-height:75px"></textarea>
-      <details>
-        <summary>Author-supplied manuscript sections (optional)</summary>
-        <p class="hint">Your Methods and Results are copied into the working manuscript as supplied, without verification. Empty sections remain marked as missing.</p>
-        <label for="authorMethods">Methods — design, data, sample, and analysis</label>
-        <textarea id="authorMethods" style="min-height:100px" maxlength="12000"></textarea>
-        <label for="authorResults">Results — findings from your actual research</label>
-        <textarea id="authorResults" style="min-height:100px" maxlength="12000"></textarea>
-      </details>
-      <label style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;">
-        <input type="checkbox" id="confirmScope" style="width:auto;margin-top:5px;">
-        <span>I have reviewed and approved this research plan and scope.</span>
-      </label>
-      <label for="keywords">Search terms <small>Separate with commas.</small></label>
-      <textarea id="keywords" style="min-height:64px"></textarea>
-      <div class="actions">
-        <button class="main" id="approveBtn">Approve and continue</button>
-        <button class="plain" id="redoBtn">Regenerate plan</button>
-      </div>
-    </div>
-
-    <div class="card hidden" id="progressCard">
-      <h2>Research in progress</h2>
-      <p class="hint" id="progressHint">Research runs on the server. You can reload this page to see the latest status.</p>
-      <ol class="progress" id="progress"></ol>
-      <div id="runMsg"></div>
-      <details><summary>View run log</summary><pre class="log" id="log"></pre></details>
-      <div class="actions hidden" id="failActions"><button class="main" id="againBtn">Try again</button></div>
-    </div>
-  </section>
-
-  <!-- ============ 3. HASIL ============ -->
-  <section id="results" class="hidden">
-    <div class="card" id="emptyResults">
-      <h2>No results yet</h2>
-      <p class="hint">Your draft and evidence will appear here when the research run finishes.</p>
-      <div class="actions"><button class="main" data-go="research">Start research</button></div>
-    </div>
-    <div id="resultView" class="hidden">
-      <div class="card">
-        <div class="score"><div class="num" id="scoreNum">-</div>
-          <div><b>AI reviewer score</b><br><span class="hint" id="scoreNote"></span></div></div>
-        <div id="reviewNotes"></div>
-      </div>
-      <div class="card">
-        <h2>Literature review draft</h2>
-        <p class="hint">ID <span class="cite">P1</span> refers to the source matrix. AI scores and matching excerpts do not replace reading the original sources.</p>
-        <div class="draft" id="draftView"></div>
-      </div>
-      <div class="card">
-        <h2>Source matrix</h2>
-        <p class="hint">DOI and title metadata are checked against Crossref. Evidence records the abstract or uploaded PDF page; matching text alone does not establish scientific support.</p>
-        <div class="table-wrap"><table id="matrix"></table></div>
-      </div>
-      <div class="card">
-        <h2>Researcher review</h2>
-        <p class="hint">Check each item after reading the sources and reviewing the claims. This records your review; it does not certify independent validation.</p>
-        <div id="humanProgress" class="hint"></div>
-        <div id="paperChecks"></div>
-        <div id="globalChecks"></div>
-        <label for="verificationNotes">Review notes</label>
-        <textarea id="verificationNotes" style="min-height:70px"></textarea>
-        <div class="actions"><button class="plain" id="saveVerification">Save review checklist</button></div>
-        <div id="verificationMsg"></div>
-      </div>
-      <div class="card">
-        <h2>Download files</h2>
-        <div class="files" id="files"></div>
-        <div class="actions">
-          <button class="plain" id="openFolderBtn">Open results folder (Windows)</button>
-          <button class="main" id="newBtn">Research a new topic</button>
-        </div>
-      </div>
-    </div>
-  </section>
-</main></div>
+  <div class="top-tools">
+    <span class="pill" id="modePill">Demo</span>
+    <div class="seg" role="group" aria-label="Interface language"><button data-lang="en" class="on">EN</button><button data-lang="id">ID</button></div>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle light or dark theme" title="Theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button>
   </div>
-  <aside class="detail" aria-label="Stage inspector"><h2>Stage details <button type="button" id="liveStepBtn" style="float:right;margin:0">Follow active stage</button></h2>
-    <div class="detail-top"><span class="detail-icon" id="detailIcon">◇</span><div><strong id="detailName">Research plan</strong><small id="detailCounter">Stage 1 of 10</small></div></div>
-    <div class="detail-section"><h3>What happens</h3><p id="detailDesc">Prepare research questions and approve the plan.</p></div>
-    <div class="detail-section"><h3>Input</h3><p id="detailInput">Research topic</p></div>
-    <div class="detail-section"><h3>Output</h3><p id="detailOutput">Approved research plan</p></div>
-    <div class="detail-section"><h3>Model or service</h3><p><code id="detailModel">—</code></p></div>
-    <div class="detail-section"><h3>Status</h3><p id="detailStatus">Not started</p><p style="font-size:11px;color:var(--muted)">Started: <span id="detailSince">—</span></p></div>
-    <div class="detail-section"><h3>Model usage</h3><div class="metric-line"><span>Model responses</span><b id="detailCalls">—</b></div><div class="metric-line"><span>API tokens</span><b id="detailTokens">Not reported</b></div><div class="metric-line"><span>API cost (USD)</span><b id="detailCost">Not reported</b></div><p style="color:var(--muted);font-size:11px;margin-top:9px">Cost and token counts appear when reported by the provider. Demo mode makes no API calls.</p></div>
-  </aside>
-</div>
+</header>
+
+<main>
+<!-- ================= WORKFLOW ================= -->
+<section id="workflow">
+  <div class="flow-head"><div><h1 data-i18n="flowTitle">Research workflow</h1>
+    <p data-i18n="flowSub">Each box is one stage. Select a stage to see what it does and to choose its AI model.</p></div></div>
+  <div id="errorBanner" class="notice bad hidden" role="alert"></div>
+  <div class="next" id="next"><div><b id="nextTitle">Start with a research question</b><span id="nextDesc"></span></div>
+    <button class="btn primary" id="nextBtn">Enter a research topic</button></div>
+  <div class="flow-wrap" id="flowWrap">
+    <div class="canvas-card">
+      <div class="viewport" id="viewport"><div class="spacer" id="spacer"><div class="board" id="board">
+        <svg class="edges" id="edges"></svg></div></div></div>
+      <div class="legend" aria-hidden="true"><span data-i18n="lgPending">Waiting</span><span class="l-run" data-i18n="lgRun">Running</span><span class="l-ok" data-i18n="lgDone">Done</span><span class="l-bad" data-i18n="lgFail">Failed</span></div>
+      <div class="zoom"><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomFit" aria-label="Fit to width">⤢</button><button id="zoomIn" aria-label="Zoom in">+</button></div>
+    </div>
+    <aside class="inspector" id="inspector" aria-label="Stage details"></aside>
+  </div>
+  <details class="activity" open><summary data-i18n="activity">Activity</summary><div class="activity-list" id="activityList"></div></details>
+  <details class="activity"><summary data-i18n="runLog">Run log</summary><pre class="log" id="log"></pre></details>
+</section>
+
+<div id="requestError" class="notice bad hidden page" role="alert"></div>
+
+<!-- ================= RESEARCH ================= -->
+<section id="research" class="hidden page">
+  <div class="card" id="topicCard">
+    <h2 data-i18n="topicTitle">Research topic</h2>
+    <p class="hint" data-i18n="topicHint">Describe what you want to investigate. English search terms usually find more papers.</p>
+    <label for="topic" data-i18n="topicLabel">Topic</label>
+    <textarea id="topic" data-i18n-ph="topicPh" placeholder="e.g. road infrastructure, governance quality and poverty"></textarea>
+    <div class="actions"><button class="btn primary" id="planBtn" data-i18n="planBtn">Create research plan</button></div>
+  </div>
+
+  <div class="card" id="researchCard">
+    <h2 data-i18n="rsTitle">Research settings</h2>
+    <p class="hint" data-i18n="rsHint">These apply to the next run and are saved when you create a plan.</p>
+    <div class="grid2">
+      <div><label for="fromYear" data-i18n="fromYear">Papers published from</label><input type="number" id="fromYear" min="1900" step="1"></div>
+      <div><label for="toYear" data-i18n="toYear">Papers published until</label><input type="number" id="toYear" min="1900" step="1"></div>
+    </div>
+    <div class="grid2">
+      <div><label for="workType" data-i18n="workType">Document type</label>
+        <select id="workType"><option value="any" data-i18n="wtAny">Any type</option><option value="article" data-i18n="wtArticle">Journal articles</option>
+          <option value="review" data-i18n="wtReview">Review articles</option><option value="article_review" data-i18n="wtBoth">Articles and reviews</option></select></div>
+      <div><label for="minCitations"><span data-i18n="minCit">Minimum citations</span><small data-i18n="minCitHint">0 = no minimum; recent papers have few citations.</small></label><input type="number" id="minCitations" min="0" step="1"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="openAccess"><span data-i18n="oaOnly">Open-access papers only (easier to get full-text PDFs)</span></label>
+    <div class="grid3">
+      <div><label for="candidates"><span data-i18n="cand">Candidates to check</span><small>1–100</small></label><input type="number" id="candidates" min="1" max="100"></div>
+      <div><label for="maxPapers"><span data-i18n="maxPapers">Papers to keep</span><small>1–40</small></label><input type="number" id="maxPapers" min="1" max="40"></div>
+      <div><label for="minVerified"><span data-i18n="minVer">Minimum usable papers</span><small data-i18n="minVerHint">The run stops below this.</small></label><input type="number" id="minVerified" min="1" max="40"></div>
+    </div>
+    <div class="grid3">
+      <div><label for="rounds"><span data-i18n="rounds">Revision rounds</span><small>0–10</small></label><input type="number" id="rounds" min="0" max="10"></div>
+      <div><label for="target"><span data-i18n="target">AI review threshold</span><small data-i18n="targetHint">Not a measure of accuracy.</small></label><input type="number" id="target" min="1" max="10" step="0.5"></div>
+      <div><label for="language" data-i18n="draftLang">Draft language</label>
+        <select id="language"><option value="English">English</option><option value="Indonesian">Indonesian</option></select></div>
+    </div>
+    <div class="actions"><button class="btn" id="saveResearch" data-i18n="saveResearch">Save research settings</button></div>
+    <div id="researchMsg"></div>
+  </div>
+
+  <div class="card" id="pdfCard">
+    <h2 data-i18n="pdfTitle">Full-text PDFs (optional)</h2>
+    <p class="hint" data-i18n="pdfHint">Add PDFs before starting. Enter the article's exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). In live mode, selected excerpts are sent to your AI provider.</p>
+    <div class="grid2">
+      <div><label for="paperDoi" data-i18n="doi">Article DOI</label><input type="text" id="paperDoi" placeholder="10.xxxx/identifier"></div>
+      <div><label for="paperFile" data-i18n="pdfFile">PDF you have permission to use</label><input type="file" id="paperFile" accept=".pdf,application/pdf"></div>
+    </div>
+    <div class="actions"><button class="btn" id="uploadPdfBtn" data-i18n="importPdf">Import PDF</button></div>
+    <div id="pdfMsg"></div>
+    <ul class="checks" id="uploadedPdfs"></ul>
+  </div>
+
+  <div class="card hidden" id="approveCard">
+    <h2 data-i18n="approveTitle">Review the plan</h2>
+    <p class="hint" data-i18n="approveHint">Check the title, questions, assumptions, and scope. Remove any location or time period you did not ask for.</p>
+    <div class="plan-view" id="planView"></div>
+    <label for="approvedTitle" data-i18n="wTitle">Working title</label><input id="approvedTitle" maxlength="350">
+    <label for="approvedQuestions"><span data-i18n="rqs">Research questions</span><small data-i18n="onePerLine">One per line.</small></label>
+    <textarea id="approvedQuestions"></textarea>
+    <label for="approvedScope" data-i18n="scope">Approved scope</label><textarea id="approvedScope"></textarea>
+    <label for="keywords"><span data-i18n="terms">Search terms</span><small data-i18n="commaSep">Separate with commas.</small></label>
+    <textarea id="keywords" style="min-height:64px"></textarea>
+    <details class="more"><summary data-i18n="authorSecs">Author-supplied manuscript sections (optional)</summary>
+      <p class="hint" data-i18n="authorHint">Your Methods and Results are copied into the working manuscript as supplied, without verification.</p>
+      <label for="authorMethods" data-i18n="methods">Methods</label><textarea id="authorMethods" maxlength="12000"></textarea>
+      <label for="authorResults" data-i18n="results">Results</label><textarea id="authorResults" maxlength="12000"></textarea>
+    </details>
+    <label class="check"><input type="checkbox" id="confirmScope"><span data-i18n="confirmScope">I have reviewed and approved this research plan and scope.</span></label>
+    <div class="actions"><button class="btn primary" id="approveBtn" data-i18n="approveBtn">Approve and continue</button>
+      <button class="btn" id="redoBtn" data-i18n="redoBtn">Regenerate plan</button></div>
+  </div>
+
+  <div class="card hidden" id="progressCard">
+    <h2 data-i18n="progressTitle">Research run</h2>
+    <p class="hint" id="progressHint"></p>
+    <div id="runMsg"></div>
+    <div class="actions"><button class="btn primary" id="toFlowBtn" data-i18n="toFlow">Open the workflow</button>
+      <button class="btn hidden" id="againBtn" data-i18n="again">Try again</button></div>
+  </div>
+</section>
+
+<!-- ================= RESULTS ================= -->
+<section id="results" class="hidden page">
+  <div class="card" id="emptyResults"><h2 data-i18n="noResults">No results yet</h2>
+    <p class="hint" data-i18n="noResultsHint">Your draft and evidence appear here when the run finishes.</p>
+    <div class="actions"><button class="btn primary" data-go="research" data-i18n="startResearch">Start research</button></div></div>
+  <div id="resultView" class="hidden">
+    <div class="card"><div class="score"><div class="num" id="scoreNum">-</div><div><b data-i18n="aiScore">AI reviewer score</b><br><span class="hint" id="scoreNote"></span></div></div><div id="reviewNotes"></div></div>
+    <div class="card"><h2 data-i18n="draftTitle">Literature review draft</h2>
+      <p class="hint" data-i18n="draftHint">IDs such as P1 refer to the source matrix. AI scores and matching excerpts do not replace reading the sources.</p>
+      <div class="draft" id="draftView"></div></div>
+    <div class="card"><h2 data-i18n="matrixTitle">Source matrix</h2>
+      <p class="hint" data-i18n="matrixHint">DOI and title are checked against Crossref. Matching text alone does not establish scientific support.</p>
+      <div class="table-wrap"><table id="matrix"></table></div></div>
+    <div class="card"><h2 data-i18n="reviewTitle">Researcher review</h2>
+      <p class="hint" data-i18n="reviewHint">Tick each item after reading the sources. This records your review; it does not certify validation.</p>
+      <div id="humanProgress" class="hint"></div><div id="paperChecks"></div><div id="globalChecks"></div>
+      <label for="verificationNotes" data-i18n="notes">Review notes</label><textarea id="verificationNotes" style="min-height:70px"></textarea>
+      <div class="actions"><button class="btn" id="saveVerification" data-i18n="saveChecklist">Save review checklist</button></div><div id="verificationMsg"></div></div>
+    <div class="card"><h2 data-i18n="files">Download files</h2><div class="files" id="files"></div>
+      <div class="actions"><button class="btn" id="openFolderBtn" data-i18n="openFolder">Open results folder (Windows)</button>
+        <button class="btn primary" id="newBtn" data-i18n="newTopic">Research a new topic</button></div></div>
+  </div>
+</section>
+
+<!-- ================= SETTINGS ================= -->
+<section id="setup" class="hidden page">
+  <div class="card">
+    <h2 data-i18n="connTitle">Connections</h2>
+    <p class="hint" data-i18n="connHint">Settings and API keys are stored in .env on the machine running the app.</p>
+    <label class="switch"><input type="checkbox" id="demo"><div><span style="color:var(--ink);font-weight:600" data-i18n="demoMode">Demo mode</span>
+      <span data-i18n="demoHint">Fictional sample data, no API calls or charges. Turn off to use live services.</span></div></label>
+    <div id="realFields">
+      <div class="grid2">
+        <div><label for="orKey"><span data-i18n="orKey">OpenRouter API key</span><small>openrouter.ai → Keys (sk-or-…)</small></label><input type="password" id="orKey" autocomplete="off"></div>
+        <div><label for="oaKey"><span data-i18n="oaKey">OpenAlex API key</span><small>openalex.org/settings/api</small></label><input type="password" id="oaKey" autocomplete="off"></div>
+      </div>
+      <label for="email"><span>Email</span><small data-i18n="emailHint">Optional, for polite OpenAlex access.</small></label><input type="email" id="email" autocomplete="off">
+    </div>
+  </div>
+  <div class="card">
+    <h2 data-i18n="modelsTitle">AI models</h2>
+    <p class="hint" data-i18n="modelsHint">The default model is used by every AI stage unless a stage has its own. Use provider/model IDs; separate fallbacks with commas.</p>
+    <label for="model"><span data-i18n="defaultModel">Default model</span><small data-i18n="defaultModelHint">openrouter/free uses free models only; openrouter/auto may choose paid models.</small></label>
+    <input type="text" id="model" list="modelList" spellcheck="false" class="mono">
+    <div class="actions" style="margin-top:10px"><button class="btn small" id="loadModels" data-i18n="loadModels">Load model list from OpenRouter</button>
+      <label class="check" style="margin:0;align-items:center"><input type="checkbox" id="showPaid"><span data-i18n="showPaid">Include paid models</span></label></div>
+    <div id="modelsMsg"></div>
+    <h3 style="font-size:14px;margin:20px 0 4px" data-i18n="stageModels">Per-stage models</h3>
+    <p class="hint" data-i18n="stageModelsHint">Leave blank to inherit. You can also set these by selecting a stage on the workflow.</p>
+    <div class="slots-table" id="slotsTable"></div>
+    <datalist id="modelList"><option value="openrouter/free"></option><option value="openrouter/auto"></option></datalist>
+  </div>
+  <div class="card">
+    <div class="actions" style="margin-top:0"><button class="btn primary" id="saveBtn" data-i18n="saveSettings">Save settings</button>
+      <button class="btn" id="checkBtn" data-i18n="testConn">Test connections</button></div>
+    <div id="setupMsg"></div><ul class="checks" id="checkList"></ul>
+  </div>
+</section>
+</main>
+
 <script>
 const $ = (id) => document.getElementById(id);
-const STAGES = ["Research plan", "Literature discovery", "Metadata & PDF", "Source selection", "Evidence extraction", "Literature synthesis", "Draft writing", "Citation & claim audit", "Critical review", "Export & review"];
-const CRITERIA = {synthesis: "Synthesis across studies", research_gap: "Research gap",
-                  coverage: "Research question coverage", evidence_use: "Evidence support", clarity: "Writing clarity", scope_fidelity: "Scope fidelity"};
-let poller = null, lastPhase = "";
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store = { get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+                set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} } };
 
+/* ---------------- translations ---------------- */
+const T = {
+  en: {
+    tagline: "Literature reviews with traceable sources", tabWorkflow: "Workflow", tabResearch: "Topic & sources", tabResults: "Draft & evidence", tabSettings: "Settings",
+    flowTitle: "Research workflow", flowSub: "Each box is one stage. Select a stage to see what it does and to choose its AI model.",
+    lgPending: "Waiting", lgRun: "Running", lgDone: "Done", lgFail: "Failed", activity: "Activity", runLog: "Run log",
+    topicTitle: "Research topic", topicHint: "Describe what you want to investigate. English search terms usually find more papers.", topicLabel: "Topic",
+    topicPh: "e.g. road infrastructure, governance quality and poverty", planBtn: "Create research plan",
+    rsTitle: "Research settings", rsHint: "These apply to the next run and are saved when you create a plan.",
+    fromYear: "Papers published from", toYear: "Papers published until", workType: "Document type", wtAny: "Any type", wtArticle: "Journal articles",
+    wtReview: "Review articles", wtBoth: "Articles and reviews", minCit: "Minimum citations", minCitHint: "0 = no minimum; recent papers have few citations.",
+    oaOnly: "Open-access papers only (easier to get full-text PDFs)", cand: "Candidates to check", maxPapers: "Papers to keep", minVer: "Minimum usable papers",
+    minVerHint: "The run stops below this.", rounds: "Revision rounds", target: "AI review threshold", targetHint: "Not a measure of accuracy.",
+    draftLang: "Draft language", saveResearch: "Save research settings",
+    pdfTitle: "Full-text PDFs (optional)", pdfHint: "Add PDFs before starting. Enter the article's exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). In live mode, selected excerpts are sent to your AI provider.",
+    doi: "Article DOI", pdfFile: "PDF you have permission to use", importPdf: "Import PDF",
+    approveTitle: "Review the plan", approveHint: "Check the title, questions, assumptions, and scope. Remove any location or time period you did not ask for.",
+    wTitle: "Working title", rqs: "Research questions", onePerLine: "One per line.", scope: "Approved scope", terms: "Search terms", commaSep: "Separate with commas.",
+    authorSecs: "Author-supplied manuscript sections (optional)", authorHint: "Your Methods and Results are copied into the working manuscript as supplied, without verification.",
+    methods: "Methods", results: "Results", confirmScope: "I have reviewed and approved this research plan and scope.", approveBtn: "Approve and continue", redoBtn: "Regenerate plan",
+    progressTitle: "Research run", toFlow: "Open the workflow", again: "Try again",
+    noResults: "No results yet", noResultsHint: "Your draft and evidence appear here when the run finishes.", startResearch: "Start research",
+    aiScore: "AI reviewer score", draftTitle: "Literature review draft", draftHint: "IDs such as P1 refer to the source matrix. AI scores and matching excerpts do not replace reading the sources.",
+    matrixTitle: "Source matrix", matrixHint: "DOI and title are checked against Crossref. Matching text alone does not establish scientific support.",
+    reviewTitle: "Researcher review", reviewHint: "Tick each item after reading the sources. This records your review; it does not certify validation.",
+    notes: "Review notes", saveChecklist: "Save review checklist", files: "Download files", openFolder: "Open results folder (Windows)", newTopic: "Research a new topic",
+    connTitle: "Connections", connHint: "Settings and API keys are stored in .env on the machine running the app.", demoMode: "Demo mode",
+    demoHint: "Fictional sample data, no API calls or charges. Turn off to use live services.", orKey: "OpenRouter API key", oaKey: "OpenAlex API key",
+    emailHint: "Optional, for polite OpenAlex access.", modelsTitle: "AI models",
+    modelsHint: "The default model is used by every AI stage unless a stage has its own. Use provider/model IDs; separate fallbacks with commas.",
+    defaultModel: "Default model", defaultModelHint: "openrouter/free uses free models only; openrouter/auto may choose paid models.",
+    loadModels: "Load model list from OpenRouter", showPaid: "Include paid models", stageModels: "Per-stage models",
+    stageModelsHint: "Leave blank to inherit. You can also set these by selecting a stage on the workflow.", saveSettings: "Save settings", testConn: "Test connections",
+    // dynamic
+    demoPill: "Demo · offline", livePill: "Live API", stage: "Stage", of: "of", whatHappens: "What happens", input: "Input", output: "Output",
+    service: "Service", model: "AI model", modelFor: "Model for this stage", inherit: "Blank = inherit", uses: "Uses", inheritsFrom: "inherited from",
+    save: "Save", saved: "Saved.", demoModelNote: "Demo mode uses the offline simulator. Your choice applies in live mode.",
+    usage: "Usage", responses: "Model responses", tokens: "API tokens", cost: "API cost (USD)", notReported: "Not reported",
+    status: "Status", st_pending: "Not started", st_current: "Running", st_waiting: "Awaiting your approval", st_done: "Completed", st_failed: "Failed",
+    st_optional: "Optional", filters: "Search filters", years: "Years", type: "Document type", oa: "Open access only", yes: "Yes", no: "No",
+    minCitShort: "Min. citations", candShort: "Candidates", edit: "Edit research settings", topicNode: "Research topic", topicNone: "No topic yet",
+    library: "PDF library", pdfCount: "{n} PDFs", noPdfs: "No PDFs added yet. The run then uses abstracts only.", managePdfs: "Add or view PDFs",
+    approveTag: "your approval", loopTag: "revise ≤ {n}×", close: "Close",
+    nextIdle: ["Start with a research question", "Enter a topic, check the research settings, then review the plan.", "Enter a research topic"],
+    nextPlanning: ["Preparing your research plan", "The plan appears for review in a moment.", "View research"],
+    nextApprove: ["Your plan is ready to review", "Check the scope and search terms before the search starts.", "Review plan"],
+    nextRunning: ["Research is running", "Follow the highlighted stage. Your draft appears when the run finishes.", "Show details"],
+    nextDone: ["Your draft and evidence are ready", "Review the audit findings and original sources before using the draft.", "Review draft & evidence"],
+    nextFailed: ["Research stopped", "Read the error and run log before trying again.", "View details"],
+    liveNote: "Live mode uses provider services and quotas.",
+    noActivity: "No activity yet. Create a research plan to begin.",
+    progressRun: "The run continues on the server. You can reload this page at any time.", progressDone: "All stages completed.",
+    runFailed: "The run stopped.", runDone: "Complete. AI API requests used: {n}.",
+    needTopic: "Enter a research topic first.", needConfirm: "Review and confirm the scope first.", needPlan: "Enter a title, research questions, scope, and search terms.",
+    settingsSaved: "Settings saved. Test connections to check your API services.", researchSaved: "Research settings saved.",
+    checking: "Checking…", modelsLoaded: "{n} models loaded. Start typing in a model field to pick one.", loading: "Loading…",
+    choosePdf: "Choose a PDF and enter its DOI.", pdfTooBig: "Maximum file size: 12 MB.", noPdfsList: "No PDFs in the source library yet.",
+    pages: "pages", pdfLinked: "PDF linked to DOI {doi}; {p} pages stored. Check that the DOI matches the PDF.",
+    origTopic: "Your original topic", assumptions: "Assumptions to review", notReportedLi: "None reported.",
+    passed: "Evidence and scope checks passed the AI review; researcher verification is still required. ",
+    provisional: "PROVISIONAL DRAFT: evidence or scope checks have not passed. Do not treat this as verified research. ",
+    supported: "Paragraphs assessed as supported: {a}/{b}. ", round: "Round {n}.", strengths: "Strengths", fixes: "Suggested improvements",
+    redteam: "Additional critical review (AI)", findings: "{n} findings", rtIncomplete: "; review incomplete", rtNote: "These are review signals, not verified facts.",
+    recorded: "Recorded: {a}/{b} checks.", readFull: "I have read the full source", claimsChecked: "I have checked the claims, methods, and quotations",
+    gMethods: "I checked the methods against the original data or protocol", gResults: "I checked all results and figures",
+    gPolicy: "I reviewed the journal or institution policy", gDisclosure: "I reviewed and edited the AI disclosure", checklistSaved: "Checklist saved: {a}/{b}.",
+    noDraft: "Draft not yet available.",
+  },
+  id: {
+    tagline: "Tinjauan pustaka dengan sumber yang dapat dilacak", tabWorkflow: "Alur kerja", tabResearch: "Topik & sumber", tabResults: "Draf & bukti", tabSettings: "Pengaturan",
+    flowTitle: "Alur kerja riset", flowSub: "Setiap kotak adalah satu tahap. Pilih tahap untuk melihat fungsinya dan memilih model AI-nya.",
+    lgPending: "Menunggu", lgRun: "Berjalan", lgDone: "Selesai", lgFail: "Gagal", activity: "Aktivitas", runLog: "Log proses",
+    topicTitle: "Topik riset", topicHint: "Jelaskan hal yang ingin Anda teliti. Kata kunci berbahasa Inggris biasanya menemukan lebih banyak paper.", topicLabel: "Topik",
+    topicPh: "mis. infrastruktur jalan, kualitas tata kelola, dan kemiskinan", planBtn: "Buat rencana riset",
+    rsTitle: "Pengaturan riset", rsHint: "Pengaturan ini berlaku untuk proses berikutnya dan disimpan saat Anda membuat rencana.",
+    fromYear: "Paper terbit mulai tahun", toYear: "Paper terbit sampai tahun", workType: "Jenis dokumen", wtAny: "Semua jenis", wtArticle: "Artikel jurnal",
+    wtReview: "Artikel tinjauan (review)", wtBoth: "Artikel dan tinjauan", minCit: "Sitasi minimum", minCitHint: "0 = tanpa batas; paper terbaru biasanya masih sedikit sitasinya.",
+    oaOnly: "Hanya paper akses terbuka (lebih mudah mendapat PDF lengkap)", cand: "Kandidat yang diperiksa", maxPapers: "Paper yang dipertahankan", minVer: "Paper layak minimum",
+    minVerHint: "Proses berhenti jika di bawah angka ini.", rounds: "Putaran revisi", target: "Ambang skor reviu AI", targetHint: "Bukan ukuran ketepatan ilmiah.",
+    draftLang: "Bahasa draf", saveResearch: "Simpan pengaturan riset",
+    pdfTitle: "PDF teks lengkap (opsional)", pdfHint: "Tambahkan PDF sebelum mulai. Masukkan DOI artikel yang tepat. PDF harus memiliki lapisan teks (maks. 12 MB dan 150 halaman). Pada mode langsung, kutipan terpilih dikirim ke penyedia AI Anda.",
+    doi: "DOI artikel", pdfFile: "PDF yang boleh Anda gunakan", importPdf: "Impor PDF",
+    approveTitle: "Periksa rencana", approveHint: "Periksa judul, pertanyaan, asumsi, dan cakupan. Hapus lokasi atau periode yang tidak Anda minta.",
+    wTitle: "Judul sementara", rqs: "Pertanyaan riset", onePerLine: "Satu pertanyaan per baris.", scope: "Cakupan yang disetujui", terms: "Kata kunci pencarian", commaSep: "Pisahkan dengan koma.",
+    authorSecs: "Bagian naskah dari penulis (opsional)", authorHint: "Bagian Metode dan Hasil Anda disalin ke naskah kerja apa adanya, tanpa verifikasi.",
+    methods: "Metode", results: "Hasil", confirmScope: "Saya sudah memeriksa dan menyetujui rencana serta cakupan riset ini.", approveBtn: "Setujui dan lanjutkan", redoBtn: "Buat ulang rencana",
+    progressTitle: "Proses riset", toFlow: "Buka alur kerja", again: "Coba lagi",
+    noResults: "Belum ada hasil", noResultsHint: "Draf dan bukti akan muncul di sini setelah proses selesai.", startResearch: "Mulai riset",
+    aiScore: "Skor reviewer AI", draftTitle: "Draf tinjauan pustaka", draftHint: "ID seperti P1 merujuk ke matriks sumber. Skor AI dan kutipan yang cocok tidak menggantikan membaca sumber aslinya.",
+    matrixTitle: "Matriks sumber", matrixHint: "DOI dan judul dicocokkan dengan Crossref. Teks yang cocok saja belum membuktikan dukungan ilmiah.",
+    reviewTitle: "Pemeriksaan peneliti", reviewHint: "Centang setiap butir setelah membaca sumber. Ini mencatat pemeriksaan Anda, bukan sertifikasi validasi.",
+    notes: "Catatan pemeriksaan", saveChecklist: "Simpan daftar periksa", files: "Unduh berkas", openFolder: "Buka folder hasil (Windows)", newTopic: "Riset topik baru",
+    connTitle: "Koneksi", connHint: "Pengaturan dan kunci API disimpan di berkas .env pada komputer yang menjalankan aplikasi.", demoMode: "Mode demo",
+    demoHint: "Data contoh fiktif, tanpa panggilan API dan tanpa biaya. Matikan untuk memakai layanan sungguhan.", orKey: "Kunci API OpenRouter", oaKey: "Kunci API OpenAlex",
+    emailHint: "Opsional, untuk akses OpenAlex yang sopan.", modelsTitle: "Model AI",
+    modelsHint: "Model bawaan dipakai semua tahap AI, kecuali tahap yang punya model sendiri. Gunakan ID provider/model; pisahkan model cadangan dengan koma.",
+    defaultModel: "Model bawaan", defaultModelHint: "openrouter/free hanya memakai model gratis; openrouter/auto bisa memilih model berbayar.",
+    loadModels: "Muat daftar model dari OpenRouter", showPaid: "Sertakan model berbayar", stageModels: "Model per tahap",
+    stageModelsHint: "Kosongkan untuk mewarisi. Anda juga bisa mengaturnya dengan memilih tahap di alur kerja.", saveSettings: "Simpan pengaturan", testConn: "Uji koneksi",
+    demoPill: "Demo · luring", livePill: "API langsung", stage: "Tahap", of: "dari", whatHappens: "Yang dilakukan", input: "Masukan", output: "Keluaran",
+    service: "Layanan", model: "Model AI", modelFor: "Model untuk tahap ini", inherit: "Kosong = mewarisi", uses: "Memakai", inheritsFrom: "diwarisi dari",
+    save: "Simpan", saved: "Tersimpan.", demoModelNote: "Mode demo memakai simulator luring. Pilihan Anda berlaku pada mode langsung.",
+    usage: "Pemakaian", responses: "Respons model", tokens: "Token API", cost: "Biaya API (USD)", notReported: "Tidak dilaporkan",
+    status: "Status", st_pending: "Belum mulai", st_current: "Berjalan", st_waiting: "Menunggu persetujuan Anda", st_done: "Selesai", st_failed: "Gagal",
+    st_optional: "Opsional", filters: "Filter pencarian", years: "Tahun", type: "Jenis dokumen", oa: "Hanya akses terbuka", yes: "Ya", no: "Tidak",
+    minCitShort: "Sitasi min.", candShort: "Kandidat", edit: "Ubah pengaturan riset", topicNode: "Topik riset", topicNone: "Belum ada topik",
+    library: "Pustaka PDF", pdfCount: "{n} PDF", noPdfs: "Belum ada PDF. Proses akan memakai abstrak saja.", managePdfs: "Tambah atau lihat PDF",
+    approveTag: "persetujuan Anda", loopTag: "revisi ≤ {n}×", close: "Tutup",
+    nextIdle: ["Mulai dari pertanyaan riset", "Masukkan topik, periksa pengaturan riset, lalu tinjau rencananya.", "Masukkan topik riset"],
+    nextPlanning: ["Menyiapkan rencana riset", "Rencana akan muncul untuk ditinjau sebentar lagi.", "Lihat riset"],
+    nextApprove: ["Rencana siap ditinjau", "Periksa cakupan dan kata kunci sebelum pencarian dimulai.", "Tinjau rencana"],
+    nextRunning: ["Riset sedang berjalan", "Ikuti tahap yang disorot. Draf muncul setelah proses selesai.", "Lihat detail"],
+    nextDone: ["Draf dan bukti sudah siap", "Tinjau temuan audit dan sumber asli sebelum memakai draf.", "Tinjau draf & bukti"],
+    nextFailed: ["Riset berhenti", "Baca pesan galat dan log proses sebelum mencoba lagi.", "Lihat detail"],
+    liveNote: "Mode langsung memakai layanan dan kuota penyedia.",
+    noActivity: "Belum ada aktivitas. Buat rencana riset untuk memulai.",
+    progressRun: "Proses tetap berjalan di server. Anda bisa memuat ulang halaman ini kapan saja.", progressDone: "Semua tahap selesai.",
+    runFailed: "Proses berhenti.", runDone: "Selesai. Permintaan API AI yang terpakai: {n}.",
+    needTopic: "Masukkan topik riset terlebih dahulu.", needConfirm: "Periksa dan konfirmasi cakupan terlebih dahulu.", needPlan: "Isi judul, pertanyaan riset, cakupan, dan kata kunci.",
+    settingsSaved: "Pengaturan tersimpan. Uji koneksi untuk memeriksa layanan API.", researchSaved: "Pengaturan riset tersimpan.",
+    checking: "Memeriksa…", modelsLoaded: "{n} model dimuat. Ketik di kolom model untuk memilih.", loading: "Memuat…",
+    choosePdf: "Pilih PDF dan isi DOI-nya.", pdfTooBig: "Ukuran berkas maksimum 12 MB.", noPdfsList: "Belum ada PDF di pustaka sumber.",
+    pages: "halaman", pdfLinked: "PDF ditautkan ke DOI {doi}; {p} halaman tersimpan. Pastikan DOI sesuai dengan isi PDF.",
+    origTopic: "Topik asli Anda", assumptions: "Asumsi yang perlu diperiksa", notReportedLi: "Tidak ada.",
+    passed: "Pemeriksaan bukti dan cakupan lolos reviu AI; verifikasi peneliti tetap diperlukan. ",
+    provisional: "DRAF SEMENTARA: pemeriksaan bukti atau cakupan belum lolos. Jangan anggap sebagai riset terverifikasi. ",
+    supported: "Paragraf yang dinilai didukung: {a}/{b}. ", round: "Putaran {n}.", strengths: "Kekuatan", fixes: "Saran perbaikan",
+    redteam: "Reviu kritis tambahan (AI)", findings: "{n} temuan", rtIncomplete: "; reviu tidak selesai", rtNote: "Ini sinyal reviu, bukan fakta terverifikasi.",
+    recorded: "Tercatat: {a}/{b} butir.", readFull: "Saya sudah membaca sumber lengkapnya", claimsChecked: "Saya sudah memeriksa klaim, metode, dan kutipan",
+    gMethods: "Saya memeriksa metode terhadap data atau protokol asli", gResults: "Saya memeriksa semua hasil dan gambar",
+    gPolicy: "Saya membaca kebijakan jurnal atau institusi", gDisclosure: "Saya meninjau dan menyunting pernyataan penggunaan AI", checklistSaved: "Daftar periksa tersimpan: {a}/{b}.",
+    noDraft: "Draf belum tersedia.",
+  }
+};
+// Stage texts come from the server in English; Indonesian versions live here.
+const STAGE_ID = {
+  1: ["Rencana riset", "Menyusun pertanyaan dan menyetujui cakupan", "Topik riset", "Rencana riset yang disetujui"],
+  2: ["Penelusuran literatur", "Mencari publikasi relevan di OpenAlex", "Kata kunci dan filter tahun", "Kandidat artikel"],
+  3: ["Metadata & PDF", "Mencocokkan metadata Crossref dan menemukan PDF unggahan", "Kandidat artikel dan PDF lokal", "Artikel dengan metadata cocok"],
+  4: ["Seleksi sumber", "Memilih artikel yang relevan dengan pertanyaan riset", "Artikel dengan metadata cocok", "Artikel terpilih"],
+  5: ["Ekstraksi bukti", "Mencatat kutipan sumber dan nomor halaman", "Cuplikan PDF atau abstrak terpilih", "Matriks sumber beserta asal-usulnya"],
+  6: ["Sintesis literatur", "Mengenali tema dan celah dari bukti terpilih", "Matriks sumber", "Kerangka tematik"],
+  7: ["Penulisan draf", "Menulis dan merevisi tinjauan pustaka", "Kerangka dan bukti", "Draf dengan sitasi sumber"],
+  8: ["Audit sitasi & klaim", "Memeriksa ID sitasi dan bukti pendukung", "Draf dan cuplikan sumber", "Laporan audit klaim"],
+  9: ["Reviu kritis", "Menilai draf dan menandai masalah metodologis", "Draf dan audit bukti", "Temuan reviu dan saran revisi"],
+  10: ["Ekspor & pemeriksaan", "Menyimpan naskah, catatan bukti, dan daftar periksa", "Draf terpilih dan audit", "Berkas lokal untuk diperiksa peneliti"],
+};
+const CRIT = { en: {synthesis: "Synthesis across studies", research_gap: "Research gap", coverage: "Research question coverage", evidence_use: "Evidence support", clarity: "Writing clarity", scope_fidelity: "Scope fidelity"},
+               id: {synthesis: "Sintesis antarstudi", research_gap: "Celah riset", coverage: "Cakupan pertanyaan riset", evidence_use: "Dukungan bukti", clarity: "Kejelasan tulisan", scope_fidelity: "Kesetiaan cakupan"} };
+const SLOT_INFO = {
+  PLAN_MODEL: {stage: 1, en: "Drafts the research plan", id: "Menyusun rencana riset"},
+  SCREEN_MODEL: {stage: 4, en: "Selects relevant papers", id: "Memilih paper yang relevan"},
+  EVIDENCE_MODEL: {stage: 5, en: "Extracts quotes and findings", id: "Mengekstrak kutipan dan temuan"},
+  OUTLINE_MODEL: {stage: 6, en: "Plans themes (falls back to Writer)", id: "Merancang tema (cadangan: Writer)"},
+  WRITER_MODEL: {stage: 7, en: "Writes and revises the draft", id: "Menulis dan merevisi draf"},
+  VERIFIER_MODEL: {stage: 8, en: "Audits claims against sources", id: "Mengaudit klaim terhadap sumber"},
+  REVIEW_MODEL: {stage: 9, en: "Scores the draft", id: "Menilai draf"},
+  REDTEAM_MODEL: {stage: 9, en: "Challenges the final draft (falls back to Reviewer)", id: "Menguji draf akhir (cadangan: Reviewer)"},
+};
+let LANG = store.get("pm-lang") === "id" ? "id" : "en";
+function t(key, vars) {
+  let s = (T[LANG] && T[LANG][key] !== undefined) ? T[LANG][key] : T.en[key];
+  if (typeof s === "string" && vars) for (const [k, v] of Object.entries(vars)) s = s.replace("{" + k + "}", v);
+  return s ?? key;
+}
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll("[data-lang]").forEach(b => b.classList.toggle("on", b.dataset.lang === LANG));
+  renderSlotsTable();
+  if (latest) render(latest);
+  if (currentView === "results") loadResults();
+  refreshLibrary().catch(() => {});
+}
+document.querySelectorAll("[data-lang]").forEach(b => b.onclick = () => { LANG = b.dataset.lang; store.set("pm-lang", LANG); applyLang(); });
+
+/* theme */
+function setTheme(name) { document.documentElement.dataset.theme = name; store.set("pm-theme", name); }
+setTheme(store.get("pm-theme") === "light" ? "light" : "dark");
+$("themeBtn").onclick = () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+
+/* ---------------- API ---------------- */
 async function api(path, data) {
   try {
-  const res = await fetch(path, data === undefined ? {} :
-    { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data) });
-  const payload = await res.json();
-  if (!res.ok) throw Error(payload.error || `Request failed (${res.status})`);
-  $('requestError').classList.add('hidden');
-  return payload;
+    const res = await fetch(path, data === undefined ? {} :
+      { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data) });
+    const payload = await res.json();
+    if (!res.ok) throw Error(payload.error || `Request failed (${res.status})`);
+    $("requestError").classList.add("hidden");
+    return payload;
   } catch (error) {
-    $('requestError').textContent = error.message || 'Cannot reach the server. Check your connection and try again.';
-    $('requestError').classList.remove('hidden');
+    $("requestError").textContent = error.message || "Cannot reach the server.";
+    $("requestError").classList.remove("hidden");
     throw error;
   }
 }
-const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function note(el, text, kind) { $(el).innerHTML = text ? `<div class="notice ${kind === true ? "ok" : kind === false ? "bad" : kind}">${esc(text)}</div>` : ""; }
 
+/* ---------------- views ---------------- */
+let currentView = "workflow";
 function show(view) {
-  if (view === 'pipeline') { showPipelineStatus('pipeline'); return; }
-  showPipelineStatus(view);
-  for (const id of ["setup", "research", "results"]) $(id).classList.toggle("hidden", id !== view);
-  document.querySelectorAll(".steps button").forEach(b => b.classList.toggle("active", b.dataset.go === view));
-
+  currentView = view;
+  for (const id of ["workflow", "research", "results", "setup"]) $(id).classList.toggle("hidden", id !== view);
+  document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  if (view === "results") loadResults();
+  if (view === "workflow") requestAnimationFrame(() => layoutFlow(true));
+  window.scrollTo({top: 0});
 }
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => show(b.dataset.view));
 document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dataset.go));
 
-function note(el, text, ok) { $(el).innerHTML = text ? `<div class="notice ${ok ? "ok" : "bad"}">${esc(text)}</div>` : ""; }
-
-/* ---------- Settings ---------- */
+/* ---------------- settings ---------------- */
+let SETTINGS = {};
+const SLOT_KEYS = Object.keys(SLOT_INFO);
+const fieldOf = (key) => key.toLowerCase();  // PLAN_MODEL -> plan_model
+function renderSlotsTable() {
+  const labels = {}; (latest?.pipeline || []).forEach(s => (s.model_slots || []).forEach(x => labels[x.key] = x.label));
+  $("slotsTable").innerHTML = SLOT_KEYS.map(key => {
+    const info = SLOT_INFO[key];
+    return `<div class="slot-row"><span>${esc(labels[key] || key)} <small>${t("stage")} ${info.stage} · ${esc(info[LANG])}</small></span>
+      <input type="text" class="mono" list="modelList" spellcheck="false" data-slot="${key}" value="${esc(SETTINGS[fieldOf(key)] || "")}" placeholder="${esc(t("inherit"))}"></div>`;
+  }).join("");
+}
 function toggleReal() { $("realFields").classList.toggle("hidden", $("demo").checked); }
 $("demo").onchange = toggleReal;
-$("model").onchange = () => $("modelCustom").classList.toggle("hidden", $("model").value !== "custom");
-
-async function loadSettings() {
-  const s = await api("/api/settings");
+function fillSettings(s) {
+  SETTINGS = s;
   $("demo").checked = s.demo;
-  for (const [id,key] of [['writerModel','writer_model'],['evidenceModel','evidence_model'],['verifierModel','verifier_model'],['reviewModel','review_model']]) $(id).value=s[key]||'';
-  $("orKey").placeholder = s.has_openrouter_key ? "Already saved. Enter a value only to replace it." : "sk-or-...";
-  $("oaKey").placeholder = s.has_openalex_key ? "Already saved. Enter a value only to replace it." : "Paste your OpenAlex key";
-  const preset = [...$("model").options].find(o => o.value === s.model);
-  if (preset) $("model").value = s.model; else { $("model").value = "custom"; $("modelCustom").value = s.model; }
-  $("modelCustom").classList.toggle("hidden", $("model").value !== "custom");
-  $("language").value = s.language === "English" ? "English" : "Indonesian";
-  $("email").value = s.email;
-  $("target").value = String(Math.round(Number(s.target) || 8));
-  toggleReal();
-  return s;
+  $("orKey").placeholder = s.has_openrouter_key ? "••••• (saved)" : "sk-or-...";
+  $("oaKey").placeholder = s.has_openalex_key ? "••••• (saved)" : "";
+  $("email").value = s.email || "";
+  $("model").value = s.model || "openrouter/free";
+  $("fromYear").value = s.from_year; $("toYear").value = s.to_year;
+  $("fromYear").max = $("toYear").max = (s.current_year || new Date().getFullYear()) + 1;
+  $("workType").value = s.work_type || "any"; $("openAccess").checked = !!s.open_access_only;
+  $("minCitations").value = s.min_citations; $("candidates").value = s.candidates; $("maxPapers").value = s.max_papers;
+  $("minVerified").value = s.min_verified; $("rounds").value = s.revision_rounds; $("target").value = s.target;
+  $("language").value = s.language === "Indonesian" ? "Indonesian" : "English";
+  renderSlotsTable(); toggleReal();
 }
-
+async function loadSettings() { const s = await api("/api/settings"); fillSettings(s); return s; }
+function researchPayload() {
+  return { from_year: $("fromYear").value, to_year: $("toYear").value, work_type: $("workType").value,
+           open_access_only: $("openAccess").checked, min_citations: $("minCitations").value,
+           candidates: $("candidates").value, max_papers: $("maxPapers").value, min_verified: $("minVerified").value,
+           revision_rounds: $("rounds").value, target: $("target").value, language: $("language").value };
+}
+$("saveResearch").onclick = async () => {
+  try { fillSettings(await api("/api/settings", researchPayload())); note("researchMsg", t("researchSaved"), true); }
+  catch (e) { note("researchMsg", e.message, false); }
+};
 $("saveBtn").onclick = async () => {
-  const model = $("model").value === "custom" ? $("modelCustom").value : $("model").value;
-  await api("/api/settings", { demo: $("demo").checked, openrouter_key: $("orKey").value,
-    openalex_key: $("oaKey").value, model,
-    writer_model: $("writerModel").value, evidence_model: $("evidenceModel").value,
-    verifier_model: $("verifierModel").value, review_model: $("reviewModel").value,
-    language: $("language").value, email: $("email").value, target: $("target").value });
-  $("orKey").value = ""; $("oaKey").value = "";
-  const s = await loadSettings();
-  note("setupMsg", s.problem ? s.problem : "Settings saved. Test connections to check your API services.", !s.problem);
-};
-
-$("checkBtn").onclick = async () => {
-  $("checkBtn").disabled = true; $("checkBtn").textContent = "Checking...";
-  $("checkList").innerHTML = ""; note("setupMsg", "");
+  const data = { demo: $("demo").checked, openrouter_key: $("orKey").value, openalex_key: $("oaKey").value,
+                 email: $("email").value, model: $("model").value.trim() };
+  document.querySelectorAll("[data-slot]").forEach(el => data[fieldOf(el.dataset.slot)] = el.value.trim());
   try {
-  const results = await api("/api/check", {});
-  $("checkList").innerHTML = results.map(r =>
-    `<li><b style="color:${r.ok ? "var(--ok)" : "var(--bad)"}">${r.ok ? "✓" : "✗"}</b>${esc(r.name)}<br><small>${esc(r.note)}</small></li>`).join("");
-  } catch (_) { /* api displays the error */ }
-  finally { $("checkBtn").disabled = false; $("checkBtn").textContent = "Test connections"; }
+    const s = await api("/api/settings", data);
+    $("orKey").value = ""; $("oaKey").value = ""; fillSettings(s);
+    note("setupMsg", s.problem || t("settingsSaved"), !s.problem);
+    refreshStatus();
+  } catch (e) { note("setupMsg", e.message, false); }
+};
+$("checkBtn").onclick = async () => {
+  $("checkBtn").disabled = true; $("checkBtn").textContent = t("checking"); $("checkList").innerHTML = ""; note("setupMsg", "");
+  try {
+    const results = await api("/api/check", {});
+    $("checkList").innerHTML = results.map(r => `<li><b style="color:${r.ok ? "var(--ok)" : "var(--bad)"}">${r.ok ? "✓" : "✗"}</b> ${esc(r.name)}<br><small>${esc(r.note)}</small></li>`).join("");
+  } catch (_) {} finally { $("checkBtn").disabled = false; $("checkBtn").textContent = t("testConn"); }
+};
+$("loadModels").onclick = async () => {
+  $("loadModels").disabled = true; note("modelsMsg", t("loading"), "info");
+  try {
+    const r = await api("/api/models", { free_only: !$("showPaid").checked });
+    $("modelList").innerHTML = r.models.map(m => `<option value="${esc(m.id)}">${esc(m.name)}${m.free ? " · free" : ""}</option>`).join("");
+    note("modelsMsg", t("modelsLoaded", {n: r.models.length}), true);
+  } catch (e) { note("modelsMsg", e.message, false); } finally { $("loadModels").disabled = false; }
 };
 
-/* ---------- Research ---------- */
+/* ---------------- research actions ---------------- */
 $("planBtn").onclick = async () => {
   const topic = $("topic").value.trim();
-  if (!topic) return alert("Enter a research topic first.");
-  await api("/api/plan", { topic });
-  startPolling();
+  if (!topic) return note("researchMsg", t("needTopic"), false);
+  try { await api("/api/plan", { topic, research: researchPayload() }); await loadSettings(); startPolling(); show("workflow"); }
+  catch (e) { note("researchMsg", e.message, false); }
 };
-
 $("approveBtn").onclick = async () => {
-  const status = await api("/api/status");
-  if (!$("confirmScope").checked) return alert("Review and confirm the scope first.");
-  const plan = { ...status.plan,
-    title: $("approvedTitle").value.trim(),
+  if (!$("confirmScope").checked) return alert(t("needConfirm"));
+  const plan = { ...(latest?.plan || {}), title: $("approvedTitle").value.trim(),
     research_questions: $("approvedQuestions").value.split("\n").map(q => q.trim()).filter(Boolean),
-    scope_note: $("approvedScope").value.trim(),
-    author_methods: $("authorMethods").value.trim(),
-    author_results: $("authorResults").value.trim(),
-    keywords: $("keywords").value.split(",").map(k => k.trim()).filter(Boolean) };
-  if (!plan.title || !plan.scope_note || !plan.research_questions.length || !plan.keywords.length)
-    return alert("Enter a title, research questions, scope, and search terms.");
+    scope_note: $("approvedScope").value.trim(), author_methods: $("authorMethods").value.trim(),
+    author_results: $("authorResults").value.trim(), keywords: $("keywords").value.split(",").map(k => k.trim()).filter(Boolean) };
+  if (!plan.title || !plan.scope_note || !plan.research_questions.length || !plan.keywords.length) return alert(t("needPlan"));
   await api("/api/approve", { plan, approved_scope: true });
-  lastPhase = "running";
-  startPolling();
+  lastPhase = "running"; startPolling(); show("workflow");
 };
 $("redoBtn").onclick = async () => {
-  const topic = latestStatus?.topic || $('topic').value.trim();
-  await api('/api/reset', {});
-  $('topic').value = topic;
-  await api('/api/plan', {topic});
-  lastPhase = '';
-  startPolling();
+  const topic = latest?.topic || $("topic").value.trim();
+  await api("/api/reset", {}); $("topic").value = topic;
+  await api("/api/plan", { topic }); lastPhase = ""; startPolling();
 };
 $("againBtn").onclick = async () => { await api("/api/reset", {}); render(await api("/api/status")); };
 $("newBtn").onclick = async () => { await api("/api/reset", {}); $("topic").value = ""; render(await api("/api/status")); show("research"); };
 $("openFolderBtn").onclick = () => api("/api/open-folder", {});
+$("toFlowBtn").onclick = () => show("workflow");
 
+/* ---------------- polling & state ---------------- */
+let poller = null, lastPhase = "", latest = null;
 function startPolling() {
   clearInterval(poller);
   const tick = async () => {
-    try {
-    const s = await api("/api/status");
-    render(s);
-    if (!["planning", "running"].includes(s.phase)) clearInterval(poller);
-    } catch (_) { /* Keep polling so a temporary connection failure can recover. */ }
+    try { const s = await api("/api/status"); render(s); if (!["planning", "running"].includes(s.phase)) clearInterval(poller); } catch (_) {}
   };
   tick(); poller = setInterval(tick, 1500);
 }
+async function refreshStatus() { try { render(await api("/api/status")); } catch (_) {} }
 
 function render(s) {
+  latest = s;
   const busy = ["planning", "running"].includes(s.phase);
-  $("topicCard").classList.toggle("hidden", s.phase !== "idle" && s.phase !== "failed" || (s.phase === "failed" && s.stage > 1));
+  $("topicCard").classList.toggle("hidden", !["idle", "failed", "done"].includes(s.phase));
+  $("researchCard").querySelectorAll("input,select,button").forEach(el => el.disabled = busy);
+  $("pdfCard").classList.toggle("hidden", !["idle", "failed", "done"].includes(s.phase));
   $("approveCard").classList.toggle("hidden", s.phase !== "approve");
-  $("progressCard").classList.toggle("hidden", !busy && s.phase !== "failed" && s.phase !== "done");
-  $("failActions").classList.toggle("hidden", s.phase !== "failed");
-
-  $("progress").innerHTML = STAGES.map((name, i) => {
-    const n = i + 1, state = (s.completed_steps || []).includes(n) || s.phase === "done" ? "done" : (s.stage === n && busy ? "now" : "");
-    return `<li class="${state}"><span class="dot">${state === "done" ? "✓" : n}</span>${name}</li>`;
-  }).join("");
-  $("log").textContent = (s.log || []).join("\n");
-  $("progressHint").textContent = s.phase === "done" ? "All stages completed." :
-    "Research runs on the server. You can reload this page to see the latest status.";
-
-  if (s.phase === "failed") note("runMsg", "The run stopped.\n" + s.error, false);
-  else if (s.phase === "done") $("runMsg").innerHTML =
-    `<div class="notice ok">Complete. AI API requests used: ${s.requests}.</div>`;
+  $("progressCard").classList.toggle("hidden", !busy && !["failed", "done"].includes(s.phase));
+  $("againBtn").classList.toggle("hidden", !["failed", "done"].includes(s.phase));
+  $("againBtn").textContent = s.phase === "done" ? t("newTopic") : t("again");
+  $("progressHint").textContent = s.phase === "done" ? t("progressDone") : t("progressRun");
+  if (s.phase === "failed") note("runMsg", t("runFailed") + "\n" + s.error, false);
+  else if (s.phase === "done") note("runMsg", t("runDone", {n: s.requests}), true);
   else note("runMsg", "");
+  $("log").textContent = (s.log || []).join("\n");
 
   if (s.phase === "approve" && s.plan && lastPhase !== "approve") {
-    $("planView").innerHTML = `<b>Your original topic</b><p>${esc(s.topic)}</p>
-      <b>Assumptions to review</b><ul>${(s.plan.assumptions || []).length ?
-        s.plan.assumptions.map(a => `<li>${esc(a)}</li>`).join("") : "<li>Not reported.</li>"}</ul>`;
-    $("approvedTitle").value = s.plan.title || "";
-    $("approvedQuestions").value = (s.plan.research_questions || []).join("\n");
-    $("approvedScope").value = s.plan.scope_note || "";
-    $("authorMethods").value = s.plan.author_methods || "";
-    $("authorResults").value = s.plan.author_results || "";
-    $("keywords").value = (s.plan.keywords || []).join(", ");
+    $("planView").innerHTML = `<b>${esc(t("origTopic"))}</b><p>${esc(s.topic)}</p><b>${esc(t("assumptions"))}</b><ul>${(s.plan.assumptions || []).length ?
+      s.plan.assumptions.map(a => `<li>${esc(a)}</li>`).join("") : `<li>${esc(t("notReportedLi"))}</li>`}</ul>`;
+    $("approvedTitle").value = s.plan.title || ""; $("approvedQuestions").value = (s.plan.research_questions || []).join("\n");
+    $("approvedScope").value = s.plan.scope_note || ""; $("authorMethods").value = s.plan.author_methods || "";
+    $("authorResults").value = s.plan.author_results || ""; $("keywords").value = (s.plan.keywords || []).join(", ");
     $("confirmScope").checked = false;
   }
-  // Jump to the results only at the moment the process finishes, not on every refresh
   if (s.phase === "done" && lastPhase === "running") setTimeout(() => show("results"), 1200);
   lastPhase = s.phase;
-  renderPipeline(s);
-  $("failActions").classList.toggle("hidden", !["failed", "done"].includes(s.phase));
-  $("againBtn").textContent = s.phase === "done" ? "Research a new topic" : "Try again";
   $("planBtn").disabled = busy;
+
+  const demo = (s.pipeline?.[0]?.model || "").startsWith("Demo simulator");
+  $("modePill").textContent = demo ? t("demoPill") : t("livePill");
+  $("modePill").classList.toggle("live", !demo);
+  const key = {idle: "nextIdle", planning: "nextPlanning", approve: "nextApprove", running: "nextRunning", done: "nextDone", failed: "nextFailed"}[s.phase] || "nextIdle";
+  const nx = t(key), target = {idle: "research", planning: "research", approve: "research", running: null, done: "results", failed: "research"}[s.phase];
+  $("nextTitle").textContent = nx[0];
+  $("nextDesc").textContent = nx[1] + (s.phase === "idle" && !demo ? " " + t("liveNote") : "");
+  $("nextBtn").textContent = nx[2];
+  $("nextBtn").onclick = () => target ? show(target) : selectNode(s.stage || 1, true);
+  $("errorBanner").classList.toggle("hidden", s.phase !== "failed");
+  $("errorBanner").textContent = s.phase === "failed" ? (s.error || "") : "";
+  if (!slotsRendered && s.pipeline) { slotsRendered = true; renderSlotsTable(); }
+  renderFlow(s);
+  renderActivity(s);
+}
+let slotsRendered = false;
+
+function renderActivity(s) {
+  const events = (s.events || []).slice(-40).reverse();
+  $("activityList").innerHTML = events.length ? events.map(e =>
+    `<div class="act"><time>${esc(e.time)}</time><div><b>${esc(e.message)}</b>${e.model ? `<br><em class="mono">${esc(e.model)}</em>` : ""}</div></div>`).join("")
+    : `<div class="act"><div class="hint" style="margin:0">${esc(t("noActivity"))}</div></div>`;
 }
 
-/* ---------- Results ---------- */
-function markdown(md) {
-  return esc(md).split(/\n\s*\n/).map(block => {
-    let b = block.trim()
-      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\[(P\d+(?:\s*[;,]\s*P\d+)*)\]/g, '<span class="cite">$1</span>');
-    if (/^#{1,6}\s/.test(b)) return `<h3>${b.replace(/^#{1,6}\s/, "")}</h3>`;
-    if (/^[-*]\s/m.test(b)) return "<ul>" + b.split(/\n/).map(l => `<li>${l.replace(/^[-*]\s/, "")}</li>`).join("") + "</ul>";
-    return `<p>${b.replace(/\n/g, " ")}</p>`;
-  }).join("");
+/* ---------------- flowchart ---------------- */
+const ICONS = {
+  topic: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+  library: '<path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/>',
+  1: '<path d="M9 3h6v3H9z"/><path d="M7 4.5H5V21h14V4.5h-2"/><path d="M8 11h8M8 15h5"/>',
+  2: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>',
+  3: '<path d="M6 3h9l3 3v15H6z"/><path d="M9 13l2 2 4-4"/>',
+  4: '<path d="M4 5h16l-6 8v6l-4-2v-4z"/>',
+  5: '<path d="M7 8h4v4c0 2.2-1.3 3.5-3.5 4M14 8h4v4c0 2.2-1.3 3.5-3.5 4"/>',
+  6: '<path d="M4 6h4l6 6h6M4 18h4l3-3"/><path d="M17 9l3 3-3 3"/>',
+  7: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',
+  8: '<circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21M8 11l2 2 4-4"/>',
+  9: '<path d="M12 4v16M6 7h12M6 7l-3 6a3 3 0 0 0 6 0zM18 7l-3 6a3 3 0 0 0 6 0zM8 20h8"/>',
+  10: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+};
+const svgIcon = (k, cls = "icon") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>`;
+// col = position along the flow, row = lane (0 = side input, 1 = main line)
+const NODES = [
+  {id: "topic", col: 0, row: 1, kind: "start"}, {id: 1, col: 1, row: 1}, {id: 2, col: 2, row: 1},
+  {id: "library", col: 2, row: 0, kind: "source"}, {id: 3, col: 3, row: 1}, {id: 4, col: 4, row: 1},
+  {id: 5, col: 5, row: 1}, {id: 6, col: 6, row: 1}, {id: 7, col: 7, row: 1}, {id: 8, col: 8, row: 1},
+  {id: 9, col: 9, row: 1}, {id: 10, col: 10, row: 1, kind: "end"},
+];
+const EDGES = [["topic", 1], [1, 2, "approve"], [2, 3], ["library", 3, "side"], [3, 4], [4, 5], ["library", 5, "side"],
+               [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [9, 7, "loop"]];
+let selected = null, followActive = true, zoom = 1, userZoomed = false, pdfCount = 0, geo = null;
+
+function nodeStatus(id, s) {
+  if (id === "topic") return s.topic ? "done" : "pending";
+  if (id === "library") return pdfCount ? "done" : "optional";
+  if (s.phase === "failed" && id === s.stage) return "failed";
+  if (["planning", "approve", "running"].includes(s.phase) && id === s.stage) return "current";
+  if (s.phase === "done" || (s.completed_steps || []).includes(id)) return "done";
+  return "pending";
+}
+function stepInfo(id, s) {
+  const step = (s.pipeline || []).find(x => x.id === id) || {};
+  if (LANG === "id" && STAGE_ID[id]) { const [name, summary, input, output] = STAGE_ID[id]; return {...step, name, summary, input, output}; }
+  return step;
+}
+function liveModel(step, s) {
+  const recent = (s.events || []).filter(e => e.kind === "model" && e.step === step.id).slice(-1)[0];
+  return recent?.model || step.model || "";
+}
+function subline(id, s) {
+  if (id === "topic") return s.topic ? s.topic : t("topicNone");
+  if (id === "library") return pdfCount ? t("pdfCount", {n: pdfCount}) : t("st_optional");
+  const step = (s.pipeline || []).find(x => x.id === id) || {};
+  const m = liveModel(step, s);
+  return m.startsWith("Demo simulator") ? "demo simulator" : m;
 }
 
-async function loadResults() {
-  const r = await api("/api/results");
-  const has = r.draft || (r.matrix && r.matrix.length);
-  $("emptyResults").classList.toggle("hidden", !!has);
-  $("resultView").classList.toggle("hidden", !has);
-  if (!has) return;
-  const rv = r.review;
-  $("scoreNum").textContent = rv ? `${rv.score}/10` : "-";
-  const ev = r.evidence;
-  $("scoreNote").textContent = rv ?
-    (rv.evidence_gate_passed && rv.scope_gate_passed ? "Evidence and scope checks passed the AI review; researcher verification is still required. " :
-      "PROVISIONAL DRAFT: evidence or scope checks have not passed. Do not treat this as verified research. ")
-    + (ev ? `Paragraphs assessed as supported: ${ev.supported}/${ev.total}. ` : "")
-    + (rv.redteam_high_risk ? ` Warning: ${rv.redteam_high_risk} high-risk findings await researcher review.` : '')
-    + (rv.status === 'redteam_check_incomplete' ? ' The critical review did not complete.' : '')
-    + (rv.from_round ? `Round ${rv.from_round}.` : "") : "";
-  const fixes = rv ? (rv.fixes || rv.problems || []) : [];
-  $("reviewNotes").innerHTML = rv ? `
-    ${rv.scores ? `<div class="bars">${Object.entries(rv.scores).map(([k, v]) =>
-      `<div class="bar"><span>${esc(CRITERIA[k] || k)}</span><i><b style="width:${v * 10}%"></b></i><em>${v}</em></div>`).join("")}</div>` : ""}
-    ${rv.strengths?.length ? `<p><b>Strengths</b></p><ul>${rv.strengths.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-    ${fixes.length ? `<p><b>Suggested improvements</b></p><ul>${fixes.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}` : "";
-  $("draftView").innerHTML = markdown(r.draft || "Draft not yet available.");
-  if (r.redteam) {
-    const findings = (r.redteam.findings || []);
-    $("reviewNotes").innerHTML += `<p><b>Additional critical review (AI)</b>: ${findings.length} findings${r.redteam.error ? '; review incomplete' : ''}. These are review signals, not verified facts.</p>` +
-      (findings.length ? `<ul>${findings.map(x => `<li><b>${esc(x.severity)}</b>: ${esc(x.issue)} — ${esc(x.action)}</li>`).join('')}</ul>` : '');
+function geometry() {
+  const vp = $("viewport"), vertical = vp.clientWidth < 720;
+  if (!vertical) {
+    const N = 76, dx = 124, x0 = 34, rows = [34, 168];
+    const pos = {}; NODES.forEach(n => pos[n.id] = {x: x0 + n.col * dx, y: rows[n.row], w: N, h: N});
+    return {vertical, N, pos, width: x0 + 10 * dx + N + 44, height: 360};
   }
-  renderHumanChecks(r);
-  const cols = [["id","ID"],["authors","Authors"],["year","Year"],["title","Title"],["method","Method"],["main_finding","Main finding"],["limitation","Limitations"],["source_type","Source type"],["source_page","PDF page (0 = abstract)"],["evidence_quote","Evidence quote"],["quote_verified","Quote matched?"]];
-  $("matrix").innerHTML = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join("")}</tr>` +
-    (r.matrix || []).map(row => `<tr>${cols.map(c => `<td>${esc(row[c[0]])}</td>`).join("")}</tr>`).join("");
-  const labels = {"8_manuscript_working.md": "Working IMRaD manuscript (missing sections marked)",
-                  "8_evidence_ledger.csv": "Evidence ledger with source pages", "8_human_verification.json": "Researcher review checklist", "8_section_status.json": "Manuscript completeness",
-                  "8_ai_disclosure_template.md": "AI disclosure template", "7_redteam_review.json": "AI critical review",
-                  "4_source_manifest.json": "PDF/abstract source provenance",
-                  "7_final_draft.md": "Selected draft + references", "7_final_review.json": "Reviewer score",
-                  "3_screening.json": "Source selection results", "4_literature_matrix.csv": "Source matrix (CSV)", "3_verification_report.csv": "Metadata check report",
-                  "2_papers_found.csv": "All discovered articles", "log.txt": "Run log", "1_plan.json": "Plan",
-                  "1_plan_approved.json": "Approved scope", "7_final_evidence_audit.json": "Evidence audit"};
-  $("files").innerHTML = (r.files || []).filter(f => labels[f]).map(f =>
-    `<a href="/files/${encodeURIComponent(r.folder_name)}/${encodeURIComponent(f)}">${esc(labels[f] || "Latest draft (" + f + ")")}</a>`).join("");
+  const N = 56, dy = 108, y0 = 26, pos = {};
+  NODES.forEach(n => pos[n.id] = n.row === 1 ? {x: 44, y: y0 + n.col * dy, w: N, h: N} : {x: 262, y: y0 + 1.75 * dy, w: N, h: N});
+  return {vertical, N, pos, width: 340, height: y0 + 10 * dy + N + 40};
+}
+function port(p, side) {
+  return {right: [p.x + p.w, p.y + p.h / 2, 1, 0], left: [p.x, p.y + p.h / 2, -1, 0],
+          top: [p.x + p.w / 2, p.y, 0, -1], bottom: [p.x + p.w / 2, p.y + p.h, 0, 1]}[side];
+}
+function edgePath(a, b, d, d2 = d) {
+  const c1 = [a[0] + a[2] * d, a[1] + a[3] * d], c2 = [b[0] + b[2] * d2, b[1] + b[3] * d2];
+  const mid = (t) => [0, 1].map(i => (1 - t) ** 3 * a[i] + 3 * (1 - t) ** 2 * t * c1[i] + 3 * (1 - t) * t ** 2 * c2[i] + t ** 3 * b[i]);
+  return {d: `M${a[0]},${a[1]} C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${b[0]},${b[1]}`, mid: mid(.5)};
+}
+function edgeEnds(from, to, kind, g) {
+  const A = g.pos[from], B = g.pos[to];
+  if (!g.vertical) {
+    if (kind === "loop") return [port(A, "bottom"), port(B, "bottom"), 92];
+    return [port(A, "right"), port(B, "left"), Math.max(40, Math.abs(B.x - A.x) * .45)];
+  }
+  if (kind === "loop") return [port(A, "left"), port(B, "left"), 40];
+  if (kind === "side") {  // drop down beside the labels, then enter under the label text
+    const a = port(A, "bottom"), b = [B.x + B.w, B.y + B.h - 6, 1, 0];
+    return [a, b, (b[1] - a[1]) * .9, (a[0] - b[0]) * .6];
+  }
+  return [port(A, "bottom"), port(B, "top"), 30];
+}
+function edgeState(from, to, kind, s) {
+  if (kind === "loop") {
+    const active = s.phase === "running" && (s.completed_steps || []).includes(9) && [7, 8].includes(s.stage);
+    return "loop" + (active ? " active" : "");
+  }
+  const st = nodeStatus(to, s);
+  if (st === "current" && s.phase === "running") return "active";
+  if (st === "done" || st === "current" || st === "failed") return "done";
+  if (from === "library" && pdfCount) return "done";
+  return "";
 }
 
-/* ---------- PDF library & researcher review ---------- */
+function renderFlow(s) {
+  geo = geometry();
+  const g = geo, board = $("board");
+  board.classList.toggle("vertical", g.vertical);
+  board.style.width = g.width + "px"; board.style.height = g.height + "px";
+  const svg = $("edges"); svg.setAttribute("width", g.width); svg.setAttribute("height", g.height);
+  if (followActive && ["planning", "approve", "running", "failed"].includes(s.phase) && s.stage) selected = s.stage;
+  let paths = "", tags = "";
+  for (const [from, to, kind] of EDGES) {
+    const [a, b, d, d2] = edgeEnds(from, to, kind, g), p = edgePath(a, b, d, d2);
+    paths += `<path class="edge ${edgeState(from, to, kind, s)}" d="${p.d}"/>`;
+    if (kind === "approve") tags += `<span class="edge-tag ${s.phase === "approve" ? "wait" : ""}" style="${g.vertical ? `left:${p.mid[0] + 14}px;top:${p.mid[1]}px;transform:translate(0,-50%)` : `left:${p.mid[0]}px;top:${p.mid[1] - 58}px`}">${esc(t("approveTag"))}</span>`;
+    if (kind === "loop" && !g.vertical) tags += `<span class="edge-tag" style="left:${p.mid[0]}px;top:${p.mid[1] - 2}px">${esc(t("loopTag", {n: SETTINGS.revision_rounds ?? 3}))}</span>`;
+  }
+  svg.innerHTML = paths;
+  const focused = board.contains(document.activeElement) ? document.activeElement.dataset.node : null;
+  const nodes = NODES.map(n => {
+    const p = g.pos[n.id], st = nodeStatus(n.id, s);
+    const step = typeof n.id === "number" ? stepInfo(n.id, s) : null;
+    const name = n.id === "topic" ? t("topicNode") : n.id === "library" ? t("library") : step?.name || "";
+    const ai = step && (step.model_slots || []).length;
+    const stLabel = st === "current" && s.phase === "approve" ? t("st_waiting") : t("st_" + st);
+    const kindCls = n.kind === "start" ? "start" : n.kind === "end" ? "end" : "";
+    const ports = (g.vertical ? `<span class="port" style="left:${p.w / 2 - 5}px;top:-6px"></span><span class="port" style="left:${p.w / 2 - 5}px;bottom:-6px"></span>`
+                               : `<span class="port" style="left:-6px;top:${p.h / 2 - 5}px"></span><span class="port" style="right:-6px;top:${p.h / 2 - 5}px"></span>`);
+    const badge = ["done", "current", "failed"].includes(st) ? `<span class="badge ${st}">${st === "done" ? "✓" : st === "failed" ? "!" : ""}</span>` : "";
+    const label = g.vertical ? `left:${p.x + p.w + 14}px;top:${p.y + 6}px;width:${n.row === 1 ? 168 : 74}px` : `left:${p.x + p.w / 2 - 58}px;top:${p.y + p.h + 10}px;width:116px`;
+    const labelV = n.row !== 0 ? label : g.vertical ? `left:${p.x - 9}px;top:${p.y - 40}px;width:74px;text-align:center`
+      : `left:${p.x - 136}px;top:${p.y + p.h / 2 - 17}px;width:122px;text-align:right`;
+    return `<button type="button" class="node ${kindCls} ${st === "optional" ? "optional" : st} ${selected === n.id ? "selected" : ""}" data-node="${n.id}"
+        style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" aria-pressed="${selected === n.id}"
+        aria-label="${esc(name)}: ${esc(stLabel)}">${ai && !g.vertical ? '<span class="ai-tag">AI</span>' : ""}${svgIcon(n.id)}${ports}${badge}</button>
+      <div class="label" style="${labelV}"><b>${typeof n.id === "number" ? n.id + ". " : ""}${esc(name)}</b><i class="mono" title="${esc(subline(n.id, s))}">${esc(subline(n.id, s))}</i></div>`;
+  }).join("");
+  board.querySelectorAll(".node,.label,.edge-tag").forEach(el => el.remove());
+  board.insertAdjacentHTML("beforeend", nodes + tags);
+  board.querySelectorAll("[data-node]").forEach(el => el.onclick = () => selectNode(el.dataset.node, true));
+  if (focused) board.querySelector(`[data-node="${focused}"]`)?.focus({preventScroll: true});
+  layoutFlow(false);
+  renderInspector(s);
+}
+function layoutFlow(refit) {
+  if (!geo) return;
+  const vp = $("viewport"), vertical = vp.clientWidth < 720;
+  if (vertical !== geo.vertical && latest) { renderFlow(latest); return; }
+  if (refit || !userZoomed) zoom = Math.max(.82, Math.min(1, (vp.clientWidth - 8) / geo.width));
+  $("board").style.transform = `scale(${zoom})`;
+  vp.style.height = Math.min(geo.vertical ? 620 : 520, Math.ceil(geo.height * zoom) + 16) + "px";
+  $("spacer").style.width = geo.width * zoom + "px"; $("spacer").style.height = geo.height * zoom + "px";
+}
+function setZoom(z) { userZoomed = true; zoom = Math.max(.4, Math.min(1.6, z)); layoutFlow(false); }
+$("zoomIn").onclick = () => setZoom(zoom + .1);
+$("zoomOut").onclick = () => setZoom(zoom - .1);
+$("zoomFit").onclick = () => { userZoomed = false; layoutFlow(true); };
+window.addEventListener("resize", () => layoutFlow(false));
+// drag the empty canvas to pan
+(() => {
+  const vp = $("viewport"); let start = null;
+  vp.addEventListener("pointerdown", e => { if (e.target.closest(".node") || e.pointerType === "touch") return; start = [e.clientX, e.clientY, vp.scrollLeft, vp.scrollTop]; vp.classList.add("dragging"); });
+  window.addEventListener("pointermove", e => { if (!start) return; vp.scrollLeft = start[2] - (e.clientX - start[0]); vp.scrollTop = start[3] - (e.clientY - start[1]); });
+  window.addEventListener("pointerup", () => { start = null; vp.classList.remove("dragging"); });
+})();
+
+function selectNode(id, user) {
+  id = /^\d+$/.test(String(id)) ? Number(id) : id;
+  if (user) followActive = selected === id ? followActive : false;
+  selected = id;
+  $("flowWrap").classList.remove("closed");
+  if (latest) renderFlow(latest);
+  if (user && window.innerWidth <= 1100) $("inspector").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+function renderInspector(s) {
+  const el = $("inspector");
+  if (selected === null) { $("flowWrap").classList.add("closed"); el.innerHTML = ""; return; }
+  const id = selected, st = nodeStatus(id, s);
+  const stLabel = st === "current" && s.phase === "approve" ? t("st_waiting") : t("st_" + st);
+  const head = (name, sub) => `<div class="insp-head"><div class="insp-icon">${svgIcon(id, "")}</div><div><strong>${esc(name)}</strong><small>${esc(sub)}</small></div>
+    <button class="icon-btn insp-close" id="inspClose" aria-label="${esc(t("close"))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div style="margin-top:10px"><span class="status-chip ${st}">${esc(stLabel)}</span></div><div class="insp-body">`;
+  let html = "";
+  if (id === "topic") {
+    html = head(t("topicNode"), "") + `<div class="insp-sec"><p>${esc(s.topic || t("topicNone"))}</p>${s.plan?.title ? `<p class="hint" style="margin-top:6px">${esc(s.plan.title)}</p>` : ""}
+      <div class="actions"><button class="btn small" data-jump="research">${esc(t("edit"))}</button></div></div>`;
+  } else if (id === "library") {
+    html = head(t("library"), t("st_optional")) + `<div class="insp-sec"><p>${esc(pdfCount ? t("pdfCount", {n: pdfCount}) : t("noPdfs"))}</p>
+      <ul class="checks" id="inspPdfs"></ul><div class="actions"><button class="btn small" data-jump="research">${esc(t("managePdfs"))}</button></div></div>`;
+  } else {
+    const step = stepInfo(id, s);
+    const usage = (s.usage_by_stage || {})[id] || {};
+    const demo = (s.pipeline?.[0]?.model || "").startsWith("Demo simulator");
+    html = head(step.name, `${t("stage")} ${id} ${t("of")} 10`) +
+      `<div class="insp-sec"><h3>${esc(t("whatHappens"))}</h3><p>${esc(step.summary)}</p></div>
+       <div class="insp-sec"><div class="kv"><span>${esc(t("input"))}</span><b>${esc(step.input)}</b></div><div class="kv"><span>${esc(t("output"))}</span><b>${esc(step.output)}</b></div></div>`;
+    if (id === 2) {
+      const typeText = {any: t("wtAny"), article: t("wtArticle"), review: t("wtReview"), article_review: t("wtBoth")}[SETTINGS.work_type] || SETTINGS.work_type;
+      html += `<div class="insp-sec"><h3>${esc(t("filters"))}</h3>
+        <div class="kv"><span>${esc(t("years"))}</span><b>${esc(SETTINGS.from_year)}–${esc(SETTINGS.to_year)}</b></div>
+        <div class="kv"><span>${esc(t("type"))}</span><b>${esc(typeText)}</b></div>
+        <div class="kv"><span>${esc(t("oa"))}</span><b>${esc(SETTINGS.open_access_only ? t("yes") : t("no"))}</b></div>
+        <div class="kv"><span>${esc(t("minCitShort"))}</span><b>${esc(SETTINGS.min_citations)}</b></div>
+        <div class="kv"><span>${esc(t("candShort"))}</span><b>${esc(SETTINGS.candidates)}</b></div>
+        <div class="actions"><button class="btn small" data-jump="research" ${["planning", "running"].includes(s.phase) ? "disabled" : ""}>${esc(t("edit"))}</button></div></div>`;
+    }
+    const slots = step.model_slots || [];
+    if (slots.length) {
+      html += `<div class="insp-sec"><h3>${esc(t("modelFor"))}</h3>` + slots.map(slot => `
+        <div class="slot"><label for="slot-${slot.key}">${esc(slot.label)} <small class="mono">${slot.key}</small></label>
+          <div class="row"><input id="slot-${slot.key}" class="mono" type="text" list="modelList" spellcheck="false" value="${esc(slot.value)}" placeholder="${esc(t("inherit"))}" ${["planning", "running"].includes(s.phase) ? "disabled" : ""}>
+          <button class="btn small" data-save-slot="${slot.key}" ${["planning", "running"].includes(s.phase) ? "disabled" : ""}>${esc(t("save"))}</button></div>
+          <div class="eff">${esc(t("uses"))} <span class="mono">${esc(slot.effective)}</span>${slot.value ? "" : ` (${esc(t("inheritsFrom"))} ${esc(slot.inherits)})`}</div></div>`).join("") +
+        (demo ? `<p class="hint" style="margin-top:10px">${esc(t("demoModelNote"))}</p>` : "") + `<div id="slotMsg"></div></div>`;
+    } else {
+      html += `<div class="insp-sec"><h3>${esc(t("service"))}</h3><p class="mono">${esc(step.model || "")}</p></div>`;
+    }
+    if (slots.length) html += `<div class="insp-sec"><h3>${esc(t("usage"))}</h3>
+      <div class="kv"><span>${esc(t("responses"))}</span><b>${usage.calls ?? "—"}</b></div>
+      <div class="kv"><span>${esc(t("tokens"))}</span><b>${usage.has_tokens ? Number(usage.total_tokens || (usage.prompt_tokens + usage.completion_tokens)).toLocaleString() : esc(t("notReported"))}</b></div>
+      <div class="kv"><span>${esc(t("cost"))}</span><b>${usage.has_cost ? "$" + Number(usage.cost).toFixed(5) : esc(t("notReported"))}</b></div>
+      ${liveModel(step, s) && st !== "pending" ? `<p class="hint mono" style="margin-top:8px">${esc(liveModel(step, s))}</p>` : ""}</div>`;
+  }
+  html += "</div>";
+  // Keep a half-typed model value when the poller re-renders the panel.
+  const typing = el.contains(document.activeElement) && document.activeElement.tagName === "INPUT" ? [document.activeElement.id, document.activeElement.value] : null;
+  el.innerHTML = html;
+  if (typing) { const input = $(typing[0]); if (input) { input.value = typing[1]; input.focus(); } }
+  $("inspClose").onclick = () => { selected = null; followActive = false; renderFlow(latest); };
+  el.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => show(b.dataset.jump));
+  el.querySelectorAll("[data-save-slot]").forEach(b => b.onclick = async () => {
+    const key = b.dataset.saveSlot, value = $("slot-" + key).value.trim();
+    try { fillSettings(await api("/api/settings", {[fieldOf(key)]: value})); await refreshStatus(); note("slotMsg", t("saved"), true); }
+    catch (e) { note("slotMsg", e.message, false); }
+  });
+  if (id === "library") renderLibraryList($("inspPdfs"));
+}
+
+/* ---------------- PDFs ---------------- */
+let PDFS = [];
 async function refreshLibrary() {
-  const r = await api('/api/library');
-  const list = r.pdfs || [];
-  $("uploadedPdfs").innerHTML = list.length ? list.map(x =>
-    `<li><b>${esc(x.doi)}</b> — ${esc(x.filename)} (${x.pages} pages)</li>`).join('') :
-    '<li>No PDFs in the source library yet.</li>';
+  const r = await api("/api/library"); PDFS = r.pdfs || []; pdfCount = PDFS.length;
+  renderLibraryList($("uploadedPdfs"));
+  if (latest) renderFlow(latest);
+}
+function renderLibraryList(target) {
+  if (!target) return;
+  target.innerHTML = PDFS.length ? PDFS.map(x => `<li><b class="mono">${esc(x.doi)}</b><br><small>${esc(x.filename)} (${x.pages} ${esc(t("pages"))})</small></li>`).join("") : `<li>${esc(t("noPdfsList"))}</li>`;
 }
 $("uploadPdfBtn").onclick = async () => {
   const file = $("paperFile").files[0], doi = $("paperDoi").value.trim();
-  if (!file || !doi) return note("pdfMsg", "Choose a PDF and enter its DOI.", false);
-  if (file.size > 12 * 1024 * 1024) return note("pdfMsg", "Maximum file size: 12 MB.", false);
+  if (!file || !doi) return note("pdfMsg", t("choosePdf"), false);
+  if (file.size > 12 * 1024 * 1024) return note("pdfMsg", t("pdfTooBig"), false);
   $("uploadPdfBtn").disabled = true;
   try {
-    const res = await fetch('/api/upload-pdf', {method: 'POST',
-      headers: {'Content-Type': 'application/pdf', 'X-Paper-DOI': doi, 'X-Filename': encodeURIComponent(file.name.slice(0,140))},
-      body: await file.arrayBuffer()});
+    const res = await fetch("/api/upload-pdf", {method: "POST", headers: {"Content-Type": "application/pdf", "X-Paper-DOI": doi,
+      "X-Filename": encodeURIComponent(file.name.slice(0, 140))}, body: await file.arrayBuffer()});
     const r = await res.json();
-    if (!res.ok) throw Error(r.error || 'Import failed');
-    note('pdfMsg', `PDF linked by you to DOI ${r.pdf.doi}; ${r.pdf.pages} pages stored on the server. Check that the DOI matches the PDF contents.`, true);
+    if (!res.ok) throw Error(r.error || "Import failed");
+    note("pdfMsg", t("pdfLinked", {doi: r.pdf.doi, p: r.pdf.pages}), true);
     await refreshLibrary();
-  } catch (error) { note('pdfMsg', error.message, false); }
-  finally { $("uploadPdfBtn").disabled = false; }
+  } catch (error) { note("pdfMsg", error.message, false); } finally { $("uploadPdfBtn").disabled = false; }
 };
+
+/* ---------------- results ---------------- */
+function markdown(md) {
+  return esc(md).split(/\n\s*\n/).map(block => {
+    let b = block.trim().replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\[(P\d+(?:\s*[;,]\s*P\d+)*)\]/g, '<span class="cite">$1</span>');
+    if (/^#{1,6}\s/.test(b)) return `<h3>${b.replace(/^#{1,6}\s/, "")}</h3>`;
+    if (/^[-*]\s/m.test(b)) return "<ul>" + b.split(/\n/).map(l => `<li>${l.replace(/^[-*]\s/, "")}</li>`).join("") + "</ul>";
+    if (/^&gt;\s?/.test(b)) return `<div class="notice info">${b.replace(/^&gt;\s?/, "")}</div>`;
+    return `<p>${b.replace(/\n/g, " ")}</p>`;
+  }).join("");
+}
+async function loadResults() {
+  const r = await api("/api/results");
+  const has = r.draft || (r.matrix && r.matrix.length);
+  $("emptyResults").classList.toggle("hidden", !!has); $("resultView").classList.toggle("hidden", !has);
+  if (!has) return;
+  const rv = r.review, ev = r.evidence;
+  $("scoreNum").textContent = rv ? `${rv.score}/10` : "-";
+  $("scoreNote").textContent = rv ? (rv.evidence_gate_passed && rv.scope_gate_passed ? t("passed") : t("provisional"))
+    + (ev ? t("supported", {a: ev.supported, b: ev.total}) : "") + (rv.from_round ? t("round", {n: rv.from_round}) : "") : "";
+  const fixes = rv ? (rv.fixes || rv.problems || []) : [];
+  $("reviewNotes").innerHTML = rv ? `
+    ${rv.scores ? `<div class="bars">${Object.entries(rv.scores).map(([k, v]) => `<div class="bar"><span>${esc(CRIT[LANG][k] || k)}</span><i><b style="width:${v * 10}%"></b></i><em>${v}</em></div>`).join("")}</div>` : ""}
+    ${rv.strengths?.length ? `<p><b>${esc(t("strengths"))}</b></p><ul>${rv.strengths.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    ${fixes.length ? `<p><b>${esc(t("fixes"))}</b></p><ul>${fixes.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}` : "";
+  if (r.redteam) {
+    const f = r.redteam.findings || [];
+    $("reviewNotes").innerHTML += `<p><b>${esc(t("redteam"))}</b>: ${esc(t("findings", {n: f.length}))}${r.redteam.error ? esc(t("rtIncomplete")) : ""}. ${esc(t("rtNote"))}</p>` +
+      (f.length ? `<ul>${f.map(x => `<li><b>${esc(x.severity)}</b>: ${esc(x.issue)} — ${esc(x.action)}</li>`).join("")}</ul>` : "");
+  }
+  $("draftView").innerHTML = markdown(r.draft || t("noDraft"));
+  renderHumanChecks(r);
+  const cols = [["id", "ID"], ["authors", LANG === "id" ? "Penulis" : "Authors"], ["year", LANG === "id" ? "Tahun" : "Year"], ["title", LANG === "id" ? "Judul" : "Title"],
+    ["method", LANG === "id" ? "Metode" : "Method"], ["main_finding", LANG === "id" ? "Temuan utama" : "Main finding"], ["limitation", LANG === "id" ? "Keterbatasan" : "Limitations"],
+    ["source_type", LANG === "id" ? "Jenis sumber" : "Source type"], ["source_page", LANG === "id" ? "Halaman (0 = abstrak)" : "Page (0 = abstract)"],
+    ["evidence_quote", LANG === "id" ? "Kutipan bukti" : "Evidence quote"], ["quote_verified", LANG === "id" ? "Kutipan cocok?" : "Quote matched?"]];
+  $("matrix").innerHTML = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join("")}</tr>` + (r.matrix || []).map(row => `<tr>${cols.map(c => `<td>${esc(row[c[0]])}</td>`).join("")}</tr>`).join("");
+  $("files").innerHTML = (r.files || []).filter(f => /\.(md|csv|json)$|^log\.txt$/.test(f)).map(f =>
+    `<a href="/files/${encodeURIComponent(r.folder_name)}/${encodeURIComponent(f)}">${esc(f)}</a>`).join("");
+}
 function renderHumanChecks(r) {
-  const v = r.verification || {papers:{}, checks:{}};
-  const progress = r.verification_progress || {done:0,total:0};
-  $("humanProgress").textContent = `Recorded: ${progress.done}/${progress.total} checks. This records your review, not independent validation.`;
-  const rows = r.matrix || [];
-  $("paperChecks").innerHTML = rows.map(item => {
+  const v = r.verification || {papers: {}, checks: {}}, progress = r.verification_progress || {done: 0, total: 0};
+  $("humanProgress").textContent = t("recorded", {a: progress.done, b: progress.total});
+  $("paperChecks").innerHTML = (r.matrix || []).map(item => {
     const flags = v.papers?.[item.id] || {};
-    return `<div style="padding:9px 0;border-bottom:1px solid var(--line)">
-      <b>${esc(item.id)}: ${esc(item.title)}</b><small> (${esc(item.source_type || 'abstract_only')})</small>
-      <label style="display:block"><input class="hcheck" type="checkbox" data-paper="${esc(item.id)}" data-field="read_full_text" ${flags.read_full_text ? 'checked' : ''}> I have read the full source</label>
-      <label style="display:block"><input class="hcheck" type="checkbox" data-paper="${esc(item.id)}" data-field="claims_checked" ${flags.claims_checked ? 'checked' : ''}> I have checked the claims, methods, and quotations</label></div>`;
-  }).join('');
-  const fields = {methods_checked:'I checked the methods against the original data or protocol',
-                  results_checked:'I checked all results and figures',
-                  journal_policy_checked:'I reviewed the journal or institution policy',
-                  ai_disclosure_checked:'I reviewed and edited the AI disclosure'};
+    return `<div style="padding:9px 0;border-bottom:1px solid var(--line)"><b>${esc(item.id)}: ${esc(item.title)}</b> <small class="hint">(${esc(item.source_type || "abstract_only")})</small>
+      <label class="check" style="margin-top:6px"><input class="hcheck" type="checkbox" data-paper="${esc(item.id)}" data-field="read_full_text" ${flags.read_full_text ? "checked" : ""}><span>${esc(t("readFull"))}</span></label>
+      <label class="check" style="margin-top:6px"><input class="hcheck" type="checkbox" data-paper="${esc(item.id)}" data-field="claims_checked" ${flags.claims_checked ? "checked" : ""}><span>${esc(t("claimsChecked"))}</span></label></div>`;
+  }).join("");
+  const fields = {methods_checked: "gMethods", results_checked: "gResults", journal_policy_checked: "gPolicy", ai_disclosure_checked: "gDisclosure"};
   $("globalChecks").innerHTML = Object.entries(fields).map(([key, label]) =>
-    `<label style="display:block"><input type="checkbox" class="gcheck" data-field="${key}" ${v.checks?.[key] ? 'checked' : ''}> ${esc(label)}</label>`).join('');
-  $("verificationNotes").value = v.notes || '';
+    `<label class="check"><input type="checkbox" class="gcheck" data-field="${key}" ${v.checks?.[key] ? "checked" : ""}><span>${esc(t(label))}</span></label>`).join("");
+  $("verificationNotes").value = v.notes || "";
 }
 $("saveVerification").onclick = async () => {
   const papers = {}, checks = {};
-  document.querySelectorAll('.hcheck').forEach(el => {
-    if (!papers[el.dataset.paper]) papers[el.dataset.paper] = {};
-    papers[el.dataset.paper][el.dataset.field] = el.checked;
-  });
-  document.querySelectorAll('.gcheck').forEach(el => checks[el.dataset.field] = el.checked);
-  try {
-    const r = await api('/api/verification', {papers, checks, notes:$("verificationNotes").value});
-    note('verificationMsg', `Checklist saved: ${r.progress.done}/${r.progress.total}.`, true);
-  } catch(error) { note('verificationMsg', error.message, false); }
+  document.querySelectorAll(".hcheck").forEach(el => { (papers[el.dataset.paper] ||= {})[el.dataset.field] = el.checked; });
+  document.querySelectorAll(".gcheck").forEach(el => checks[el.dataset.field] = el.checked);
+  try { const r = await api("/api/verification", {papers, checks, notes: $("verificationNotes").value}); note("verificationMsg", t("checklistSaved", {a: r.progress.done, b: r.progress.total}), true); }
+  catch (e) { note("verificationMsg", e.message, false); }
 };
 
-/* ---------- Start ---------- */
+/* ---------------- start ---------------- */
 (async () => {
-  const s = await loadSettings();
+  applyLang();
+  await loadSettings().catch(() => {});
   const status = await api("/api/status");
-  show('pipeline');
+  selected = ["planning", "approve", "running", "failed"].includes(status.phase) ? status.stage : 1;
   render(status);
-  if (["planning","running"].includes(status.phase)) startPolling();
+  if (["planning", "running"].includes(status.phase)) startPolling();
   refreshLibrary().catch(() => {});
 })();
-/* Stage details and navigation */
-const STEP_ICONS = ['◇','⌕','▤','▽','▥','◈','≡','⬡','◎','↥'];
-let selectedStep = 1, manuallySelected = false, latestStatus = null, currentView = 'pipeline';
-function showPipelineStatus(view){
-  currentView = view;
-  document.querySelector('.app-shell').classList.toggle('form-view', view !== 'pipeline');
-  $('pipelinePage').classList.toggle('hidden', view !== 'pipeline');
-  $('formsContainer').classList.toggle('hidden', view === 'pipeline');
-  for(const id of ['setup','research','results']) $(id).classList.toggle('hidden', id !== view);
-  document.querySelectorAll('[data-panel]').forEach(b => b.classList.toggle('active', b.dataset.panel === view));
-  if(view === 'results') loadResults();
-}
-function safeStatus(step, s){
-  if(s.phase === 'failed' && step === s.stage) return 'failed';
-  if((s.phase === 'planning' || s.phase === 'approve' || s.phase === 'running') && step === s.stage) return 'current';
-  if(s.phase === 'done' || (s.completed_steps||[]).includes(step)) return 'done';
-  return 'pending';
-}
-function modelForStep(step,s){
-  const recent = (s.events||[]).filter(e=>e.kind==='model' && e.step===step.id).slice(-1)[0];
-  return recent?.model || step.model || step.engine;
-}
-function setSelectedStep(id,user=false){
-  selectedStep=id;
-  if(user) manuallySelected=true;
-  if(latestStatus) renderPipeline(latestStatus);
-}
-function shortModel(full){return full.length > 26 ? full.slice(0,24)+'…' : full}
-function renderPipeline(s){
-  latestStatus = s;
-  const steps = s.pipeline||[];
-  if(!manuallySelected && s.stage >=1 && s.stage <=10) selectedStep=s.stage;
-  const graph=$('pipelineGraph');
-  const focusedStep = graph.contains(document.activeElement) ? document.activeElement.dataset.step : null;
-  graph.innerHTML=steps.map((step,i)=>{
-    const status=safeStatus(step.id,s), model=modelForStep(step,s);
-    const statusLabel={done:'Completed',current:s.phase==='approve'?'Awaiting approval':'Running',failed:'Failed',pending:'Not started'}[status];
-    return `<button type="button" class="node ${status} ${selectedStep===step.id?'selected':''}" data-step="${step.id}" aria-pressed="${selectedStep===step.id}" aria-label="Stage ${step.id}: ${esc(step.name)}, ${statusLabel}">
-      <span class="node-number">${step.id}</span><span class="node-state">${status==='done'?'✓':status==='current'?'●':status==='failed'?'!':'○'}</span>
-      <span class="node-icon" aria-hidden="true">${STEP_ICONS[i]}</span><strong>${esc(step.name)}</strong><span class="description">${esc(step.summary)}</span>
-      <span class="model-chip" title="${esc(model)}">${esc(shortModel(model))}</span></button>`
-  }).join('');
-  graph.querySelectorAll('[data-step]').forEach(el=>el.onclick=()=>setSelectedStep(Number(el.dataset.step),true));
-  if (focusedStep) graph.querySelector(`[data-step="${focusedStep}"]`)?.focus({preventScroll:true});
-  const selected = steps.find(x=>x.id===selectedStep);
-  if(selected){
-    const status=safeStatus(selected.id,s);
-    const labels={current:s.phase==='approve'?'Awaiting approval':'Running',done:'Stage completed',failed:'Failed',pending:'Not started'};
-    $('detailIcon').textContent=STEP_ICONS[selected.id-1];
-    $('detailName').textContent=selected.name;
-    $('detailCounter').textContent=`Stage ${selected.id} of 10`;
-    $('detailStatus').textContent=labels[status] || 'Not started';
-    $('detailDesc').textContent=selected.summary;
-    $('detailInput').textContent=selected.input;
-    $('detailOutput').textContent=selected.output;
-    $('detailModel').textContent=modelForStep(selected,s);
-    const usage=(s.usage_by_stage||{})[selected.id] || {};
-    $('detailCalls').textContent=usage.calls === undefined ? '—' : String(usage.calls);
-    $('detailTokens').textContent=usage.has_tokens ? (usage.total_tokens || (usage.prompt_tokens+usage.completion_tokens)).toLocaleString('en-US') : 'Not reported';
-    $('detailCost').textContent=usage.has_cost ? '$'+Number(usage.cost).toFixed(5) : 'Not reported';
-    $('detailSince').textContent=status==='current' ? (s.stage_started?.replace('T',' ')||'—') : '—';
-  }
-  const events=(s.events||[]).slice(-35).reverse();
-  $('activityList').innerHTML=events.length ? events.map(e=>
-    `<div class="activity-row"><span class="dot ${esc(e.kind)}"></span><time>${esc(e.time)}</time><div><b>${esc(e.message)}</b>${e.model?`<br><em>${esc(e.model)}</em>`:''}</div></div>`).join('') :
-    '<div class="activity-empty">No activity yet. Create a research plan to begin.</div>';
-  const phaseText={idle:'Not started',planning:'Preparing plan',approve:'Awaiting approval',running:'Running',done:'Draft available',failed:'Run failed'};
-  $('projectStatus').textContent=phaseText[s.phase] || s.phase;
-  $('projectName').textContent=s.plan?.title || s.topic || 'No research topic yet';
-  $('sidebarStage').textContent=String((s.completed_steps||[]).length) + '/10';
-  $('sidebarCalls').textContent=String(s.requests||0);
-  $('sidebarMode').textContent=(steps[0]?.model||'').startsWith('Demo simulator') ? 'Demo mode · offline' : 'Live API mode';
-  $('modeLabel').textContent=$('sidebarMode').textContent;
-  $('liveMark').innerHTML='<i></i>'+esc(phaseText[s.phase]||s.phase);
-  const next = {
-    idle:['Start with a research question','Enter a topic and review the plan before searching. Demo mode uses fictional sample data.','Enter a research topic','research'],
-    planning:['Preparing your research plan','Review the title, questions, and scope when the plan is ready.','View research','research'],
-    approve:['Your plan is ready to review','Check the scope and search terms before starting the search.','Review plan','research'],
-    running:['Research is running','Follow the stages and run log below. Your draft will be available when the run finishes.','View progress','research'],
-    done:['Your draft and evidence are ready','Review the audit findings and original sources before using the draft.','Review draft & evidence','results'],
-    failed:['Research stopped','Read the error message and run log before trying again.','View details','research']
-  }[s.phase];
-  if(next && s.phase==='idle' && !(steps[0]?.model||'').startsWith('Demo simulator')) next[1]='Enter a topic and review the plan before searching. Live mode uses provider services and quotas.';
-  if(next){$('nextTitle').textContent=next[0];$('nextDescription').textContent=next[1];$('nextActionBtn').textContent=next[2];$('nextActionBtn').onclick=()=>show(next[3]);}
-  $('startResearch').textContent=s.phase==='approve'?'Review plan':s.phase==='idle'?'Enter a research topic':'Open research';
-  $('newResearch').disabled=['planning','running'].includes(s.phase);
-  $('openResultsShortcut').disabled=s.phase!=='done';
-  // Approval and errors are actionable, not merely decorative status badges.
-  $('approvalShortcut').classList.toggle('hidden',s.phase!=='approve');
-  $('errorBanner').classList.toggle('hidden',s.phase!=='failed');
-  $('errorBanner').textContent=s.phase==='failed'?s.error||'The run failed. Check the run log.':'';
-}
-document.querySelectorAll('[data-panel]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.panel)));
-$('liveStepBtn').onclick=()=>{manuallySelected=false;if(latestStatus)setSelectedStep(latestStatus.stage||1)};
-$('startResearch').onclick=()=>show('research');
-$('newResearch').onclick=async()=>{
-  if(latestStatus?.phase==='idle'){show('research');return}
-  await api('/api/reset',{});show('research');render(await api('/api/status'));
-};
-$('approvalShortcut').onclick=()=>show('research');
-$('openResultsShortcut').onclick=()=>show('results');
-$('settingsShortcut').onclick=()=>show('setup');
 </script>
 </body>
 </html>

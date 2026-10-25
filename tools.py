@@ -53,6 +53,35 @@ def _rebuild_abstract(inverted_index):
     return " ".join(word for _, word in sorted(positions))
 
 
+WORK_TYPE_FILTERS = {"article": "article", "review": "review", "article_review": "article|review"}
+
+
+def openalex_filter(settings):
+    """Build the OpenAlex filter string from the research settings (AND-combined)."""
+    parts = [f"from_publication_date:{int(settings['FROM_YEAR'])}-01-01"]
+    if settings.get("TO_YEAR"):
+        parts.append(f"to_publication_date:{int(settings['TO_YEAR'])}-12-31")
+    work_type = WORK_TYPE_FILTERS.get(settings.get("WORK_TYPE", "any"))
+    if work_type:
+        parts.append(f"type:{work_type}")
+    if settings.get("OPEN_ACCESS_ONLY"):
+        parts.append("is_oa:true")
+    if int(settings.get("MIN_CITATIONS") or 0) > 0:
+        parts.append(f"cited_by_count:>{int(settings['MIN_CITATIONS']) - 1}")
+    return ",".join(parts)
+
+
+def within_filters(paper, settings):
+    """Local safety net: drop records outside the requested year range or citations."""
+    year = paper.get("year")
+    if isinstance(year, int):
+        if year < int(settings.get("FROM_YEAR") or 0):
+            return False
+        if settings.get("TO_YEAR") and year > int(settings["TO_YEAR"]):
+            return False
+    return int(paper.get("cited_by") or 0) >= int(settings.get("MIN_CITATIONS") or 0)
+
+
 def search_papers(keyword, settings, how_many=8):
     """Search OpenAlex for papers matching `keyword`. Returns a list of paper dictionaries."""
     if settings["DEMO_MODE"]:
@@ -64,7 +93,7 @@ def search_papers(keyword, settings, how_many=8):
     params = {
         "search": keyword,
         "per_page": how_many,
-        "filter": f"publication_year:>{settings['FROM_YEAR'] - 1}",
+        "filter": openalex_filter(settings),
     }
     if settings.get("OPENALEX_API_KEY"):
         params["api_key"] = settings["OPENALEX_API_KEY"]  # free key = 10x bigger daily budget

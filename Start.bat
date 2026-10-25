@@ -7,6 +7,8 @@ if errorlevel 1 (
   echo  Python is not installed.
   echo  Download it from python.org/downloads and tick "Add Python to PATH" during installation.
   echo.
+  echo  Python belum terpasang. Unduh dari python.org/downloads dan centang "Add Python to PATH".
+  echo.
   pause
   exit /b
 )

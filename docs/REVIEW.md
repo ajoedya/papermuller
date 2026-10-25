@@ -167,3 +167,18 @@ activity events, PDF validation errors, server errors, review checklists, and
 exported template instructions. Draft output language remains an independent
 setting: new settings default to English, and existing preferences are preserved.
 The English-interface regression test also runs with Indonesian draft settings.
+
+## Addendum: flowchart redesign (same day)
+
+At the owner's request the stage list was replaced by a node flowchart modelled
+on workflow-builder canvases (dark dotted canvas, icon nodes, curved
+connectors). This reverses the earlier move to a paper-coloured list, so the
+following safeguards were kept to preserve readability:
+
+- Node states still come only from backend events; nothing is animated without
+  a matching state change, and animation stops under `prefers-reduced-motion`.
+- Every node is a real button with a text label and status in its accessible
+  name; a light theme is one click away.
+- Phones get a vertical graph rather than a shrunken horizontal one.
+- Model choice per stage moved into the node panel, next to the stage it
+  affects, with the inherited model shown when a slot is blank.

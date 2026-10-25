@@ -1,7 +1,7 @@
 """
 app.py  -  THE SIMPLE WEB INTERFACE
 ===================================
-Double-click "Mulai.bat" (or run:  python app.py ) and your browser opens
+Double-click "Start.bat" (or run:  python app.py ) and your browser opens
 a simple page where you can set keys, type a topic, approve the plan, and
 read the results. No terminal typing needed.
 
@@ -79,6 +79,83 @@ def read_settings():
         return harness.load_settings(), ""
     except (SystemExit, ValueError) as stop:
         return None, str(stop)
+
+
+# Fields the page may change: request field -> .env key. Values are checked by
+# harness.parse_settings before anything is written.
+TEXT_FIELDS = {"model": "MODEL", "language": "LANGUAGE", "email": "EMAIL",
+               "plan_model": "PLAN_MODEL", "screen_model": "SCREEN_MODEL",
+               "evidence_model": "EVIDENCE_MODEL", "outline_model": "OUTLINE_MODEL",
+               "writer_model": "WRITER_MODEL", "verifier_model": "VERIFIER_MODEL",
+               "review_model": "REVIEW_MODEL", "redteam_model": "REDTEAM_MODEL",
+               "from_year": "FROM_YEAR", "to_year": "TO_YEAR", "work_type": "WORK_TYPE",
+               "min_citations": "MIN_CITATIONS", "candidates": "CANDIDATES",
+               "max_papers": "MAX_PAPERS", "min_verified": "MIN_VERIFIED",
+               "revision_rounds": "REVISION_ROUNDS", "target": "TARGET_SCORE"}
+BOOL_FIELDS = {"demo": "DEMO_MODE", "open_access_only": "OPEN_ACCESS_ONLY"}
+RESEARCH_FIELDS = {"from_year", "to_year", "work_type", "open_access_only", "min_citations",
+                   "candidates", "max_papers", "min_verified", "revision_rounds", "target", "language"}
+MODEL_ID = re.compile(r"[A-Za-z0-9._:/@+\-]+(?:\s*,\s*[A-Za-z0-9._:/@+\-]+)*")
+
+
+def raw_env():
+    raw = {}
+    for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+        if "=" in line and not line.lstrip().startswith("#"):
+            k, v = line.split("=", 1)
+            raw[k.strip()] = v.strip().strip('"')
+    return raw
+
+
+def save_settings(data, allowed=None):
+    """Validate a partial settings update, then write only the changed keys."""
+    updates = {}
+    for field, key in TEXT_FIELDS.items():
+        if field in data and (allowed is None or field in allowed):
+            value = str(data[field] if data[field] is not None else "").strip()
+            if "\n" in value or "\r" in value or len(value) > 300:
+                raise ValueError("Invalid settings value.")
+            if key.endswith("MODEL") and value and not MODEL_ID.fullmatch(value):
+                raise ValueError(f"Invalid model ID for {key}. Use provider/model, comma-separated for fallbacks.")
+            updates[key] = value
+    for field, key in BOOL_FIELDS.items():
+        if field in data and (allowed is None or field in allowed):
+            updates[key] = "true" if data[field] else "false"
+    if allowed is None:  # API keys are only replaced when the user typed a new one
+        for field, key in (("openrouter_key", "OPENROUTER_API_KEY"), ("openalex_key", "OPENALEX_API_KEY")):
+            value = str(data.get(field, "") or "").strip()
+            if value:
+                if len(value) > 300 or any(c.isspace() for c in value):
+                    raise ValueError("Invalid API key format.")
+                updates[key] = value
+    merged = dict(raw_env(), **updates)
+    try:
+        harness.parse_settings(merged)
+    except ValueError as problem:
+        # A missing live key is reported, not blocking, so demo users can switch modes later.
+        if "OPENROUTER_API_KEY" not in str(problem):
+            raise
+    if updates:
+        update_env(updates)
+
+
+def public_settings():
+    raw = raw_env()
+    settings, problem = read_settings()
+    data = {"demo": raw.get("DEMO_MODE", "true").lower() == "true",
+            "has_openrouter_key": raw.get("OPENROUTER_API_KEY", "").startswith("sk-or-"),
+            "has_openalex_key": bool(raw.get("OPENALEX_API_KEY")),
+            "open_access_only": raw.get("OPEN_ACCESS_ONLY", "false").lower() == "true",
+            "problem": problem, "current_year": harness.CURRENT_YEAR}
+    for field, key in TEXT_FIELDS.items():
+        data[field] = raw.get(key, "")
+    if settings:  # show the effective defaults for blank numeric fields
+        for field in ("from_year", "to_year", "min_citations", "candidates", "max_papers",
+                      "min_verified", "revision_rounds", "work_type"):
+            data[field] = settings[TEXT_FIELDS[field]]
+        data["target"] = settings["TARGET_SCORE"]
+        data["model"] = settings["MODEL"]
+    return data
 
 
 # ---------------------------------------------------------------------------
@@ -324,24 +401,7 @@ class Handler(BaseHTTPRequestHandler):
             status["pipeline"] = pipeline.describe(settings or {"DEMO_MODE": True})
             return self.send(status)
         if self.path == "/api/settings":
-            settings, problem = read_settings()
-            raw = {}
-            for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
-                if "=" in line and not line.lstrip().startswith("#"):
-                    k, v = line.split("=", 1)
-                    raw[k.strip()] = v.strip()
-            return self.send({
-                "demo": raw.get("DEMO_MODE", "true").lower() == "true",
-                "has_openrouter_key": raw.get("OPENROUTER_API_KEY", "").startswith("sk-or-"),
-                "has_openalex_key": bool(raw.get("OPENALEX_API_KEY")),
-                "model": raw.get("MODEL", ""), "language": raw.get("LANGUAGE", "English"),
-                "writer_model": raw.get("WRITER_MODEL", ""),
-                "evidence_model": raw.get("EVIDENCE_MODEL", ""),
-                "verifier_model": raw.get("VERIFIER_MODEL", ""),
-                "review_model": raw.get("REVIEW_MODEL", ""),
-                "email": raw.get("EMAIL", ""), "problem": problem,
-                "target": raw.get("TARGET_SCORE", "8"),
-            })
+            return self.send(public_settings())
         if self.path == "/api/results":
             return self.send(read_results())
         if self.path.startswith("/files/"):
@@ -411,32 +471,17 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/settings":
             if STATE["phase"] in ("planning", "running"):
                 return self.send({"error": "Settings cannot be changed during a research run."}, 409)
-            updates = {"DEMO_MODE": "true" if data.get("demo") else "false",
-                       "MODEL": str(data.get("model", "openrouter/auto")).strip(),
-                       "WRITER_MODEL": str(data.get("writer_model", "")).strip(),
-                       "EVIDENCE_MODEL": str(data.get("evidence_model", "")).strip(),
-                       "VERIFIER_MODEL": str(data.get("verifier_model", "")).strip(),
-                       "REVIEW_MODEL": str(data.get("review_model", "")).strip(),
-                       "LANGUAGE": str(data.get("language", "English")).strip(),
-                       "EMAIL": str(data.get("email", "")).strip(),
-                       "TARGET_SCORE": str(data.get("target", "8"))}
             try:
-                target = float(updates["TARGET_SCORE"])
-                if not 1 <= target <= 10:
-                    raise ValueError()
-            except ValueError:
-                return self.send({"error": "The review threshold must be between 1 and 10."}, 400)
-            if any("\n" in v or "\r" in v or len(v) > 300 for v in updates.values()):
-                return self.send({"error": "Invalid settings value."}, 400)
-            # Keys are only replaced when the user typed a new one
-            for field, key in (("openrouter_key", "OPENROUTER_API_KEY"), ("openalex_key", "OPENALEX_API_KEY")):
-                value = str(data.get(field, "")).strip()
-                if value:
-                    if len(value) > 300 or any(c.isspace() for c in value):
-                        return self.send({"error": "Invalid API key format."}, 400)
-                    updates[key] = value
-            update_env(updates)
-            return self.send({"ok": True})
+                save_settings(data)
+            except ValueError as exc:
+                return self.send({"error": str(exc)[:250]}, 400)
+            return self.send(dict(public_settings(), ok=True))
+        if self.path == "/api/models":
+            # Public model catalogue; contacted only when the researcher asks for it.
+            try:
+                return self.send({"models": llm.list_models(data.get("free_only", True))})
+            except RuntimeError as exc:
+                return self.send({"error": str(exc)[:250]}, 502)
         if self.path == "/api/check":
             if STATE["phase"] in ("planning", "running"):
                 return self.send({"error": "A research run is already active."}, 409)
@@ -447,6 +492,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send({"error": "Enter a research topic."}, 400)
             if STATE["phase"] not in ("idle", "failed", "done"):
                 return self.send({"error": "Finish or reset the current plan before starting another."}, 409)
+            if isinstance(data.get("research"), dict):
+                try:
+                    save_settings(data["research"], allowed=RESEARCH_FIELDS)
+                except ValueError as exc:
+                    return self.send({"error": str(exc)[:250]}, 400)
             llm.REQUESTS_USED[0] = 0
             set_state(phase="planning", stage=1, log=[], plan=None, topic=topic, folder="", error="",
                       completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
