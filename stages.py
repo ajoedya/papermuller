@@ -32,6 +32,7 @@ from llm import ask, ask_for_json
 from tools import search_papers, verify_doi, within_filters
 from sources import source_for_paper, source_prompt, quote_location
 from manuscript import (compile_manuscript, verification_record, disclosure_template)
+from paper import run_paper
 from quality import (normalize_doi, quote_is_in_abstract, citation_audit,
                      validate_evidence_audit)
 
@@ -629,7 +630,6 @@ def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
     else:
         warning = ("> **DRAFT FOR RESEARCHER VERIFICATION.** "
                    "Check abstract-based evidence and AI assessments against the full articles.\n\n")
-    on_stage(10)
     save_text(folder, "7_final_draft.md", warning + draft + references(matrix))
     save_json(folder, "7_final_review.json", review)
     save_json(folder, "7_final_evidence_audit.json", audit)
@@ -652,6 +652,18 @@ def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
     if ledger:
         save_csv(folder, '8_evidence_ledger.csv', ledger)
     say('Working manuscript, researcher checklist, and AI disclosure template created.')
-    say('Researcher verification is still required; missing methods and results remain unfilled.')
     say(f"Draft saved (round {attempt}, score {review['score']}/10, status {review['status']}).")
+
+    # Full paper around the reviewed literature review, gated by a final AI review.
+    try:
+        paper = run_paper(plan, draft, matrix, review["verdict"] == "accept", settings, folder,
+                          say=say, on_stage=on_stage)
+        review["paper_status"] = paper["status"]
+        review["paper_score"] = paper["score"]
+    except (ValueError, SystemExit) as exc:
+        review["paper_status"] = "paper_stage_failed"
+        say(f"Full paper drafting failed: {str(exc)[:300]}. The literature review files above are still valid.")
+    save_json(folder, "7_final_review.json", review)
+    on_stage(12)
+    say('Researcher verification is still required; missing methods and results remain unfilled.')
     return review

@@ -106,7 +106,8 @@ def disclosure_template(settings, matrix):
     model = model_for_stage('draft', settings) if settings.get('MODEL') else '(model not recorded)'
     review_model = model_for_stage('review', settings) if settings.get('MODEL') else model
     roles = [('plan', 'planning'), ('screen', 'screening'), ('matrix', 'evidence extraction'),
-             ('outline', 'synthesis'), ('evidence_audit', 'claim audit'), ('redteam', 'red-team review')]
+             ('outline', 'synthesis'), ('evidence_audit', 'claim audit'), ('redteam', 'red-team review'),
+             ('paper_draft', 'full-paper drafting'), ('paper_review', 'final paper review')]
     stage_models = "".join(f"- {label}: `{model_for_stage(stage, settings)}`\n" for stage, label in roles) \
         if settings.get('MODEL') else ""
     return ("# Draft AI-assistance disclosure (edit to match journal requirements)\n\n"

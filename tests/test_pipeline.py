@@ -16,7 +16,7 @@ class PipelineTests(unittest.TestCase):
                   'REVIEW_MODEL':'provider/reviewer','VERIFIER_MODEL':'provider/verifier',
                   'EVIDENCE_MODEL':'provider/evidence'}
         desc=pipeline.describe(settings)
-        self.assertEqual(len(desc),10)
+        self.assertEqual(len(desc),12)
         self.assertEqual(desc[4]['model'],'provider/evidence')
         self.assertEqual(desc[6]['model'],'provider/writer')
         self.assertEqual(desc[7]['model'],'provider/verifier')
@@ -94,7 +94,7 @@ class PipelineTests(unittest.TestCase):
                 try:
                     with urlopen(f'http://127.0.0.1:{app.PORT}/api/status') as response:
                         body=json.load(response)
-                    self.assertEqual(len(body['pipeline']),10)
+                    self.assertEqual(len(body['pipeline']),12)
                     self.assertEqual(body['events'][-1]['model'],'actual/openrouter/model')
                 finally:
                     server.shutdown();thread.join();app.PORT=port

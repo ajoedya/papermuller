@@ -6,12 +6,13 @@
 
 ## Features
 
-- **Interactive research pipeline:** Ten connected stages show what is running, complete, pending, or blocked. Click a node to inspect its inputs, outputs, model configuration, and execution telemetry.
+- **Interactive research pipeline:** Twelve connected stages show what is running, complete, pending, or blocked. Click a node to inspect its inputs, outputs, model configuration, and execution telemetry.
 - **Literature discovery and verification:** Search OpenAlex and check publication identifiers against Crossref.
 - **PDF-assisted evidence extraction:** Upload text-based academic PDFs, link them to a DOI, and trace extracted passages to their PDF page.
 - **Evidence-first checks:** Flag unknown citation IDs, missing references, unsupported or incomplete evidence mapping, and high-risk reviewer findings.
 - **Researcher-approved scope:** Review and edit the research questions and scope before the pipeline continues.
 - **Working manuscript:** Produce a literature review and an IMRaD-oriented manuscript scaffold without inventing empirical methods or results.
+- **Full paper with a release gate:** After the literature review passes, AI drafts the title, abstract, introduction, discussion and conclusion. Methods and Results come only from your own text. A final AI review (scored by code, with no-fabrication and scope gates) must pass, and your checklist must be complete, before `9_paper_final.md` and `.docx` are written; otherwise the paper is saved as a stamped draft.
 - **Multi-model routing:** Choose different OpenRouter models for evidence extraction, writing, claim verification, and review.
 - **Local demo mode:** Explore the workflow with simulated data before configuring live APIs.
 
@@ -95,6 +96,8 @@ Papermuller uses [OpenRouter](https://openrouter.ai/) to connect to AI models. T
 | `VERIFIER_MODEL` | 8 Citation & claim audit | `MODEL` |
 | `REVIEW_MODEL` | 9 Critical review (scoring) | `MODEL` |
 | `REDTEAM_MODEL` | 9 Critical review (red-team pass) | `REVIEW_MODEL`, then `MODEL` |
+| `PAPER_MODEL` | 10 Full paper draft | `WRITER_MODEL`, then `MODEL` |
+| `PAPER_REVIEW_MODEL` | 11 Final paper review | `REVIEW_MODEL`, then `MODEL` |
 
 Set them by clicking a stage on the flowchart or under **Settings → AI models**. **Load model list from OpenRouter** fills the model fields with suggestions from OpenRouter's public catalogue (free models by default). Comma-separated entries act as fallbacks.
 

@@ -30,7 +30,8 @@ CURRENT_YEAR = datetime.now().year
 # Every model a stage can use. An empty value falls back to the next key in
 # the chain, and finally to MODEL. Comma-separated values are fallbacks.
 STAGE_MODEL_KEYS = ["PLAN_MODEL", "SCREEN_MODEL", "EVIDENCE_MODEL", "OUTLINE_MODEL",
-                    "WRITER_MODEL", "VERIFIER_MODEL", "REVIEW_MODEL", "REDTEAM_MODEL"]
+                    "WRITER_MODEL", "VERIFIER_MODEL", "REVIEW_MODEL", "REDTEAM_MODEL",
+                    "PAPER_MODEL", "PAPER_REVIEW_MODEL"]
 WORK_TYPES = {"any": "", "article": "article", "review": "review", "article_review": "article|review"}
 
 
