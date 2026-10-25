@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Harness</title>
+<style>
+  :root {
+    --bg: #f6f8fb; --ink: #1e293b; --muted: #64748b; --line: rgba(15,23,42,.09);
+    --glass: rgba(255,255,255,.72); --accent: #2563eb; --accent-soft: #e8f0fe;
+    --ok: #15803d; --ok-soft: #e7f6ec; --bad: #b91c1c; --bad-soft: #fdecec; --warn-soft: #fff7e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); font: 16px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 12% 8%, #dbe7ff 0, transparent 38%),
+                      radial-gradient(circle at 90% 30%, #e3f4ff 0, transparent 35%);
+    background-attachment: fixed; min-height: 100vh;
+  }
+  main { max-width: 780px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  header h1 { margin: 0; font-size: 28px; }
+  .lang select { width: auto; padding: 7px 10px; font-size: 14px; }
+  header p { margin: 4px 0 24px; color: var(--muted); }
+
+  .steps { display: flex; gap: 8px; margin-bottom: 20px; }
+  .steps button {
+    flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--glass); backdrop-filter: blur(10px); font: inherit; color: var(--muted); cursor: pointer;
+  }
+  .steps button.active { color: var(--accent); border-color: var(--accent); background: #fff; font-weight: 600; }
+  .steps b { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+             background: var(--accent-soft); color: var(--accent); font-size: 13px; margin-right: 6px; }
+
+  .card {
+    background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-bottom: 16px;
+    box-shadow: 0 8px 30px rgba(15,23,42,.05);
+  }
+  .card h2 { margin: 0 0 4px; font-size: 20px; }
+  .card > p.hint { margin: 0 0 18px; color: var(--muted); }
+  .hidden { display: none !important; }
+
+  label { display: block; font-weight: 600; margin: 16px 0 6px; }
+  label small { display: block; font-weight: 400; color: var(--muted); }
+  input[type=text], input[type=password], select, textarea {
+    width: 100%; padding: 11px 13px; border: 1px solid #cbd5e1; border-radius: 10px;
+    font: inherit; background: #fff; color: var(--ink);
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent-soft); border-color: var(--accent); }
+
+  .switch { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 12px;
+            background: var(--warn-soft); border: 1px solid #f5deb0; cursor: pointer; }
+  .switch input { width: 20px; height: 20px; margin-top: 3px; }
+  .switch span { font-weight: 400; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  button.main, button.plain {
+    padding: 11px 20px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button.main { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+  button.main:hover { background: #1d4ed8; }
+  button.plain { background: #fff; color: var(--ink); border: 1px solid #cbd5e1; }
+  button:disabled { opacity: .55; cursor: wait; }
+
+  .notice { padding: 12px 14px; border-radius: 10px; margin-top: 14px; }
+  .notice.ok { background: var(--ok-soft); color: var(--ok); }
+  .notice.bad { background: var(--bad-soft); color: var(--bad); white-space: pre-wrap; }
+
+  ul.checks { list-style: none; padding: 0; margin: 14px 0 0; }
+  ul.checks li { padding: 10px 12px; border-radius: 10px; margin-bottom: 6px; background: #fff; border: 1px solid var(--line); }
+  ul.checks li b { margin-right: 6px; }
+
+  .plan h3 { margin: 0 0 10px; font-size: 18px; }
+  .plan ol { margin: 0 0 8px 20px; padding: 0; }
+
+  ol.progress { list-style: none; padding: 0; margin: 0; }
+  ol.progress li { display: flex; gap: 12px; align-items: center; padding: 9px 0; color: var(--muted); }
+  ol.progress li .dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+                        background: #eef2f7; font-size: 13px; flex: none; }
+  ol.progress li.now { color: var(--ink); font-weight: 600; }
+  ol.progress li.now .dot { background: var(--accent); color: #fff; animation: pulse 1.4s infinite; }
+  ol.progress li.done .dot { background: var(--ok-soft); color: var(--ok); }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--accent-soft); } }
+  @media (prefers-reduced-motion: reduce) { ol.progress li.now .dot { animation: none; } }
+
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: var(--accent); }
+  pre.log { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+            max-height: 260px; overflow: auto; font-size: 13px; white-space: pre-wrap; margin: 8px 0 0; }
+
+  .score { display: flex; align-items: center; gap: 16px; }
+  .score .num { font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .draft { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  .draft h3 { margin-top: 0; }
+  .cite { background: var(--accent-soft); color: var(--accent); border-radius: 5px; padding: 0 4px; font-size: .9em; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #f8fafc; position: sticky; top: 0; }
+  .bars { margin: 16px 0 6px; }
+  .bar { display: grid; grid-template-columns: 210px 1fr 28px; gap: 10px; align-items: center; margin: 6px 0; font-size: 14px; }
+  .bar i { height: 8px; border-radius: 6px; background: #eef2f7; overflow: hidden; }
+  .bar i b { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
+  .bar em { font-style: normal; font-weight: 600; text-align: right; }
+  @media (max-width: 560px) { .bar { grid-template-columns: 1fr 1fr 24px; } }
+  .files a { display: inline-block; margin: 4px 6px 4px 0; padding: 6px 10px; border-radius: 8px;
+             background: #fff; border: 1px solid var(--line); color: var(--accent); text-decoration: none; font-size: 14px; }
+  @media (max-width: 560px) { .steps button span { display: none; } .card { padding: 18px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1 data-i18n="app_title"></h1>
+      <p data-i18n="app_sub"></p>
+    </div>
+    <label class="lang" style="margin:0"><span class="hidden" data-i18n="lang_label"></span>
+      <select id="uiLang" aria-label="Language">
+        <option value="en">English</option>
+        <option value="id">Bahasa Indonesia</option>
+      </select>
+    </label>
+  </header>
+
+  <nav class="steps">
+    <button data-go="setup"><b>1</b><span data-i18n="tab_setup"></span></button>
+    <button data-go="research"><b>2</b><span data-i18n="tab_research"></span></button>
+    <button data-go="results"><b>3</b><span data-i18n="tab_results"></span></button>
+  </nav>
+
+  <!-- ============ 1. SETTINGS ============ -->
+  <section id="setup" class="card">
+    <h2 data-i18n="setup_title"></h2>
+    <p class="hint" data-i18n="setup_hint"></p>
+
+    <label class="switch">
+      <input type="checkbox" id="demo">
+      <div><span data-i18n="demo_title" style="font-weight:600"></span>
+        <span><br><span data-i18n="demo_hint"></span></span></div>
+    </label>
+
+    <div id="realFields">
+      <label for="orKey"><span data-i18n="or_key"></span><small data-i18n="or_key_hint"></small></label>
+      <input type="password" id="orKey" autocomplete="off">
+
+      <label for="oaKey"><span data-i18n="oa_key"></span><small data-i18n="oa_key_hint"></small></label>
+      <input type="password" id="oaKey" autocomplete="off">
+
+      <label for="model"><span data-i18n="model"></span><small data-i18n="model_hint"></small></label>
+      <select id="model">
+        <option value="thinkingmachines/inkling:free,google/gemma-4-31b-it:free,poolside/laguna-s-2.1:free" data-i18n="model_rec"></option>
+        <option value="openrouter/free" data-i18n="model_auto"></option>
+        <option value="custom" data-i18n="model_custom"></option>
+      </select>
+      <input type="text" id="modelCustom" class="hidden" data-i18n-ph="model_ph" style="margin-top:8px">
+
+      <label for="email"><span data-i18n="email"></span> <small data-i18n="email_hint"></small></label>
+      <input type="text" id="email" autocomplete="off">
+    </div>
+
+    <label for="target"><span data-i18n="target"></span><small data-i18n="target_hint"></small></label>
+    <select id="target">
+      <option value="7" data-i18n="target_7"></option>
+      <option value="8" data-i18n="target_8"></option>
+      <option value="9" data-i18n="target_9"></option>
+    </select>
+
+    <label for="language"><span data-i18n="draft_lang"></span><small data-i18n="draft_lang_hint"></small></label>
+    <select id="language">
+      <option value="English">English</option>
+      <option value="Indonesian">Bahasa Indonesia</option>
+      <option value="Malay">Bahasa Melayu</option>
+      <option value="Spanish">Español</option>
+      <option value="French">Français</option>
+      <option value="German">Deutsch</option>
+      <option value="Portuguese">Português</option>
+      <option value="Dutch">Nederlands</option>
+      <option value="Arabic">العربية</option>
+      <option value="Chinese (Simplified)">简体中文</option>
+      <option value="Japanese">日本語</option>
+      <option value="Korean">한국어</option>
+    </select>
+
+    <div class="actions">
+      <button class="main" id="saveBtn" data-i18n="save"></button>
+      <button class="plain" id="checkBtn" data-i18n="check"></button>
+    </div>
+    <div id="setupMsg"></div>
+    <ul class="checks" id="checkList"></ul>
+  </section>
+
+  <!-- ============ 2. RESEARCH ============ -->
+  <section id="research" class="hidden">
+    <div class="card" id="topicCard">
+      <h2 data-i18n="topic_title"></h2>
+      <p class="hint" data-i18n="topic_hint"></p>
+      <label for="topic" data-i18n="topic"></label>
+      <textarea id="topic" data-i18n-ph="topic_ph"></textarea>
+      <div class="actions"><button class="main" id="planBtn" data-i18n="make_plan"></button></div>
+    </div>
+
+    <div class="card hidden" id="approveCard">
+      <h2 data-i18n="approve_title"></h2>
+      <p class="hint" data-i18n="approve_hint"></p>
+      <div class="plan" id="planView"></div>
+      <label for="keywords"><span data-i18n="keywords"></span> <small data-i18n="keywords_hint"></small></label>
+      <textarea id="keywords" style="min-height:64px"></textarea>
+      <div class="actions">
+        <button class="main" id="approveBtn" data-i18n="approve"></button>
+        <button class="plain" id="redoBtn" data-i18n="redo"></button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="progressCard">
+      <h2 data-i18n="progress_title"></h2>
+      <p class="hint" id="progressHint"></p>
+      <ol class="progress" id="progress"></ol>
+      <div id="runMsg"></div>
+      <details><summary data-i18n="show_log"></summary><pre class="log" id="log"></pre></details>
+      <div class="actions hidden" id="failActions"><button class="main" id="againBtn"></button></div>
+    </div>
+  </section>
+
+  <!-- ============ 3. RESULTS ============ -->
+  <section id="results" class="hidden">
+    <div class="card" id="emptyResults">
+      <h2 data-i18n="empty_title"></h2>
+      <p class="hint" data-i18n="empty_hint"></p>
+      <div class="actions"><button class="main" data-go="research" data-i18n="start_research"></button></div>
+    </div>
+    <div id="resultView" class="hidden">
+      <div class="card">
+        <div class="score"><div class="num" id="scoreNum">-</div>
+          <div><b data-i18n="score_title"></b><br><span class="hint" id="scoreNote"></span></div></div>
+        <div id="reviewNotes"></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="draft_title"></h2>
+        <p class="hint" data-i18n-html="draft_hint"></p>
+        <div class="draft" id="draftView"></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="matrix_title"></h2>
+        <p class="hint" data-i18n="matrix_hint"></p>
+        <div class="table-wrap"><table id="matrix"></table></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="files_title"></h2>
+        <div class="files" id="files"></div>
+        <div class="actions">
+          <button class="plain" id="openFolderBtn" data-i18n="open_folder"></button>
+          <button class="main" id="newBtn" data-i18n="new_topic"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ============================================================
+   TRANSLATIONS
+   To add a language: copy the "en" block, change its key, translate
+   the text, and add an <option> to the #uiLang menu above.
+   ============================================================ */
+const I18N = {
+  en: {
+    app_title: "Research Harness", app_sub: "From a rough topic to a literature review with verified references.",
+    lang_label: "Language", tab_setup: "Settings", tab_research: "Research", tab_results: "Results",
+    setup_title: "Settings", setup_hint: "Fill this in once. Keys are stored only on this computer.",
+    demo_title: "Demo mode", demo_hint: "Uses sample data, free and offline. Turn it off for real research.",
+    or_key: "OpenRouter key", or_key_hint: "From openrouter.ai, Keys menu. Starts with sk-or-",
+    oa_key: "OpenAlex key", oa_key_hint: "From openalex.org/settings/api. Free.",
+    model: "AI model", model_hint: "The first choice is tried first; the others are backups.",
+    model_rec: "Free, recommended bundle (3 backup models)", model_auto: "Free, picked automatically by OpenRouter",
+    model_custom: "Enter my own...", model_ph: "e.g. provider/model-name:free",
+    email: "Email", email_hint: "Optional, for OpenAlex access.",
+    target: "Minimum target score", target_hint: "The draft is revised automatically until the reviewer's score reaches this target, up to 4 rounds.",
+    target_7: "7 of 10 (faster, saves quota)", target_8: "8 of 10 (recommended)", target_9: "9 of 10 (very strict, rarely reached by free models)",
+    draft_lang: "Draft language", draft_lang_hint: "The language the literature review is written in.",
+    save: "Save settings", check: "Check connections", checking: "Checking...",
+    saved_ok: "Settings saved. Click Check connections to make sure everything is ready.",
+    key_saved: "Already saved. Fill in only to replace it.", oa_ph: "paste your OpenAlex key",
+    topic_title: "Research topic", topic_hint: "Describe your topic in plain words. English gives the most search results.",
+    topic: "Topic", topic_ph: "e.g. road infrastructure, governance quality and poverty", make_plan: "Create research plan",
+    approve_title: "Review the plan", approve_hint: "You stay in charge of the research direction. You may edit the keywords before continuing.",
+    rq: "Research questions", keywords: "Search keywords", keywords_hint: "Separate with commas.",
+    approve: "Approve and continue", redo: "Create a new plan",
+    progress_title: "In progress", progress_hint: "Keep this page open. Free models can take a few minutes.",
+    all_done: "All stages finished.", show_log: "Show process log", again: "Start again", new_topic: "Research a new topic",
+    stopped: "The process stopped.", finished: "Done. AI requests used: {n}.",
+    stages: ["Drafting the plan", "Searching papers", "Verifying and screening papers",
+             "Summarising into the matrix", "Outlining and writing the draft", "Reviewing and revising"],
+    crit: { synthesis: "Synthesis across studies", research_gap: "Research gap", coverage: "Answers the research questions",
+            evidence_use: "Evidence support", clarity: "Clarity of writing" },
+    empty_title: "No results yet", empty_hint: "Results appear here after a research run finishes.", start_research: "Start research",
+    score_title: "AI reviewer score", reached: "Target reached.", not_reached: "Target not reached; showing the best draft.",
+    from_round: " From round {n}.", strengths: "Strengths", fixes: "Suggested further improvements",
+    draft_title: "Final literature review draft",
+    draft_hint: 'Codes like <span class="cite">P1</span> refer to papers in the table below. Read and check before using.',
+    no_draft: "No draft yet.", matrix_title: "Literature matrix", matrix_hint: "Every paper here was verified in Crossref.",
+    cols: ["Code", "Authors", "Year", "Title", "Method", "Main finding", "Limitation"],
+    files_title: "Download files", open_folder: "Open results folder",
+    files: { "7_final_draft.md": "Final draft + references", "7_final_review.json": "Reviewer scores",
+             "4_literature_matrix.csv": "Literature matrix (Excel)", "3_screening.json": "Screening results",
+             "3_verification_report.csv": "Verification report", "2_papers_found.csv": "All papers found",
+             "log.txt": "Process log", "1_plan.json": "Plan" },
+    need_topic: "Please write a research topic first.", need_keyword: "Enter at least one keyword."
+  },
+  id: {
+    app_title: "Asisten Riset", app_sub: "Dari topik kasar menjadi tinjauan pustaka yang referensinya sudah diperiksa.",
+    lang_label: "Bahasa", tab_setup: "Pengaturan", tab_research: "Riset", tab_results: "Hasil",
+    setup_title: "Pengaturan", setup_hint: "Cukup diisi sekali. Kunci disimpan hanya di komputer ini.",
+    demo_title: "Mode latihan", demo_hint: "Memakai data contoh, gratis dan tanpa internet. Matikan kalau ingin riset sungguhan.",
+    or_key: "Kunci OpenRouter", or_key_hint: "Dari openrouter.ai, menu Keys. Diawali sk-or-",
+    oa_key: "Kunci OpenAlex", oa_key_hint: "Dari openalex.org/settings/api. Gratis.",
+    model: "Model AI", model_hint: "Pilihan pertama dicoba lebih dulu, berikutnya menjadi cadangan.",
+    model_rec: "Gratis, paket rekomendasi (3 model cadangan)", model_auto: "Gratis, dipilihkan otomatis oleh OpenRouter",
+    model_custom: "Tulis sendiri...", model_ph: "contoh: penyedia/nama-model:free",
+    email: "Email", email_hint: "Opsional, untuk akses OpenAlex.",
+    target: "Target nilai minimal", target_hint: "Draf direvisi otomatis sampai nilai penelaah mencapai target ini, maksimal 4 putaran.",
+    target_7: "7 dari 10 (lebih cepat, hemat kuota)", target_8: "8 dari 10 (disarankan)", target_9: "9 dari 10 (sangat ketat, jarang tercapai model gratis)",
+    draft_lang: "Bahasa draf", draft_lang_hint: "Bahasa yang dipakai untuk menulis tinjauan pustaka.",
+    save: "Simpan pengaturan", check: "Cek koneksi", checking: "Memeriksa...",
+    saved_ok: "Pengaturan tersimpan. Klik Cek koneksi untuk memastikan semuanya siap.",
+    key_saved: "Sudah tersimpan. Isi hanya kalau ingin mengganti.", oa_ph: "tempel kunci OpenAlex",
+    topic_title: "Topik penelitian", topic_hint: "Tulis topikmu dengan kalimat biasa. Bahasa Inggris memberi hasil pencarian paling banyak.",
+    topic: "Topik", topic_ph: "contoh: road infrastructure, governance quality and poverty", make_plan: "Buat rencana penelitian",
+    approve_title: "Periksa rencana", approve_hint: "Keputusan arah penelitian tetap di tanganmu. Kata kunci boleh diubah sebelum lanjut.",
+    rq: "Pertanyaan penelitian", keywords: "Kata kunci pencarian", keywords_hint: "Pisahkan dengan koma.",
+    approve: "Setujui dan lanjutkan", redo: "Buat ulang rencana",
+    progress_title: "Proses berjalan", progress_hint: "Biarkan halaman ini terbuka. Model gratis bisa memerlukan beberapa menit.",
+    all_done: "Semua tahap selesai.", show_log: "Lihat catatan proses", again: "Mulai lagi", new_topic: "Riset topik baru",
+    stopped: "Proses berhenti.", finished: "Selesai. Permintaan ke model AI terpakai: {n}.",
+    stages: ["Menyusun rencana", "Mencari artikel", "Memeriksa keaslian dan menyaring relevansi",
+             "Merangkum ke matriks", "Menyusun kerangka dan menulis draf", "Penilaian dan revisi"],
+    crit: { synthesis: "Sintesis antarpenelitian", research_gap: "Celah penelitian", coverage: "Menjawab pertanyaan penelitian",
+            evidence_use: "Dukungan bukti", clarity: "Kejelasan tulisan" },
+    empty_title: "Belum ada hasil", empty_hint: "Hasil muncul di sini setelah proses riset selesai.", start_research: "Mulai riset",
+    score_title: "Nilai dari penelaah AI", reached: "Target tercapai.", not_reached: "Target belum tercapai, draf terbaik yang ditampilkan.",
+    from_round: " Dari putaran {n}.", strengths: "Kekuatan", fixes: "Saran perbaikan lanjutan",
+    draft_title: "Draf akhir tinjauan pustaka",
+    draft_hint: 'Kode seperti <span class="cite">P1</span> merujuk ke artikel di tabel di bawah. Baca dan periksa sebelum dipakai.',
+    no_draft: "Draf belum tersedia.", matrix_title: "Matriks literatur", matrix_hint: "Semua artikel di sini sudah dicek keasliannya lewat Crossref.",
+    cols: ["Kode", "Penulis", "Tahun", "Judul", "Metode", "Temuan utama", "Keterbatasan"],
+    files_title: "Unduh berkas", open_folder: "Buka folder hasil",
+    files: { "7_final_draft.md": "Draf akhir + daftar pustaka", "7_final_review.json": "Nilai penelaah",
+             "4_literature_matrix.csv": "Matriks literatur (Excel)", "3_screening.json": "Hasil penyaringan",
+             "3_verification_report.csv": "Laporan verifikasi", "2_papers_found.csv": "Semua artikel ditemukan",
+             "log.txt": "Catatan proses", "1_plan.json": "Rencana" },
+    need_topic: "Tulis topik penelitian dulu.", need_keyword: "Isi minimal satu kata kunci."
+  }
+};
+
+let LANG = "en";
+const t = (key, vars = {}) => {
+  let text = (I18N[LANG] && I18N[LANG][key] !== undefined) ? I18N[LANG][key] : I18N.en[key];
+  if (typeof text === "string") for (const [k, v] of Object.entries(vars)) text = text.replace(`{${k}}`, v);
+  return text;
+};
+
+function applyLanguage() {
+  document.documentElement.lang = LANG;
+  document.title = t("app_title");
+  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-html]").forEach(el => el.innerHTML = t(el.dataset.i18nHtml));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  $("uiLang").value = LANG;
+  if (lastStatus) render(lastStatus);
+  if (!$("results").classList.contains("hidden")) loadResults();
+}
+
+const $ = (id) => document.getElementById(id);
+let poller = null, lastPhase = "", lastStatus = null, lastSettings = null;
+
+async function api(path, data) {
+  const res = await fetch(path, data === undefined ? {} :
+    { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data) });
+  return res.json();
+}
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function show(view) {
+  for (const id of ["setup", "research", "results"]) $(id).classList.toggle("hidden", id !== view);
+  document.querySelectorAll(".steps button").forEach(b => b.classList.toggle("active", b.dataset.go === view));
+  if (view === "results") loadResults();
+}
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dataset.go));
+
+function note(el, text, ok) { $(el).innerHTML = text ? `<div class="notice ${ok ? "ok" : "bad"}">${esc(text)}</div>` : ""; }
+
+$("uiLang").onchange = async () => {
+  LANG = $("uiLang").value;
+  try { localStorage.setItem("uiLang", LANG); } catch (e) {}
+  await api("/api/ui-language", { lang: LANG });   // so the progress log follows too
+  applyLanguage();
+  if (lastSettings) keyPlaceholders(lastSettings);
+};
+
+/* ---------- Settings ---------- */
+function toggleReal() { $("realFields").classList.toggle("hidden", $("demo").checked); }
+$("demo").onchange = toggleReal;
+$("model").onchange = () => $("modelCustom").classList.toggle("hidden", $("model").value !== "custom");
+
+function keyPlaceholders(s) {
+  $("orKey").placeholder = s.has_openrouter_key ? t("key_saved") : "sk-or-...";
+  $("oaKey").placeholder = s.has_openalex_key ? t("key_saved") : t("oa_ph");
+}
+
+async function loadSettings() {
+  const s = await api("/api/settings");
+  lastSettings = s;
+  $("demo").checked = s.demo;
+  keyPlaceholders(s);
+  const preset = [...$("model").options].find(o => o.value === s.model);
+  if (preset) $("model").value = s.model; else { $("model").value = "custom"; $("modelCustom").value = s.model; }
+  $("modelCustom").classList.toggle("hidden", $("model").value !== "custom");
+  if ([...$("language").options].some(o => o.value === s.language)) $("language").value = s.language;
+  else { $("language").add(new Option(s.language, s.language)); $("language").value = s.language; }
+  $("email").value = s.email;
+  $("target").value = String(Math.round(Number(s.target) || 8));
+  toggleReal();
+  return s;
+}
+
+$("saveBtn").onclick = async () => {
+  const model = $("model").value === "custom" ? $("modelCustom").value : $("model").value;
+  await api("/api/settings", { demo: $("demo").checked, openrouter_key: $("orKey").value,
+    openalex_key: $("oaKey").value, model, language: $("language").value, email: $("email").value, target: $("target").value });
+  $("orKey").value = ""; $("oaKey").value = "";
+  const s = await loadSettings();
+  note("setupMsg", s.problem ? s.problem : t("saved_ok"), !s.problem);
+};
+
+$("checkBtn").onclick = async () => {
+  $("checkBtn").disabled = true; $("checkBtn").textContent = t("checking");
+  $("checkList").innerHTML = ""; note("setupMsg", "");
+  const results = await api("/api/check", {});
+  $("checkList").innerHTML = results.map(r =>
+    `<li><b style="color:${r.ok ? "var(--ok)" : "var(--bad)"}">${r.ok ? "✓" : "✗"}</b>${esc(r.name)}<br><small>${esc(r.note)}</small></li>`).join("");
+  $("checkBtn").disabled = false; $("checkBtn").textContent = t("check");
+};
+
+/* ---------- Research ---------- */
+$("planBtn").onclick = async () => {
+  const topic = $("topic").value.trim();
+  if (!topic) return alert(t("need_topic"));
+  await api("/api/plan", { topic });
+  startPolling();
+};
+
+$("approveBtn").onclick = async () => {
+  const status = await api("/api/status");
+  const plan = { ...status.plan, keywords: $("keywords").value.split(",").map(k => k.trim()).filter(Boolean) };
+  if (!plan.keywords.length) return alert(t("need_keyword"));
+  await api("/api/approve", { plan });
+  lastPhase = "running";
+  startPolling();
+};
+$("redoBtn").onclick = () => $("planBtn").onclick();
+$("againBtn").onclick = async () => { await api("/api/reset", {}); render(await api("/api/status")); };
+$("newBtn").onclick = async () => { await api("/api/reset", {}); $("topic").value = ""; render(await api("/api/status")); show("research"); };
+$("openFolderBtn").onclick = () => api("/api/open-folder", {});
+
+function startPolling() {
+  clearInterval(poller);
+  const tick = async () => {
+    const s = await api("/api/status");
+    render(s);
+    if (!["planning", "running"].includes(s.phase)) clearInterval(poller);
+  };
+  tick(); poller = setInterval(tick, 1500);
+}
+
+function render(s) {
+  lastStatus = s;
+  const busy = ["planning", "running"].includes(s.phase);
+  $("topicCard").classList.toggle("hidden", !(s.phase === "idle" || (s.phase === "failed" && s.stage <= 1)));
+  $("approveCard").classList.toggle("hidden", s.phase !== "approve");
+  $("progressCard").classList.toggle("hidden", !busy && s.phase !== "failed" && s.phase !== "done");
+
+  $("progress").innerHTML = t("stages").map((name, i) => {
+    const n = i + 1, state = s.stage > n || s.phase === "done" ? "done" : (s.stage === n && busy ? "now" : "");
+    return `<li class="${state}"><span class="dot">${state === "done" ? "✓" : n}</span>${esc(name)}</li>`;
+  }).join("");
+  $("log").textContent = (s.log || []).join("\n");
+  $("progressHint").textContent = s.phase === "done" ? t("all_done") : t("progress_hint");
+
+  if (s.phase === "failed") note("runMsg", t("stopped") + "\n" + s.error, false);
+  else if (s.phase === "done") $("runMsg").innerHTML = `<div class="notice ok">${esc(t("finished", { n: s.requests }))}</div>`;
+  else note("runMsg", "");
+
+  if (s.phase === "approve" && s.plan) {
+    $("planView").innerHTML = `<h3>${esc(s.plan.title)}</h3><b>${esc(t("rq"))}</b>
+      <ol>${(s.plan.research_questions || []).map(q => `<li>${esc(q)}</li>`).join("")}</ol>
+      <small class="hint">${esc(s.plan.scope_note)}</small>`;
+    if (document.activeElement !== $("keywords") && !$("keywords").dataset.filled) {
+      $("keywords").value = (s.plan.keywords || []).join(", ");
+      $("keywords").dataset.filled = "1";
+    }
+  } else { delete $("keywords").dataset.filled; }
+
+  // Jump to the results only at the moment the process finishes, not on every refresh
+  if (s.phase === "done" && lastPhase === "running") setTimeout(() => show("results"), 1200);
+  lastPhase = s.phase;
+  $("failActions").classList.toggle("hidden", !["failed", "done"].includes(s.phase));
+  $("againBtn").textContent = s.phase === "done" ? t("new_topic") : t("again");
+  $("planBtn").disabled = busy;
+}
+
+/* ---------- Results ---------- */
+function markdown(md) {
+  return esc(md).split(/\n\s*\n/).map(block => {
+    let b = block.trim()
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\[(P\d+(?:\s*[;,]\s*P\d+)*)\]/g, '<span class="cite">$1</span>');
+    if (/^#{1,6}\s/.test(b)) return `<h3>${b.replace(/^#{1,6}\s/, "")}</h3>`;
+    if (/^[-*]\s/m.test(b)) return "<ul>" + b.split(/\n/).map(l => `<li>${l.replace(/^[-*]\s/, "")}</li>`).join("") + "</ul>";
+    return `<p>${b.replace(/\n/g, " ")}</p>`;
+  }).join("");
+}
+
+async function loadResults() {
+  const r = await api("/api/results");
+  const has = r.draft || (r.matrix && r.matrix.length);
+  $("emptyResults").classList.toggle("hidden", !!has);
+  $("resultView").classList.toggle("hidden", !has);
+  if (!has) return;
+  const rv = r.review;
+  $("scoreNum").textContent = rv ? `${rv.score}/10` : "-";
+  $("scoreNote").textContent = rv ? (rv.verdict === "accept" ? t("reached") : t("not_reached"))
+    + (rv.from_round ? t("from_round", { n: rv.from_round }) : "") : "";
+  const fixes = rv ? (rv.fixes || rv.problems || []) : [];
+  const crit = t("crit");
+  $("reviewNotes").innerHTML = rv ? `
+    ${rv.scores ? `<div class="bars">${Object.entries(rv.scores).map(([k, v]) =>
+      `<div class="bar"><span>${esc(crit[k] || k)}</span><i><b style="width:${v * 10}%"></b></i><em>${v}</em></div>`).join("")}</div>` : ""}
+    ${rv.strengths?.length ? `<p><b>${esc(t("strengths"))}</b></p><ul>${rv.strengths.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    ${fixes.length ? `<p><b>${esc(t("fixes"))}</b></p><ul>${fixes.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}` : "";
+  $("draftView").innerHTML = markdown(r.draft || t("no_draft"));
+  const keys = ["id", "authors", "year", "title", "method", "main_finding", "limitation"], heads = t("cols");
+  $("matrix").innerHTML = `<tr>${heads.map(h => `<th>${esc(h)}</th>`).join("")}</tr>` +
+    (r.matrix || []).map(row => `<tr>${keys.map(k => `<td>${esc(row[k])}</td>`).join("")}</tr>`).join("");
+  const labels = t("files");
+  $("files").innerHTML = (r.files || []).filter(f => labels[f]).map(f =>
+    `<a href="/files/${encodeURIComponent(r.folder_name)}/${encodeURIComponent(f)}">${esc(labels[f])}</a>`).join("");
+}
+
+/* ---------- Start ---------- */
+(async () => {
+  const s = await loadSettings();
+  let saved = null;
+  try { saved = localStorage.getItem("uiLang"); } catch (e) {}
+  LANG = saved || s.ui_language || ((navigator.language || "").toLowerCase().startsWith("id") ? "id" : "en");
+  if (!I18N[LANG]) LANG = "en";
+  if (LANG !== s.ui_language) api("/api/ui-language", { lang: LANG });
+  applyLanguage();
+  keyPlaceholders(s);
+  const status = await api("/api/status");
+  if (status.phase !== "idle") { show("research"); render(status); if (["planning","running"].includes(status.phase)) startPolling(); }
+  else show(s.demo || !s.has_openrouter_key ? "setup" : "research");
+})();
+</script>
+</body>
+</html>
