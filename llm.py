@@ -11,6 +11,22 @@ You normally never need to edit this file.
 
 import json
 import time
+
+# Optional per-request observer for the local UI. No prompt/credentials are logged.
+EVENT_HOOK = None
+
+def _report(event):
+    if EVENT_HOOK:
+        try:
+            EVENT_HOOK(event)
+        except Exception:
+            pass  # Observability must never break a research run.
+
+ROLE_MODELS = {
+    "matrix": "EVIDENCE_MODEL", "outline": "WRITER_MODEL",
+    "draft": "WRITER_MODEL", "evidence_audit": "VERIFIER_MODEL",
+    "review": "REVIEW_MODEL", "redteam": "REVIEW_MODEL",
+}
 import urllib.request
 import urllib.error
 
@@ -27,12 +43,15 @@ def ask(prompt, settings, stage="general", system="You are a careful academic re
     """
     if settings["DEMO_MODE"]:
         from demo_data import fake_llm_answer
-        return fake_llm_answer(stage, prompt)
+        answer = fake_llm_answer(stage, prompt)
+        _report({"stage": stage, "model": "Simulator demo (offline)", "simulated": True, "usage": {}})
+        return answer
 
     # ---- Build the message in the format OpenRouter expects ----
     # MODEL can be one name, or several separated by commas.
     # With several, OpenRouter automatically tries the next one if the first fails.
-    models = [m.strip() for m in settings["MODEL"].split(",") if m.strip()]
+    configured = settings.get(ROLE_MODELS.get(stage, "")) or settings["MODEL"]
+    models = [m.strip() for m in configured.split(",") if m.strip()]
     body = {
         "model": models[0],
         "messages": [
@@ -49,7 +68,7 @@ def ask(prompt, settings, stage="general", system="You are a careful academic re
 
     for attempt in (1, 2, 3):  # try up to 3 times if the model is busy or down
         try:
-            return _send(body, settings)
+            return _send(body, settings, stage)
         except _Retry as problem:
             if attempt == 3:
                 raise SystemExit(f"\n[AI ERROR] {problem}\n")
@@ -64,7 +83,7 @@ class _Retry(Exception):
 REQUESTS_USED = [0]  # counts real requests, so you can watch your daily free quota
 
 
-def _send(body, settings):
+def _send(body, settings, stage="general"):
     REQUESTS_USED[0] += 1
     request = urllib.request.Request(
         OPENROUTER_URL,
@@ -90,9 +109,6 @@ def _send(body, settings):
                     reason += f" | provider: {meta['provider_name']} | {str(meta.get('raw', ''))[:120]}"
             except (ValueError, KeyError, TypeError):
                 reason = detail[:150]
-            if "per-day" in reason:  # daily free quota used up: retrying cannot help
-                from i18n import tr
-                raise SystemExit("\n[AI ERROR] " + tr("quota") + "\n")
             raise _Retry(f"Model busy or unavailable (error {error.code}): {reason}")
         hints = {
             401: "Your API key is wrong or missing. Check OPENROUTER_API_KEY in .env",
@@ -102,6 +118,8 @@ def _send(body, settings):
 
     if "choices" not in data:  # some providers return an error inside a normal reply
         raise _Retry(f"Provider error: {str(data.get('error', data))[:150]}.")
+    _report({"stage": stage, "model": str(data.get("model") or body["model"]),
+             "simulated": False, "usage": data.get("usage") or {}})
     return data["choices"][0]["message"]["content"]
 
 

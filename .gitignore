@@ -1,24 +1,17 @@
-# ------------------------------------------------------------
-# NEVER commit secrets or personal research output
-# ------------------------------------------------------------
-
-# Your settings file holds API keys. Only env.example (empty) is shared.
+# API keys and local/private data
 .env
 .env.*
-!env.example
-
-# Research runs: plans, drafts, matrices and logs from your own topics
+!.env.example
+*backup*
 projects/
-
-# Python cache and virtual environments
 __pycache__/
 *.py[cod]
+.pytest_cache/
 .venv/
-venv/
+*.log
+.DS_Store
+library/
 
-# Editor and OS clutter
+# local editor / OS state
 .vscode/
 .idea/
-.DS_Store
-Thumbs.db
-desktop.ini

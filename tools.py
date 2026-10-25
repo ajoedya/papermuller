@@ -12,6 +12,8 @@ In DEMO mode, they return sample data instead of going online.
 """
 
 import json
+
+from quality import normalize_doi, title_similarity
 import time
 import urllib.parse
 import urllib.request
@@ -20,7 +22,7 @@ import urllib.error
 
 def _get_json(url):
     """Download a web address and read it as JSON. Returns None on failure."""
-    request = urllib.request.Request(url, headers={"User-Agent": "papermuller/1.0 (+https://github.com/ajoedya/papermuller)"})
+    request = urllib.request.Request(url, headers={"User-Agent": "riset-harness/1.0"})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             return json.loads(response.read().decode("utf-8"))
@@ -82,9 +84,11 @@ def search_papers(keyword, settings, how_many=8):
             "year": item.get("publication_year"),
             "authors": ", ".join(a["author"]["display_name"]
                                  for a in item.get("authorships", [])[:4]),
-            "doi": (item.get("doi") or "").replace("https://doi.org/", ""),
+            "doi": normalize_doi(item.get("doi")),
             "abstract": _rebuild_abstract(item.get("abstract_inverted_index")),
             "cited_by": item.get("cited_by_count", 0),
+            "openalex_id": item.get("id", ""),
+            "publication_date": item.get("publication_date", ""),
         })
     time.sleep(0.5)  # be polite to the free service
     return papers
@@ -100,16 +104,19 @@ def verify_doi(doi, expected_title, settings):
         from demo_data import fake_verify
         return fake_verify(doi)
 
-    if not doi:
-        return False, "no DOI"
-    data = _get_json("https://api.crossref.org/works/" + urllib.parse.quote(doi))
+    doi = normalize_doi(doi)
+    if not doi.startswith("10.") or "/" not in doi:
+        return False, "invalid DOI format"
+    data = _get_json("https://api.crossref.org/works/" + urllib.parse.quote(doi, safe=""))
     time.sleep(0.3)
     if not data:
         return False, "DOI not found in Crossref"
 
-    real_title = (data["message"].get("title") or [""])[0].lower()
-    # Compare the first few words: a simple, beginner-friendly match check
-    expected_start = " ".join(expected_title.lower().split()[:5])
-    if expected_start and expected_start[:25] in real_title:
-        return True, "verified"
-    return False, f"title mismatch (Crossref says: {real_title[:60]})"
+    message = data.get("message") or {}
+    titles = message.get("title") or []
+    real_title = titles[0] if titles else ""
+    real_doi = normalize_doi(message.get("DOI"))
+    similarity = title_similarity(expected_title, real_title)
+    if real_doi == doi and similarity >= 0.82:
+        return True, f"Crossref DOI + title match ({similarity:.0%}); content not checked"
+    return False, f"metadata mismatch (title similarity {similarity:.0%}; Crossref: {real_title[:60]})"

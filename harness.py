@@ -53,15 +53,23 @@ def load_settings():
         "CANDIDATES": int(raw.get("CANDIDATES", "30")),
         # Optional different model for the reviewer (a second opinion)
         "REVIEW_MODEL": raw.get("REVIEW_MODEL", ""),
+        "WRITER_MODEL": raw.get("WRITER_MODEL", ""),
+        "EVIDENCE_MODEL": raw.get("EVIDENCE_MODEL", ""),
+        "VERIFIER_MODEL": raw.get("VERIFIER_MODEL", ""),
         "EMAIL": raw.get("EMAIL", ""),
         "OPENALEX_API_KEY": raw.get("OPENALEX_API_KEY", ""),
         # Servers (providers) to skip, comma-separated, e.g. Nvidia
         "IGNORE_PROVIDERS": raw.get("IGNORE_PROVIDERS", ""),
-        # Language of the interface and progress messages: en or id
-        "UI_LANGUAGE": raw.get("UI_LANGUAGE", "en"),
+        "PDF_LIBRARY": str(Path(__file__).parent / 'library'),
     }
     if not settings["DEMO_MODE"] and not settings["OPENROUTER_API_KEY"].startswith("sk-or-"):
         sys.exit("Real mode needs a valid OPENROUTER_API_KEY in .env (it starts with sk-or-).")
+    if (settings["CANDIDATES"] < 1 or settings["MAX_PAPERS"] < 1 or
+        settings["MIN_VERIFIED"] < 1 or
+        settings["MIN_VERIFIED"] > settings["MAX_PAPERS"] or
+        settings["REVISION_ROUNDS"] < 0 or settings["REVISION_ROUNDS"] > 10 or
+        not 1 <= settings["TARGET_SCORE"] <= 10):
+        sys.exit("Pengaturan tidak masuk akal: periksa batas artikel, putaran revisi, dan target skor.")
     return settings
 
 
@@ -91,8 +99,6 @@ def main():
         sys.exit('Usage: python harness.py "your research topic"')
     topic = sys.argv[1]
     settings = load_settings()
-    from i18n import set_language
-    set_language(settings["UI_LANGUAGE"])
 
     # Every run gets its own folder, so nothing is ever overwritten
     folder = Path(__file__).parent / "projects" / datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -112,7 +118,8 @@ def main():
     if answer != "y":
         log.say("Stopped by user at plan approval. Edit the topic and run again.")
         return
-    log.say("Plan approved by user.")
+    stages.save_json(folder, "1_plan_approved.json", plan)
+    log.say("Plan approved by user. Scope frozen for subsequent stages.")
 
     # ---- STAGES 2-6: search, verify, screen, matrix, outline, draft, review ----
     # The whole cycle lives in stages.run_research, shared with the web app.
