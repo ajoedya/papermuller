@@ -41,7 +41,7 @@ python app.py
 
 Open **http://localhost:8765** in your browser. By default, the server binds to **127.0.0.1** (your own computer).
 
-On Windows, you can also double-click `Start.bat` or `Mulai.bat` after installing the dependencies.
+On Windows, you can also double-click `Start.bat` after installing the dependencies.
 
 ### Demo mode vs. live mode
 
@@ -60,6 +60,10 @@ You can configure supported settings from the local app interface as well.
 
 ## The visual research pipeline
 
+![Papermuller research workflow](docs/screenshots/workspace-desktop.png)
+
+The workflow is drawn as a node flowchart: the research topic and the optional PDF library feed the ten stages, the researcher's approval sits between planning and the search, and a dashed loop shows the draft → audit → review revision cycle. On narrow screens the same graph is drawn top to bottom.
+
 | Step | Stage | What happens |
 | --- | --- | --- |
 | 1 | **Research setup** | Propose a title, research questions, keywords, and scope; obtain researcher approval. |
@@ -73,25 +77,44 @@ You can configure supported settings from the local app interface as well.
 | 9 | **Adversarial review** | Critique the draft, research scope, and methodology-related claims. |
 | 10 | **Export & human verification** | Save the draft, working manuscript, evidence ledger, audit results, and researcher checklist. |
 
-Select any node in the flowchart to inspect its **inputs, outputs, status, configured/reported AI model, request count, and token or cost figures when available**.
+Select any node in the flowchart to inspect its **inputs, outputs, status, configured/reported AI model, request count, and token or cost figures when available**. AI stages can be given their own model directly from that panel, and the literature-discovery node shows the active search filters.
 
 The node status is derived from backend events rather than a fabricated progress animation. Steps 7–9 may repeat during revision cycles. Demo activity is explicitly identified as simulated.
 
 ## Configure AI models
 
-Papermuller uses [OpenRouter](https://openrouter.ai/) to connect to AI models. You can set a general model and optionally override it for individual tasks.
+Papermuller uses [OpenRouter](https://openrouter.ai/) to connect to AI models. The default `MODEL` is `openrouter/free`, which routes only to free models (subject to availability and daily limits). `openrouter/auto` may select **paid** models. You can override the default for each AI stage:
 
-| Environment setting | Purpose |
+| Environment setting | Stage | Falls back to |
+| --- | --- | --- |
+| `PLAN_MODEL` | 1 Research plan | `MODEL` |
+| `SCREEN_MODEL` | 4 Source selection | `MODEL` |
+| `EVIDENCE_MODEL` | 5 Evidence extraction | `MODEL` |
+| `OUTLINE_MODEL` | 6 Literature synthesis | `WRITER_MODEL`, then `MODEL` |
+| `WRITER_MODEL` | 7 Draft writing | `MODEL` |
+| `VERIFIER_MODEL` | 8 Citation & claim audit | `MODEL` |
+| `REVIEW_MODEL` | 9 Critical review (scoring) | `MODEL` |
+| `REDTEAM_MODEL` | 9 Critical review (red-team pass) | `REVIEW_MODEL`, then `MODEL` |
+
+Set them by clicking a stage on the flowchart or under **Settings → AI models**. **Load model list from OpenRouter** fills the model fields with suggestions from OpenRouter's public catalogue (free models by default). Comma-separated entries act as fallbacks.
+
+The inspector displays the actual model reported by OpenRouter **when that information is available**; before a request runs, it shows the configured model. With router models such as `openrouter/free` or `openrouter/auto`, a specific model is not guaranteed for every request.
+
+## Research settings
+
+Under **Topic & sources → Research settings** (or in `.env`):
+
+| Setting | Meaning |
 | --- | --- |
-| `MODEL` | Default model, including research setup and screening. |
-| `EVIDENCE_MODEL` | Literature matrix and evidence extraction. |
-| `WRITER_MODEL` | Outline creation and drafting. |
-| `VERIFIER_MODEL` | Claim-support auditing. |
-| `REVIEW_MODEL` | Rubric evaluation and adversarial review. |
+| `FROM_YEAR`, `TO_YEAR` | Publication-year window for the OpenAlex search (inclusive). Blank `TO_YEAR` means the current year. |
+| `WORK_TYPE` | `any`, `article`, `review`, or `article_review`. |
+| `OPEN_ACCESS_ONLY` | Only open-access works, which makes full-text PDFs easier to obtain. |
+| `MIN_CITATIONS` | Skip works with fewer citations (0 = no minimum). |
+| `CANDIDATES`, `MAX_PAPERS`, `MIN_VERIFIED` | How many works to check, keep, and require before drafting. |
+| `REVISION_ROUNDS`, `TARGET_SCORE` | Revision limit and AI review threshold. |
+| `LANGUAGE` | Draft language (English or Indonesian). |
 
-Overrides left blank use the default model. The same options are available in the app's configuration area. Comma-separated model entries can be used for fallback routing where supported.
-
-The inspector displays the actual model reported by OpenRouter **when that information is available**; before a request runs, it shows the configured model. With `openrouter/auto`, a specific model is not guaranteed for every request.
+The filters are sent to OpenAlex and the year range is re-checked locally. Each run saves the filters it used in `2_search_settings.json`.
 
 **Usage reporting:** Token counts and costs appear only when the provider returns them. “Not reported” does not mean free. Simulated numbers in demo mode are not real usage or billing records.
 
@@ -136,7 +159,7 @@ The project currently uses a lightweight Python backend (`app.py`, `harness.py`,
 - Literature selection may omit important studies, and AI review scores do **not** guarantee publishable academic quality.
 - Empirical study design, data collection, analysis, methods, and results remain the researcher's responsibility.
 - Real-model pricing, quotas, and availability depend on the provider. Check them before live use.
-- The interface, status messages, and review controls are in **English**. Draft output language is configured separately (English by default; Indonesian is also available). Existing draft-language preferences are preserved. `i18n.py` is retained for future localization.
+- The interface is available in **English and Indonesian** (switch with EN/ID in the top bar; the choice is remembered in your browser). Run-log lines and server error messages are still English. Draft output language is configured separately. `i18n.py` is retained for future localization of the command-line harness.
 
 ## License
 

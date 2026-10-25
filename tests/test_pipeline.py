@@ -42,8 +42,9 @@ class PipelineTests(unittest.TestCase):
                 llm.EVENT_HOOK=old_hook
         self.assertTrue(observed[-1]['simulated'])
         self.assertEqual(observed[-1]['usage'],{})
-    def test_interface_stays_english_with_indonesian_drafts(self):
-        # Output-language preferences must not change application navigation or errors.
+    def test_interface_defaults_to_english_with_indonesian_option(self):
+        # The draft language must not change navigation or API errors; the interface
+        # starts in English and offers an Indonesian translation in the browser.
         from urllib.error import HTTPError
         from urllib.request import Request
         settings = {'DEMO_MODE': True, 'LANGUAGE': 'Indonesian'}
@@ -59,6 +60,8 @@ class PipelineTests(unittest.TestCase):
                         html = response.read().decode()
                     self.assertIn('<html lang="en">', html)
                     self.assertIn('Create research plan', html)
+                    self.assertIn('data-lang="id"', html)
+                    self.assertIn('Buat rencana riset', html)
                     with urlopen(base + '/api/status') as response:
                         status = json.load(response)
                     self.assertEqual(status['pipeline'][0]['name'], 'Research plan')

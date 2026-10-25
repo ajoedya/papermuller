@@ -102,8 +102,13 @@ def verified_count(record):
 
 
 def disclosure_template(settings, matrix):
-    model = settings.get('MODEL', '(model not recorded)')
-    review_model = settings.get('REVIEW_MODEL') or model
+    from llm import model_for_stage
+    model = model_for_stage('draft', settings) if settings.get('MODEL') else '(model not recorded)'
+    review_model = model_for_stage('review', settings) if settings.get('MODEL') else model
+    roles = [('plan', 'planning'), ('screen', 'screening'), ('matrix', 'evidence extraction'),
+             ('outline', 'synthesis'), ('evidence_audit', 'claim audit'), ('redteam', 'red-team review')]
+    stage_models = "".join(f"- {label}: `{model_for_stage(stage, settings)}`\n" for stage, label in roles) \
+        if settings.get('MODEL') else ""
     return ("# Draft AI-assistance disclosure (edit to match journal requirements)\n\n"
             "**This is a disclosure template, not an automatically validated compliance statement.**\n\n"
             "During preparation of this manuscript, the author used an AI-assisted local research "
@@ -112,4 +117,5 @@ def disclosure_template(settings, matrix):
             "citation and evidence issues. The author is responsible for reading the cited works, "
             "verifying all claims, reviewing the entire manuscript, and following the journal's disclosure policy.\n\n"
             f"Sources selected in the research matrix: {len(matrix)}. "
-            "The system's validation results are provisional and do not constitute scientific peer review.\n")
+            "The system's validation results are provisional and do not constitute scientific peer review.\n"
+            + (f"\nModels configured for other stages:\n{stage_models}" if stage_models else ""))

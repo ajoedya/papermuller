@@ -29,7 +29,7 @@ import json
 import re
 
 from llm import ask, ask_for_json
-from tools import search_papers, verify_doi
+from tools import search_papers, verify_doi, within_filters
 from sources import source_for_paper, source_prompt, quote_location
 from manuscript import (compile_manuscript, verification_record, disclosure_template)
 from quality import (normalize_doi, quote_is_in_abstract, citation_audit,
@@ -132,7 +132,8 @@ def stage_search(plan, settings, folder):
     per_keyword = []
     for keyword in plan["keywords"]:
         print(f"   searching: {keyword}")
-        per_keyword.append(search_papers(keyword, settings, how_many=15))
+        results = search_papers(keyword, settings, how_many=15)
+        per_keyword.append([p for p in results if within_filters(p, settings)])
 
     # Take result #1 of every keyword, then #2 of every keyword, and so on.
     # OpenAlex already orders by relevance, so this keeps the best of each keyword.
@@ -150,6 +151,11 @@ def stage_search(plan, settings, folder):
     for number, paper in enumerate(papers, start=1):
         paper["id"] = f"P{number}"
     save_csv(folder, "2_papers_found.csv", papers)
+    save_json(folder, "2_search_settings.json", {
+        "keywords": plan["keywords"], "from_year": settings.get("FROM_YEAR"),
+        "to_year": settings.get("TO_YEAR"), "work_type": settings.get("WORK_TYPE", "any"),
+        "open_access_only": bool(settings.get("OPEN_ACCESS_ONLY")),
+        "min_citations": settings.get("MIN_CITATIONS", 0), "candidates": settings.get("CANDIDATES")})
     return papers
 
 
@@ -516,7 +522,7 @@ def run_research(plan, settings, folder, say=print, on_stage=lambda n: None):
     chosen = stage_screen(verified, plan, settings, folder) if verified else []
     if len(chosen) < settings["MIN_VERIFIED"]:
         raise SystemExit(f"Fewer relevant articles with matching metadata than required: {settings['MIN_VERIFIED']}. "
-                         "Try broader search terms or an earlier start year, then start again.")
+                         "Try broader search terms, a wider year range, or looser search filters, then start again.")
 
     on_stage(5)
     say("Stage 5: extracting evidence into the source matrix...")

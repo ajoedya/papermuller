@@ -22,11 +22,22 @@ def _report(event):
         except Exception:
             pass  # Observability must never break a research run.
 
+# Which settings key chooses the model for each AI call. The first non-empty
+# key wins; MODEL is the final fallback.
 ROLE_MODELS = {
-    "matrix": "EVIDENCE_MODEL", "outline": "WRITER_MODEL",
-    "draft": "WRITER_MODEL", "evidence_audit": "VERIFIER_MODEL",
-    "review": "REVIEW_MODEL", "redteam": "REVIEW_MODEL",
+    "plan": ("PLAN_MODEL",), "screen": ("SCREEN_MODEL",),
+    "matrix": ("EVIDENCE_MODEL",), "outline": ("OUTLINE_MODEL", "WRITER_MODEL"),
+    "draft": ("WRITER_MODEL",), "evidence_audit": ("VERIFIER_MODEL",),
+    "review": ("REVIEW_MODEL",), "redteam": ("REDTEAM_MODEL", "REVIEW_MODEL"),
 }
+
+
+def model_for_stage(stage, settings):
+    """The configured model string (possibly comma-separated fallbacks) for a stage."""
+    for key in ROLE_MODELS.get(stage, ()):
+        if str(settings.get(key) or "").strip():
+            return str(settings[key]).strip()
+    return str(settings.get("MODEL") or "openrouter/free").strip()
 import urllib.request
 import urllib.error
 
@@ -50,7 +61,7 @@ def ask(prompt, settings, stage="general", system="You are a careful academic re
     # ---- Build the message in the format OpenRouter expects ----
     # MODEL can be one name, or several separated by commas.
     # With several, OpenRouter automatically tries the next one if the first fails.
-    configured = settings.get(ROLE_MODELS.get(stage, "")) or settings["MODEL"]
+    configured = model_for_stage(stage, settings)
     models = [m.strip() for m in configured.split(",") if m.strip()]
     body = {
         "model": models[0],
@@ -121,6 +132,33 @@ def _send(body, settings, stage="general"):
     _report({"stage": stage, "model": str(data.get("model") or body["model"]),
              "simulated": False, "usage": data.get("usage") or {}})
     return data["choices"][0]["message"]["content"]
+
+
+MODELS_URL = "https://openrouter.ai/api/v1/models"
+
+
+def list_models(free_only=True):
+    """Fetch OpenRouter's public model catalogue (no API key is sent)."""
+    request = urllib.request.Request(MODELS_URL, headers={"User-Agent": "papermuller/1.0"})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"Could not load the OpenRouter model list: {error}")
+    models = []
+    for item in data.get("data", []):
+        model_id = str(item.get("id") or "")
+        pricing = item.get("pricing") or {}
+        free = model_id.endswith(":free") or (str(pricing.get("prompt")) in ("0", "0.0")
+                                              and str(pricing.get("completion")) in ("0", "0.0"))
+        if model_id and (free or not free_only):
+            models.append({"id": model_id, "name": str(item.get("name") or model_id)[:120],
+                           "free": free, "context": item.get("context_length")})
+    models.sort(key=lambda m: (not m["free"], m["id"]))
+    routers = [{"id": "openrouter/free", "name": "OpenRouter Free router", "free": True, "context": None}]
+    if not free_only:
+        routers.append({"id": "openrouter/auto", "name": "OpenRouter Auto (may be paid)", "free": False, "context": None})
+    return routers + [m for m in models if m["id"] not in ("openrouter/free", "openrouter/auto")]
 
 
 def ask_for_json(prompt, settings, stage="general"):

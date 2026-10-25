@@ -75,9 +75,28 @@ STEPS = [{'id': 1,
   'output': 'Local files for researcher review',
   'role': 'system'}]
 
-ROLE_KEYS = {"planner": "MODEL", "retriever": None, "parser": None,
-             "screen": "MODEL", "evidence": "EVIDENCE_MODEL", "writer": "WRITER_MODEL",
-             "verifier": "VERIFIER_MODEL", "reviewer": "REVIEW_MODEL", "system": None}
+# AI stages and the settings key(s) that pick their model, in fallback order.
+# Each entry is shown as an editable model slot on the flowchart.
+STAGE_MODEL_SLOTS = {
+    1: [{"key": "PLAN_MODEL", "label": "Planner", "chain": ["PLAN_MODEL"]}],
+    4: [{"key": "SCREEN_MODEL", "label": "Screener", "chain": ["SCREEN_MODEL"]}],
+    5: [{"key": "EVIDENCE_MODEL", "label": "Extractor", "chain": ["EVIDENCE_MODEL"]}],
+    6: [{"key": "OUTLINE_MODEL", "label": "Synthesis", "chain": ["OUTLINE_MODEL", "WRITER_MODEL"]}],
+    7: [{"key": "WRITER_MODEL", "label": "Writer", "chain": ["WRITER_MODEL"]}],
+    8: [{"key": "VERIFIER_MODEL", "label": "Auditor", "chain": ["VERIFIER_MODEL"]}],
+    9: [{"key": "REVIEW_MODEL", "label": "Reviewer", "chain": ["REVIEW_MODEL"]},
+        {"key": "REDTEAM_MODEL", "label": "Red-team", "chain": ["REDTEAM_MODEL", "REVIEW_MODEL"]}],
+}
+SERVICES = {2: "OpenAlex API", 3: "Crossref + pypdf", 10: "Local Python"}
+ROLE_KEYS = {"planner": "PLAN_MODEL", "screen": "SCREEN_MODEL", "evidence": "EVIDENCE_MODEL",
+             "writer": "WRITER_MODEL", "verifier": "VERIFIER_MODEL", "reviewer": "REVIEW_MODEL"}
+
+
+def resolve(chain, settings):
+    for key in chain:
+        if str(settings.get(key) or "").strip():
+            return str(settings[key]).strip()
+    return settings.get("MODEL") or "openrouter/free"
 
 
 def model_for_role(role, settings):
@@ -86,8 +105,19 @@ def model_for_role(role, settings):
     key = ROLE_KEYS.get(role)
     if not key:
         return {"retriever": "OpenAlex API", "parser": "Crossref + pypdf", "system": "Local Python"}.get(role, "Rules engine")
-    return settings.get(key) or settings.get("MODEL", "openrouter/auto")
+    return resolve([key], settings)
 
 
 def describe(settings):
-    return [dict(step, model=model_for_role(step["role"], settings)) for step in STEPS]
+    steps = []
+    for step in STEPS:
+        slots = []
+        for slot in STAGE_MODEL_SLOTS.get(step["id"], []):
+            slots.append({"key": slot["key"], "label": slot["label"],
+                          "value": str(settings.get(slot["key"]) or ""),
+                          "effective": resolve(slot["chain"], settings),
+                          "inherits": next((k for k in slot["chain"][1:] if settings.get(k)), "MODEL")})
+        model = ("Demo simulator (offline)" if settings.get("DEMO_MODE") and slots else
+                 slots[0]["effective"] if slots else SERVICES.get(step["id"], "Rules engine"))
+        steps.append(dict(step, model=model, model_slots=slots))
+    return steps
