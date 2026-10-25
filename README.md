@@ -1,175 +1,78 @@
 # Papermuller
 
-A small, beginner-friendly AI research assistant that turns a rough topic into a
-**literature review draft whose references are verified to exist**.
+**Evidence-first Research & Writing Lab**, sebuah aplikasi web lokal untuk menyusun tinjauan literatur yang dapat diaudit, mengimpor PDF full-text yang dimiliki peneliti, menyiapkan manuskrip kerja IMRaD, dan mengamati setiap tahap melalui **interactive research pipeline**.
 
-It runs on your own computer, needs **no extra Python packages**, and can work
-entirely on **free AI models** through [OpenRouter](https://openrouter.ai).
-Papers come from [OpenAlex](https://openalex.org) and are checked against
-[Crossref](https://www.crossref.org), the official DOI registry.
 
-![Results page](docs/screenshots/3-results.png)
+> **Status**: prototipe penelitian. Semua klaim, metode, hasil, kutipan, dan kebijakan penggunaan AI wajib diverifikasi peneliti. Audit AI bukan peer review.
 
-> The interface is available in **English** and **Bahasa Indonesia** (switch at the top right).
-> Drafts can be written in 12 languages.
----
+## Instalasi
 
-## Why this exists
+Memerlukan **Python 3.11+** dan internet untuk mode riset nyata. Mode demo berjalan offline setelah dependensi terpasang.
 
-AI chatbots are good writers but unreliable researchers: they often invent
-references. This project wraps the AI in a **harness**, a manager program that
-runs the AI step by step, gives it real tools, and checks its work with plain
-code before moving on. The AI may only cite papers that a real database confirmed.
-
-## Features
-
-- **Verified references only.** Every paper is checked in Crossref, and code (not AI)
-  rejects any draft that cites something outside the verified list.
-- **Human in control.** You approve the research plan and keywords before anything runs.
-- **Relevance screening.** From up to 30 verified candidates, the AI keeps the 12 most
-  relevant to your research questions.
-- **Literature matrix.** Method, main finding, limitation and relevance for each paper,
-  exported as a CSV that opens in Excel.
-- **Outline first, then write.** The review is organised by themes, not paper by paper.
-- **Rubric-based reviewer with a target score.** A reviewer AI scores 5 criteria;
-  the final score is computed by code. Drafts are revised until they reach your
-  target (default 8/10, max 4 rounds). The best draft is always kept.
-- **Reference list included** in the final draft.
-- **Quota friendly.** About 10 to 15 AI requests per run; automatic retries and backup models.
-- **Demo mode.** Try the full flow with fictional data, free and offline.
-
-## How it works
-
-```
- Your topic
-    |
- [1] PLAN        AI drafts title, research questions, keywords
-    |
- >> YOU APPROVE  (edit keywords if needed)
-    |
- [2] SEARCH      OpenAlex, most relevant results from every keyword
- [3] VERIFY      Crossref confirms each DOI          <- gate: enough real papers?
-     SCREEN      AI keeps only papers that answer the research questions
- [4] MATRIX      AI summarises each paper (from its abstract only)
- [5] OUTLINE     AI plans themes and the research gap
-     DRAFT       AI writes, citing [P1], [P2]...
-     CITE CHECK  code checks every citation is verified   <- gate
- [6] REVIEW      reviewer scores 5 criteria               <- gate: target reached?
-     (if not, the reviewer's fixes go back to DRAFT, up to 4 rounds)
-    |
- FINAL DRAFT + REFERENCES   saved in projects/<date_time>/
+```sh
+python -m pip install -r requirements.txt
+cp env.example .env  # Windows: copy env.example .env
+python app.py
 ```
 
-| Part | File | Role |
-|---|---|---|
-| Manager | `harness.py` | Terminal version: order of work, approval, logging |
-| Web interface | `app.py`, `ui.html` | Local web page for non-technical users |
-| Workers | `stages.py` | One function per stage, with plain-English prompts you can edit |
-| Brain | `llm.py` | Talks to OpenRouter, with retries and backup models |
-| Hands | `tools.py` | OpenAlex search and Crossref verification |
-| Practice kit | `demo_data.py` | Fictional answers for demo mode |
-| Translations | `i18n.py`, `ui.html` | Messages in English and Indonesian |
-| Settings | `env.example` → `.env` | Keys, models, language, quality rules |
+Di Windows, kamu juga dapat menjalankan `Start.bat` atau `Mulai.bat` (sesudah menginstal dependensi). Buka `http://localhost:8765`. Server hanya mendengarkan `127.0.0.1`.
 
-## Quick start (Windows, no terminal)
+Default `DEMO_MODE=true` sehingga kamu dapat bereksperimen tanpa API key. Untuk riset nyata, isi `.env` menggunakan kredensial OpenRouter dan OpenAlex, lalu ubah `DEMO_MODE=false`. Kamu juga bisa menyimpannya dari antarmuka pengaturan lokal.
 
-1. Install **Python 3.11+** from [python.org](https://www.python.org/downloads/) and tick
-   **"Add Python to PATH"** during installation.
-2. Download this repository (green **Code** button → **Download ZIP**) and unzip it,
-   or clone it: `git clone https://github.com/ajoedya/papermuller.git`
-3. Double-click **`Start.bat`**. A black window opens and your browser shows the app
-   at `http://localhost:8765`. Keep the black window open while you use it.
-4. **Settings:** leave *Demo mode* ticked for a first try, or untick it and paste your keys
-   (see below). Click **Save settings**, then **Check connections**.
-5. **Research:** type a topic, click **Create research plan**, review it,
-   then **Approve and continue**.
-6. **Results:** read the score, final draft and matrix, and download the files.
+**Jangan pernah commit `.env`, API key, PDF berlisensi, atau isi direktori `projects/` dan `library/` ke GitHub.** Jika sebelumnya pernah terunggah, rotasi key.
 
-| Settings | Plan approval |
-|---|---|
-| ![Settings](docs/screenshots/1-settings.png) | ![Plan approval](docs/screenshots/2-approve-plan.png) |
+## Visual pipeline: 10 tahap
 
-## Getting the keys (both free)
+1. Setup Riset — susun rencana dan minta persetujuan peneliti.
+2. Discovery Literatur — cari artikel melalui OpenAlex.
+3. Verifikasi & PDF — validasi DOI dengan Crossref; menggunakan PDF dari library lokal bila DOI cocok.
+4. Screening — pilih artikel yang relevan.
+5. Ekstraksi Bukti — susun matriks dari abstrak atau potongan teks PDF dan catat lokasi kutipan.
+6. Sintesis Literatur — rancang outline bertema.
+7. Draft Manuskrip — tulis draf tinjauan literatur dan lakukan iterasi perbaikan.
+8. Audit Sitasi & Klaim — validasi ID sitasi dan dukungan bukti.
+9. Adversarial Review — reviewer AI menilai rubrik, ruang lingkup, dan temuan berisiko.
+10. Ekspor & Verifikasi — simpan manuskrip kerja, bukti, checklist peneliti, dan disclosure AI.
 
-| Key | Where | Notes |
-|---|---|---|
-| OpenRouter | [openrouter.ai](https://openrouter.ai) → Keys → Create Key | Starts with `sk-or-`. Set a credit limit on the key. |
-| OpenAlex | [openalex.org](https://openalex.org) → sign up → `openalex.org/settings/api` | Without it you get a very small daily budget. |
+Klik setiap node flowchart untuk melihat **input, output, status, model yang dikonfigurasi atau benar-benar dilaporkan provider, token, jumlah respons AI, dan biaya bila dilaporkan**. Status diturunkan dari event backend, **bukan animasi progres atau angka buatan**. Saat draft direvisi, tahap 7–9 dapat dikerjakan berulang.
 
-**Free model quota:** OpenRouter allows 50 free-model requests per day, or 1,000 per day
-after a one-time purchase of 10 credits. In OpenRouter **Settings → Privacy**, the switch
-for free endpoints must allow providers that may train on prompts, or most free models
-return error 404. Do not send confidential data through free models.
+## Multi-model routing
 
-## Terminal version
+Atur model OpenRouter default melalui `MODEL`. Kosongkan override jika ingin memakai default.
 
-```bash
-cp env.example .env          # Windows: copy env.example .env
-python harness.py "your research topic"
+| Setting | Pemakaian |
+| --- | --- |
+| `MODEL` | Setup riset dan screening |
+| `EVIDENCE_MODEL` | Matriks / ekstraksi bukti |
+| `WRITER_MODEL` | Outline dan drafting |
+| `VERIFIER_MODEL` | Audit dukungan klaim |
+| `REVIEW_MODEL` | Review rubrik dan adversarial review |
+
+Setiap field bisa diatur di tab **Konfigurasi**. Nama model pada inspector diambil dari respons OpenRouter bila tersedia; sebelum request berjalan tampil model yang dikonfigurasi. `openrouter/auto` tidak menjamin model yang sama di setiap request. Mode demo selalu ditandai sebagai simulasi.
+
+Jumlah token/biaya hanya muncul ketika OpenRouter menyediakannya dalam respons; tanda *Tidak dilaporkan* berarti data tidak tersedia, bukan gratis. Jangan mengandalkan hitungan demo sebagai biaya nyata. Fallback model dipisahkan dengan koma pada field model default/override.
+
+## Tahap peneliti dan artefak
+
+- **Research scope approval**: edit judul, research questions, asumsi dan kata kunci. AI tidak berhak mengubah lokasi/periode secara diam-diam.
+- **PDF library**: unggah PDF digital berlapisan teks hingga 12 MB dan 150 halaman; hubungkan dengan DOI yang benar. PDF scan tanpa teks belum didukung OCR.
+- **Evidence ledger**: kutipan, asal abstrak/halaman PDF, dan pemeriksaan referensi. Kecocokan teks bukan bukti otomatis kebenaran interpretasi.
+- **IMRaD**: literature review AI disertakan, tetapi Methods/Results hanya berasal dari masukan peneliti atau berupa placeholder yang jelas. AI tidak mengarang hasil empiris.
+- **Human verification checklist**: semua pemeriksaan sumber dan deklarasi penggunaan AI harus dilakukan peneliti sendiri.
+
+Berkas disimpan ke `projects/<timestamp>/`. Dokumen paling berguna: `7_final_draft.md`, `7_final_evidence_audit.json`, `8_manuscript_working.md`, `8_evidence_ledger.csv` (jika tersedia), dan `8_human_verification.json`.
+
+## Pengujian
+
+```sh
+python -m pip install -r requirements-dev.txt
+python -m unittest discover -s tests -v
 ```
 
-## Configuration (`.env`)
+Tes menguji audit bukti, impor PDF, kontrak endpoint lokal, routing model, dan telemetry pipeline. Mode riset nyata memerlukan pengujian tambahan dengan akun API masing-masing.
 
-| Setting | Default | Meaning |
-|---|---|---|
-| `DEMO_MODE` | `true` | `true` = fictional data, free and offline |
-| `OPENROUTER_API_KEY` | | Your OpenRouter key |
-| `MODEL` | 3 free models | One model or several separated by commas (backups) |
-| `REVIEW_MODEL` | empty | Optional different model for the reviewer |
-| `LANGUAGE` | `English` | Draft language, e.g. `Indonesian`, `Spanish` |
-| `UI_LANGUAGE` | `en` | Interface and log language: `en` or `id` |
-| `TARGET_SCORE` | `8` | Reviewer average score a draft must reach |
-| `REVISION_ROUNDS` | `3` | Extra revision rounds after the first draft |
-| `CANDIDATES` / `MAX_PAPERS` | `30` / `12` | Papers verified / kept after screening |
-| `MIN_VERIFIED` | `5` | Stop if fewer relevant, verified papers |
-| `FROM_YEAR` | `2015` | Earliest publication year |
-| `OPENALEX_API_KEY`, `EMAIL` | | OpenAlex access |
-| `IGNORE_PROVIDERS` | empty | Providers to skip if one keeps failing, e.g. `Nvidia` |
+## Keterbatasan dan tanggung jawab
 
-## Output files
+PDF diproses sebagai potongan relevan, bukan sebagai pengganti membaca keseluruhan artikel. Tidak ada OCR pada rilis ini. Tidak ada jaminan bahwa artikel yang ditemukan relevan, cuplikan yang cocok benar-benar mendukung interpretasi klaim, atau skor reviewer mencerminkan kualitas ilmiah. Biaya/kuota tergantung penyedia model. Proyek tidak membuat riset empiris secara otomatis, tidak mengarang metodologi/hasil, dan tidak mengesampingkan kewajiban peneliti untuk mengikuti kebijakan jurnal/institusi.
 
-Each run gets its own folder in `projects/` (ignored by git).
-
-| File | Contents |
-|---|---|
-| `7_final_draft.md` | Best-scoring draft with reference list |
-| `7_final_review.json` | Rubric scores, strengths, suggested fixes |
-| `4_literature_matrix.csv` | Literature matrix (opens in Excel) |
-| `3_verification_report.csv`, `3_screening.json` | Which papers passed and why |
-| `5_outline.json`, `5_draft_v*.md`, `6_review_v*.json` | Every intermediate step |
-| `log.txt` | Full log of the run |
-
-## Troubleshooting
-
-| Message | Fix |
-|---|---|
-| `error 404 ... Provider returned error` | That provider is down. Use backup models or set `IGNORE_PROVIDERS`. |
-| `error 404` on every free model | Check OpenRouter privacy settings (see above). |
-| `free-models-per-day` | Daily free quota used up. Wait, or buy 10 credits once. |
-| `Server said 400/429` from OpenAlex | Check your OpenAlex key or daily budget. |
-| `Expected JSON but got...` | The model is too weak for structured output. Try a larger one. |
-
-## Limitations and responsible use
-
-- It reads **abstracts only**, not full texts, so summaries can be shallow.
-- It writes the **literature review section**, not a full paper.
-- The reviewer is an AI; a score of 8/10 is a useful signal, not a guarantee of quality.
-- **You are the author.** Read every source you cite, check every claim, and follow your
-  institution's and journal's rules on disclosing AI assistance.
-
-## Security
-
-- Your keys live only in `.env`, which `.gitignore` keeps out of the repository.
-- The web app listens on `127.0.0.1` only, so it is not reachable from other computers.
-- If you ever commit a key by mistake, delete that key in OpenRouter/OpenAlex immediately
-  and create a new one; removing the file from git is not enough.
-
-## Adding a language
-
-1. In `ui.html`, copy the `en` block inside `I18N`, change its key (e.g. `ms`), translate the text,
-   and add an `<option>` to the language menu.
-2. In `i18n.py`, copy the `en` block in `MESSAGES` the same way.
-
-## License
-
-[MIT](LICENSE)
+UI flowchart v5 saat ini menggunakan Bahasa Indonesia; kemampuan alih bahasa UI lama belum dimigrasikan secara penuh (bahasa draf tetap bisa diatur). `i18n.py` lama disimpan untuk migrasi selanjutnya.

@@ -54,24 +54,26 @@ def fake_llm_answer(stage, prompt):
     if stage == "plan":
         _counter.update(draft=0, review=0)  # each new run starts the demo story again
         return json.dumps({
-            "title": "Does Governance Quality Shape the Poverty Impact of Road Infrastructure?",
+            "title": "Road Infrastructure, Governance Quality and Poverty Outcomes",
             "research_questions": [
-                "Does road infrastructure reduce poverty at the district level?",
-                "Does governance quality strengthen or weaken that effect?"],
+                "How is road infrastructure associated with poverty outcomes?",
+                "How does governance quality moderate these relationships?"],
             "keywords": ["road infrastructure poverty", "governance quality public investment",
                          "fiscal transfers service delivery", "transport spillovers"],
-            "scope_note": "District-level studies after 2015; excludes urban transit."})
+            "scope_note": "Infrastructure, governance and poverty; geography, population and timeframe are not yet specified.",
+            "assumptions": ["Which geography and population should the actual study cover?"]})
 
     if stage == "screen":
         ids = re.findall(r"\[(P\d+)\]", prompt)
         return json.dumps({"include": ids, "excluded": {}})
 
     if stage == "matrix":
-        ids = re.findall(r"Paper (P\d+)", prompt)
-        return json.dumps({"rows": [{"id": i, "method": "Panel regression (as stated in abstract)",
-                                     "main_finding": "Effect is positive but conditional.",
-                                     "limitation": "Limited to one country",
-                                     "relevance": "Helps answer both research questions."} for i in ids]})
+        matches = re.findall(r"Paper (P\d+):[^\n]*\nAbstract: ([^\n]+)", prompt)
+        return json.dumps({"rows": [{"id": pid, "method": "As reported in the abstract",
+                                     "main_finding": abstract,
+                                     "evidence_quote": abstract,
+                                     "limitation": "not stated",
+                                     "relevance": "Relevant to research questions."} for pid, abstract in matches]})
 
     if stage == "outline":
         return json.dumps({"themes": [
@@ -91,10 +93,25 @@ def fake_llm_answer(stage, prompt):
                 "## Measurement\n\nMeasuring governance at the subnational level remains contested [P6].\n\n"
                 "**Research gap:** few studies test governance as a moderator at district level [P2; P6].")
 
+    if stage == "evidence_audit":
+        abstracts = dict(re.findall(r"(P\d+):[^\n]*\nABSTRACT: (?:\[PAGE ABSTRACT\] )?([^\n]+)", prompt))
+        results = []
+        for number, cites in re.findall(r"PARAGRAPH (\d+) \(cites ([^)]+)\):", prompt):
+            ids = [pid.strip() for pid in cites.split(",") if pid.strip()]
+            results.append({"paragraph": int(number), "status": "supported",
+                            "evidence": [{"id": pid, "quote": abstracts.get(pid, "")}
+                                         for pid in ids],
+                            "reason": "DEMO ONLY: scripted check, not genuine semantic evaluation"})
+        return json.dumps({"items": results})
+
+    if stage == 'redteam':
+        return json.dumps({'findings': [], 'limitations': ['Demo menggunakan literatur fiktif'],
+                           'summary': 'DEMO ONLY: not a genuine adversarial review'})
+
     if stage == "review":
         _counter["review"] += 1
         level = {1: 6, 2: 7, 3: 8}.get(_counter["review"], 8)
-        scores = {k: level for k in ["synthesis", "research_gap", "coverage", "evidence_use", "clarity"]}
+        scores = {k: level for k in ["synthesis", "research_gap", "coverage", "evidence_use", "clarity", "scope_fidelity"]}
         scores["clarity"] = min(10, level + 1)
         return json.dumps({"scores": scores, "strengths": ["Clear thematic structure"],
                            "fixes": [] if level >= 8 else ["Compare the methods of P2 and P5 explicitly",

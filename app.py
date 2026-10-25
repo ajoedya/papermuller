@@ -1,7 +1,7 @@
 """
 app.py  -  THE SIMPLE WEB INTERFACE
 ===================================
-Double-click "Start.bat" (or run:  python app.py ) and your browser opens
+Double-click "Mulai.bat" (or run:  python app.py ) and your browser opens
 a simple page where you can set keys, type a topic, approve the plan, and
 read the results. No terminal typing needed.
 
@@ -18,6 +18,7 @@ How it works, in short:
 import csv
 import io
 import json
+import re
 import os
 import shutil
 import sys
@@ -32,7 +33,9 @@ import harness
 import llm
 import stages
 import tools
-from i18n import tr, set_language
+import sources
+import manuscript
+import pipeline
 
 HERE = Path(__file__).parent
 ENV_FILE = HERE / ".env"
@@ -41,7 +44,9 @@ PORT = 8765
 
 # Everything the page needs to know about the current job lives here.
 STATE = {"phase": "idle", "stage": 0, "log": [], "plan": None, "topic": "",
-         "folder": "", "error": "", "requests": 0}
+         "folder": "", "error": "", "requests": 0,
+         "completed_steps": [], "events": [], "usage_by_stage": {}, "active_model": "",
+         "stage_started": ""}
 LOCK = threading.Lock()
 
 
@@ -71,10 +76,8 @@ def update_env(updates):
 def read_settings():
     """Load settings; return (settings, problem message or '')."""
     try:
-        settings = harness.load_settings()
-        set_language(settings["UI_LANGUAGE"])
-        return settings, ""
-    except SystemExit as stop:
+        return harness.load_settings(), ""
+    except (SystemExit, ValueError) as stop:
         return None, str(stop)
 
 
@@ -98,6 +101,54 @@ class PageLog(io.TextIOBase):
         return len(text)
 
 
+LLM_STAGE_TO_STEP = {"plan": 1, "screen": 4, "matrix": 5, "outline": 6,
+                     "draft": 7, "evidence_audit": 8, "review": 9, "redteam": 9, "check": 0}
+
+
+def record_event(kind, step, message, **extra):
+    item = {"time": datetime.now().strftime("%H:%M:%S"), "kind": kind,
+            "step": step, "message": str(message)[:240], **extra}
+    with LOCK:
+        STATE["events"].append(item)
+        STATE["events"] = STATE["events"][-150:]
+
+
+def enter_step(step):
+    with LOCK:
+        previous = STATE.get("stage", 0)
+        if 1 <= previous <= 10 and previous != step and previous not in STATE["completed_steps"]:
+            STATE["completed_steps"].append(previous)
+        STATE["stage"] = step
+        STATE["stage_started"] = datetime.now().isoformat(timespec="seconds")
+        STATE["active_model"] = ""
+    record_event("stage", step, f"Memulai: {pipeline.STEPS[step - 1]['name']}")
+
+
+def on_llm_event(event):
+    step = LLM_STAGE_TO_STEP.get(event.get("stage"), 0)
+    model = str(event.get("model", ""))[:200]
+    usage = event.get("usage") or {}
+    values = {k: usage.get(k) for k in ("prompt_tokens", "completion_tokens", "total_tokens", "cost")
+              if isinstance(usage.get(k), (int, float)) and not isinstance(usage.get(k), bool)}
+    with LOCK:
+        STATE["active_model"] = model
+        if step:
+            old = STATE["usage_by_stage"].setdefault(str(step), {"calls": 0, "prompt_tokens": 0,
+                                                               "completion_tokens": 0, "total_tokens": 0,
+                                                               "cost": 0, "has_cost": False, "has_tokens": False})
+            old["calls"] += 1
+            for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                if k in values:
+                    old[k] += values[k]
+                    old["has_tokens"] = True
+            if "cost" in values:
+                old["cost"] += values["cost"]
+                old["has_cost"] = True
+    record_event("model", step, "Respons model diterima" if not event.get("simulated")
+                 else "Respons simulasi demo", model=model, simulated=bool(event.get("simulated")),
+                 usage=values)
+
+
 def say(message):
     print(message)
 
@@ -112,15 +163,18 @@ def run_in_background(job):
     """Run `job` in a separate thread, turning any error into a clear message."""
     def wrapper():
         old = sys.stdout
+        old_hook = llm.EVENT_HOOK
+        llm.EVENT_HOOK = on_llm_event
         sys.stdout = PageLog(Path(STATE["folder"]) if STATE["folder"] else None)
         try:
             job()
         except SystemExit as stop:
-            set_state(phase="failed", error=str(stop).strip() or tr("stopped"))
+            set_state(phase="failed", error=str(stop).strip() or "Proses berhenti.")
         except Exception as error:  # unexpected problem: show it instead of crashing
             set_state(phase="failed", error=f"{type(error).__name__}: {error}")
         finally:
             sys.stdout = old
+            llm.EVENT_HOOK = old_hook
             set_state()
     threading.Thread(target=wrapper, daemon=True).start()
 
@@ -132,16 +186,17 @@ def job_plan(topic):
     settings, problem = read_settings()
     if problem:
         raise SystemExit(problem)
-    folder = PROJECTS / datetime.now().strftime("%Y%m%d_%H%M%S")
-    folder.mkdir(parents=True)
+    folder = PROJECTS / datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    folder.mkdir(parents=True, exist_ok=False)
     set_state(folder=str(folder))
+    enter_step(1)
     sys.stdout.folder = folder
-    say(tr("topic", t=topic))
-    say(tr("mode_demo" if settings["DEMO_MODE"] else "mode_real"))
-    say(tr("plan_start"))
+    say(f"Topik: {topic}")
+    say(f"Mode: {'LATIHAN (data contoh)' if settings['DEMO_MODE'] else 'NYATA'}")
+    say("Tahap 1: menyusun rencana penelitian...")
     plan = stages.stage_plan(topic, settings, folder)
     set_state(phase="approve", plan=plan, stage=1)
-    say(tr("plan_ready"))
+    say("Rencana siap. Silakan periksa lalu setujui.")
 
 
 def job_research(plan):
@@ -149,33 +204,40 @@ def job_research(plan):
     if problem:
         raise SystemExit(problem)
     folder = Path(STATE["folder"])
+    plan = stages.validate_plan(plan, STATE["topic"])
     (folder / "1_plan.json").write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
-    say(tr("approved"))
+    (folder / "1_plan_approved.json").write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
+    say("Rencana disetujui pengguna.")
     # The whole cycle is shared with the terminal version (stages.run_research)
-    stages.run_research(plan, settings, folder, say=say, on_stage=lambda n: set_state(stage=n))
-    set_state(phase="done", stage=7)
-    say(tr("done"))
+    stages.run_research(plan, settings, folder, say=say, on_stage=enter_step)
+    with LOCK:
+        if 10 not in STATE["completed_steps"]:
+            STATE["completed_steps"].append(10)
+    set_state(phase="done", stage=10)
+    record_event("done", 10, "Artefak manuskrip dan audit tersedia; verifikasi manusia tetap diperlukan")
+    say("Selesai.")
 
 
 def run_checks():
     """Test every connection quickly, so problems show up before research starts."""
     settings, problem = read_settings()
     if problem:
-        return [{"name": tr("check_settings"), "ok": False, "note": problem}]
+        return [{"name": "Berkas pengaturan", "ok": False, "note": problem}]
     if settings["DEMO_MODE"]:
-        return [{"name": tr("check_demo"), "ok": True, "note": tr("check_demo_note")}]
+        return [{"name": "Mode latihan", "ok": True,
+                 "note": "Mode latihan aktif, jadi tidak perlu koneksi. Matikan untuk riset nyata."}]
     results = []
     try:
         reply = llm.ask("Reply with the single word: OK", settings, stage="check")
-        results.append({"name": tr("check_ai"), "ok": True, "note": tr("check_ai_reply", r=reply.strip()[:40])})
+        results.append({"name": "Model AI (OpenRouter)", "ok": True, "note": f"Menjawab: {reply.strip()[:40]}"})
     except SystemExit as stop:
-        results.append({"name": tr("check_ai"), "ok": False, "note": str(stop).strip()})
+        results.append({"name": "Model AI (OpenRouter)", "ok": False, "note": str(stop).strip()})
     found = tools.search_papers("public policy", settings, how_many=2)
-    results.append({"name": tr("check_oa"), "ok": bool(found),
-                    "note": tr("check_oa_ok", n=len(found)) if found else tr("check_oa_bad")})
+    results.append({"name": "Pencarian artikel (OpenAlex)", "ok": bool(found),
+                    "note": f"{len(found)} artikel contoh ditemukan" if found else "Tidak ada jawaban. Periksa kunci OpenAlex."})
     if found:
         ok, note = tools.verify_doi(found[0]["doi"], found[0]["title"], settings)
-        results.append({"name": tr("check_cr"), "ok": ok, "note": note})
+        results.append({"name": "Verifikasi artikel (Crossref)", "ok": ok, "note": note})
     set_state()
     return results
 
@@ -193,12 +255,22 @@ def read_results():
             matrix = list(csv.DictReader(f))
     draft = folder / "7_final_draft.md" if (folder / "7_final_draft.md").exists() else latest("5_draft_v*.md")
     review = folder / "7_final_review.json" if (folder / "7_final_review.json").exists() else latest("6_review_v*.json")
+    verified_file = folder / '8_human_verification.json'
+    verification = json.loads(verified_file.read_text(encoding='utf-8')) if verified_file.exists() else None
+    redteam_file = folder / '7_redteam_review.json'
+    section_file = folder / '8_section_status.json'
     return {
+        "verification": verification,
+        "verification_progress": manuscript.verified_count(verification) if verification else None,
+        "redteam": json.loads(redteam_file.read_text(encoding='utf-8')) if redteam_file.exists() else None,
+        "section_status": json.loads(section_file.read_text(encoding='utf-8')) if section_file.exists() else None,
         "folder_name": folder.name,
         "matrix": matrix,
         "draft": draft.read_text(encoding="utf-8") if draft else "",
         "draft_file": draft.name if draft else "",
         "review": json.loads(review.read_text(encoding="utf-8")) if review else None,
+        "evidence": json.loads((folder / "7_final_evidence_audit.json").read_text(encoding="utf-8"))
+                    if (folder / "7_final_evidence_audit.json").exists() else None,
         "files": sorted(p.name for p in folder.iterdir()),
     }
 
@@ -215,19 +287,42 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", kind + ("; charset=utf-8" if "text" in kind or "json" in kind else ""))
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
         self.wfile.write(body)
 
     def body(self):
         length = int(self.headers.get("Content-Length") or 0)
-        return json.loads(self.rfile.read(length) or b"{}")
+        if not 0 <= length <= 128_000:
+            raise ValueError("Ukuran permintaan tidak valid (maksimum 128 KB).")
+        data = json.loads(self.rfile.read(length) or b"{}")
+        if not isinstance(data, dict):
+            raise ValueError("Isi permintaan harus objek JSON.")
+        return data
+
+    def safe_host(self):
+        return self.headers.get('Host', '') in (f'localhost:{PORT}', f'127.0.0.1:{PORT}')
+
+    def same_origin(self):
+        origin = self.headers.get('Origin', '')
+        return not origin or origin in (f'http://localhost:{PORT}', f'http://127.0.0.1:{PORT}')
 
     def do_GET(self):
+        if not self.safe_host():
+            return self.send({'error': 'Host tidak diizinkan.'}, 403)
+        if self.path == '/api/library':
+            return self.send({'pdfs': sources.list_pdfs(sources.library_path())})
         if self.path in ("/", "/index.html"):
             return self.send((HERE / "ui.html").read_bytes(), kind="text/html")
         if self.path == "/api/status":
             with LOCK:
-                return self.send(dict(STATE, log=STATE["log"][-200:]))
+                status = dict(STATE, log=STATE["log"][-200:], events=STATE["events"][-80:],
+                              completed_steps=list(STATE["completed_steps"]),
+                              usage_by_stage={k: dict(v) for k, v in STATE["usage_by_stage"].items()})
+            settings, _ = read_settings()
+            status["pipeline"] = pipeline.describe(settings or {"DEMO_MODE": True})
+            return self.send(status)
         if self.path == "/api/settings":
             settings, problem = read_settings()
             raw = {}
@@ -240,62 +335,139 @@ class Handler(BaseHTTPRequestHandler):
                 "has_openrouter_key": raw.get("OPENROUTER_API_KEY", "").startswith("sk-or-"),
                 "has_openalex_key": bool(raw.get("OPENALEX_API_KEY")),
                 "model": raw.get("MODEL", ""), "language": raw.get("LANGUAGE", "English"),
+                "writer_model": raw.get("WRITER_MODEL", ""),
+                "evidence_model": raw.get("EVIDENCE_MODEL", ""),
+                "verifier_model": raw.get("VERIFIER_MODEL", ""),
+                "review_model": raw.get("REVIEW_MODEL", ""),
                 "email": raw.get("EMAIL", ""), "problem": problem,
                 "target": raw.get("TARGET_SCORE", "8"),
-                "ui_language": raw.get("UI_LANGUAGE", ""),
             })
         if self.path == "/api/results":
             return self.send(read_results())
-        if self.path.startswith("/files/"):  # download a result file
-            _, _, run, name = self.path.split("/", 3)
-            target = (PROJECTS / unquote(run) / unquote(name)).resolve()
-            if PROJECTS.resolve() in target.parents and target.is_file():
-                self.send_response(200)
-                self.send_header("Content-Type", "application/octet-stream")
-                self.send_header("Content-Disposition", f'attachment; filename="{target.name}"')
-                self.end_headers()
-                return self.wfile.write(target.read_bytes())
+        if self.path.startswith("/files/"):
+            parts = self.path.split("/")
+            if len(parts) == 4:
+                run, name = unquote(parts[2]), unquote(parts[3])
+                allowed_run = re.fullmatch(r"\d{8}_\d{6}(?:_\d{6})?", run)
+                allowed_file = re.fullmatch(r"[1-8]_[a-z0-9_]+\.(?:md|csv|json)|log\.txt", name)
+                current = Path(STATE["folder"]).name if STATE["folder"] else None
+                if allowed_run and allowed_file and run == current:
+                    target = PROJECTS / run / name
+                    if target.is_file() and target.resolve().parent == (PROJECTS / run).resolve():
+                        body = target.read_bytes()
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/octet-stream")
+                        self.send_header("Content-Disposition", f'attachment; filename="{name}"')
+                        self.send_header("Content-Length", str(len(body)))
+                        self.send_header("X-Content-Type-Options", "nosniff")
+                        self.send_header("Cache-Control", "no-store")
+                        self.end_headers()
+                        return self.wfile.write(body)
         self.send({"error": "not found"}, 404)
 
     def do_POST(self):
-        data = self.body()
+        if not self.safe_host():
+            return self.send({'error': 'Host tidak diizinkan.'}, 403)
+        # Malicious sites must not be able to submit cross-origin forms to a
+        # loopback service holding users' API credentials.
+        if not self.same_origin():
+            return self.send({"error": "Origin tidak diizinkan."}, 403)
+        if self.path == '/api/upload-pdf':
+            if STATE['phase'] in ('planning', 'running'):
+                return self.send({'error': 'Unggah PDF sebelum riset berjalan.'}, 409)
+            if self.headers.get('Content-Type', '').split(';')[0].strip().lower() != 'application/pdf':
+                return self.send({'error': 'Berkas harus application/pdf.'}, 415)
+            try:
+                length = int(self.headers.get('Content-Length') or 0)
+                if not 20 <= length <= sources.MAX_PDF_BYTES:
+                    raise ValueError('Maksimal 12 MB per PDF.')
+                doi = self.headers.get('X-Paper-DOI', '')
+                name = unquote(self.headers.get('X-Filename', 'artikel.pdf')[:300])
+                result = sources.import_pdf(sources.library_path(), doi, name, self.rfile.read(length))
+                return self.send({'ok': True, 'pdf': result})
+            except (ValueError, RuntimeError) as exc:
+                return self.send({'error': str(exc)[:250]}, 400)
+        if self.headers.get("Content-Type", "").split(";")[0].strip().lower() != "application/json":
+            return self.send({"error": "Gunakan application/json."}, 415)
+        try:
+            data = self.body()
+        except (ValueError, json.JSONDecodeError) as exc:
+            return self.send({"error": str(exc)[:200]}, 400)
+        if self.path == '/api/verification':
+            if STATE['phase'] != 'done':
+                return self.send({'error': 'Checklist tersedia setelah hasil selesai.'}, 409)
+            folder = Path(STATE['folder'])
+            csv_path = folder / '4_literature_matrix.csv'
+            if not csv_path.exists():
+                return self.send({'error': 'Matriks belum tersedia.'}, 409)
+            with csv_path.open(encoding='utf-8-sig', newline='') as stream:
+                matrix = list(csv.DictReader(stream))
+            try:
+                record = manuscript.normalize_verification(data, matrix)
+            except ValueError as exc:
+                return self.send({'error': str(exc)}, 400)
+            stages.save_json(folder, '8_human_verification.json', record)
+            return self.send({'ok': True, 'progress': manuscript.verified_count(record)})
         if self.path == "/api/settings":
+            if STATE["phase"] in ("planning", "running"):
+                return self.send({"error": "Pengaturan terkunci saat riset berjalan."}, 409)
             updates = {"DEMO_MODE": "true" if data.get("demo") else "false",
-                       "MODEL": data.get("model", "").strip(),
-                       "LANGUAGE": data.get("language", "English"),
-                       "EMAIL": data.get("email", "").strip(),
+                       "MODEL": str(data.get("model", "openrouter/auto")).strip(),
+                       "WRITER_MODEL": str(data.get("writer_model", "")).strip(),
+                       "EVIDENCE_MODEL": str(data.get("evidence_model", "")).strip(),
+                       "VERIFIER_MODEL": str(data.get("verifier_model", "")).strip(),
+                       "REVIEW_MODEL": str(data.get("review_model", "")).strip(),
+                       "LANGUAGE": str(data.get("language", "English")).strip(),
+                       "EMAIL": str(data.get("email", "")).strip(),
                        "TARGET_SCORE": str(data.get("target", "8"))}
+            try:
+                target = float(updates["TARGET_SCORE"])
+                if not 1 <= target <= 10:
+                    raise ValueError()
+            except ValueError:
+                return self.send({"error": "Target harus antara 1 sampai 10."}, 400)
+            if any("\n" in v or "\r" in v or len(v) > 300 for v in updates.values()):
+                return self.send({"error": "Nilai pengaturan tidak valid."}, 400)
             # Keys are only replaced when the user typed a new one
-            if data.get("openrouter_key", "").strip():
-                updates["OPENROUTER_API_KEY"] = data["openrouter_key"].strip()
-            if data.get("openalex_key", "").strip():
-                updates["OPENALEX_API_KEY"] = data["openalex_key"].strip()
+            for field, key in (("openrouter_key", "OPENROUTER_API_KEY"), ("openalex_key", "OPENALEX_API_KEY")):
+                value = str(data.get(field, "")).strip()
+                if value:
+                    if len(value) > 300 or any(c.isspace() for c in value):
+                        return self.send({"error": "Format API key tidak valid."}, 400)
+                    updates[key] = value
             update_env(updates)
             return self.send({"ok": True})
-        if self.path == "/api/ui-language":  # the page's language switcher
-            code = data.get("lang", "en")
-            update_env({"UI_LANGUAGE": code})
-            set_language(code)
-            return self.send({"ok": True})
         if self.path == "/api/check":
+            if STATE["phase"] in ("planning", "running"):
+                return self.send({"error": "Ada riset aktif."}, 409)
             return self.send(run_checks())
         if self.path == "/api/plan":
             topic = data.get("topic", "").strip()
             if not topic:
-                return self.send({"error": tr("no_topic")}, 400)
-            if STATE["phase"] in ("planning", "running"):
-                return self.send({"error": tr("busy")}, 409)
+                return self.send({"error": "Topik masih kosong."}, 400)
+            if STATE["phase"] not in ("idle", "failed", "done"):
+                return self.send({"error": "Selesaikan atau tolak rencana yang sedang aktif."}, 409)
             llm.REQUESTS_USED[0] = 0
-            set_state(phase="planning", stage=1, log=[], plan=None, topic=topic, folder="", error="")
+            set_state(phase="planning", stage=1, log=[], plan=None, topic=topic, folder="", error="",
+                      completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
             run_in_background(lambda: job_plan(topic))
             return self.send({"ok": True})
         if self.path == "/api/approve":
-            plan = data.get("plan") or STATE["plan"]
-            set_state(phase="running", plan=plan, stage=2)
+            if STATE["phase"] != "approve" or not data.get("approved_scope"):
+                return self.send({"error": "Periksa dan setujui ruang lingkup terlebih dahulu."}, 409)
+            try:
+                plan = stages.validate_plan(data.get("plan") or STATE["plan"], STATE["topic"])
+            except ValueError as exc:
+                return self.send({"error": str(exc)}, 400)
+            set_state(phase="running", plan=plan)
+            record_event("approval", 1, "Ruang lingkup disetujui oleh peneliti")
             run_in_background(lambda: job_research(plan))
             return self.send({"ok": True})
         if self.path == "/api/reset":
-            set_state(phase="idle", stage=0, log=[], plan=None, topic="", folder="", error="")
+            if STATE["phase"] in ("planning", "running"):
+                return self.send({"error": "Proses berjalan, tidak dapat di-reset."}, 409)
+            set_state(phase="idle", stage=0, log=[], plan=None, topic="", folder="", error="",
+                      completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
             return self.send({"ok": True})
         if self.path == "/api/open-folder" and STATE["folder"] and hasattr(os, "startfile"):
             os.startfile(STATE["folder"])  # Windows: opens the results folder
@@ -308,8 +480,8 @@ def main():
     PROJECTS.mkdir(exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     url = f"http://localhost:{PORT}"
-    print(f"\n  Papermuller is running at {url}")
-    print("  Keep this window open while you use it. Close it to stop.\n")
+    print(f"\n  Asisten Riset sudah berjalan di {url}")
+    print("  Biarkan jendela hitam ini terbuka. Tutup jendela ini untuk berhenti.\n")
     if "--no-browser" not in sys.argv:
         webbrowser.open(url)
     try:
