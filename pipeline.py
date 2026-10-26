@@ -6,7 +6,7 @@ not fabricated when an upstream provider does not supply them.
 
 STEPS = [{'id': 1,
   'name': 'Research plan',
-  'summary': 'Define questions and approve the scope',
+  'summary': 'Brainstorm topics, define questions and approve the scope',
   'engine': 'Researcher + AI',
   'input': 'Research topic',
   'output': 'Approved research plan',

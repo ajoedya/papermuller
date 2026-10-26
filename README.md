@@ -10,6 +10,10 @@
 - **Literature discovery and verification:** Search OpenAlex and check publication identifiers against Crossref.
 - **PDF-assisted evidence extraction:** Upload text-based academic PDFs, link them to a DOI, and trace extracted passages to their PDF page.
 - **Evidence-first checks:** Flag unknown citation IDs, missing references, unsupported or incomplete evidence mapping, and high-risk reviewer findings.
+- **Continue after an error:** Finished stages are saved in the run folder. If a stage fails, **Continue from stage N** repeats only that stage instead of the whole run. Changing the plan, search filters, language or PDF library starts the affected work again.
+- **Token usage detail:** A table under the flowchart lists input and output tokens per stage and per model, with a CSV copy in the run folder (`9_api_usage.csv`). Only what the provider reports is counted.
+- **Topic brainstorming:** Not sure what to research? Describe a field and the AI suggests several topics to pick from, using the model you choose. Suggestions are not a literature search.
+- **Free and paid models:** Load OpenRouter's catalogue by free or paid, with prices per 1M tokens, and pick a model for planning. Paid models are billed to your OpenRouter balance.
 - **Researcher-approved scope:** Review and edit the research questions and scope before the pipeline continues.
 - **Working manuscript:** Produce a literature review and an IMRaD-oriented manuscript scaffold without inventing empirical methods or results.
 - **Full paper with a release gate:** After the literature review passes, AI drafts the title, abstract, introduction, discussion and conclusion. Methods and Results come only from your own text. A final AI review (scored by code, with no-fabrication and scope gates) must pass, and your checklist must be complete, before `9_paper_final.md` and `.docx` are written; otherwise the paper is saved as a stamped draft.

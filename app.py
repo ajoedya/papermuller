@@ -46,8 +46,8 @@ PORT = 8765
 # Everything the page needs to know about the current job lives here.
 STATE = {"phase": "idle", "stage": 0, "log": [], "plan": None, "topic": "",
          "folder": "", "error": "", "requests": 0,
-         "completed_steps": [], "events": [], "usage_by_stage": {}, "active_model": "",
-         "stage_started": ""}
+         "completed_steps": [], "events": [], "usage_by_stage": {}, "usage_detail": {},
+         "active_model": "", "stage_started": "", "resumable": False}
 LOCK = threading.Lock()
 
 
@@ -181,7 +181,7 @@ class PageLog(io.TextIOBase):
 
 
 LLM_STAGE_TO_STEP = {"plan": 1, "screen": 4, "matrix": 5, "outline": 6,
-                     "draft": 7, "evidence_audit": 8, "review": 9, "redteam": 9,
+                     "draft": 7, "evidence_audit": 8, "review": 9, "redteam": 9, "brainstorm": 1,
                      "paper_draft": 10, "paper_review": 11, "check": 0}
 
 
@@ -204,12 +204,33 @@ def enter_step(step):
     record_event("stage", step, f"Starting: {pipeline.STEPS[step - 1]['name']}")
 
 
+def _count(value):
+    """A usable non-negative number from a provider's usage block, else None."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return value if 0 <= value < float("inf") else None
+
+
+def _usage_detail(usage, block, key):
+    inner = usage.get(block)
+    return _count(inner.get(key)) if isinstance(inner, dict) else None
+
+
+def usage_rows():
+    """Token usage per stage and model, in flow order. Caller holds LOCK or works on a copy."""
+    return sorted((dict(v) for v in STATE["usage_detail"].values()),
+                  key=lambda r: (r["step"], r["stage"], r["model"]))
+
+
 def on_llm_event(event):
-    step = LLM_STAGE_TO_STEP.get(event.get("stage"), 0)
+    stage = str(event.get("stage", ""))
+    step = LLM_STAGE_TO_STEP.get(stage, 0)
     model = str(event.get("model", ""))[:200]
     usage = event.get("usage") or {}
-    values = {k: usage.get(k) for k in ("prompt_tokens", "completion_tokens", "total_tokens", "cost")
-              if isinstance(usage.get(k), (int, float)) and not isinstance(usage.get(k), bool)}
+    values = {k: _count(usage.get(k)) for k in ("prompt_tokens", "completion_tokens", "total_tokens", "cost")
+              if _count(usage.get(k)) is not None}
+    cached = _usage_detail(usage, "prompt_tokens_details", "cached_tokens") or 0
+    reasoning = _usage_detail(usage, "completion_tokens_details", "reasoning_tokens") or 0
     with LOCK:
         STATE["active_model"] = model
         if step:
@@ -224,9 +245,56 @@ def on_llm_event(event):
             if "cost" in values:
                 old["cost"] += values["cost"]
                 old["has_cost"] = True
+            # The same numbers, split by the AI task and the model that actually answered.
+            row = STATE["usage_detail"].setdefault(f"{stage}|{model}", {
+                "stage": stage, "step": step, "model": model, "calls": 0, "reported": 0,
+                "input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
+                "cached_tokens": 0, "reasoning_tokens": 0, "cost": 0, "has_cost": False})
+            row["calls"] += 1
+            if any(k in values for k in ("prompt_tokens", "completion_tokens", "total_tokens")):
+                row["reported"] += 1
+            row["input_tokens"] += int(values.get("prompt_tokens", 0))
+            row["output_tokens"] += int(values.get("completion_tokens", 0))
+            row["total_tokens"] += int(values.get("total_tokens", values.get("prompt_tokens", 0)
+                                                  + values.get("completion_tokens", 0)))
+            row["cached_tokens"] += int(cached)
+            row["reasoning_tokens"] += int(reasoning)
+            if "cost" in values:
+                row["cost"] += values["cost"]
+                row["has_cost"] = True
     record_event("model", step, "Model response received" if not event.get("simulated")
                  else "Demo response received", model=model, simulated=bool(event.get("simulated")),
                  usage=values)
+
+
+def save_usage_report():
+    """Write the token usage next to the run's other files, so it can be opened in Excel."""
+    with LOCK:
+        rows, folder = usage_rows(), STATE["folder"]
+    if not rows or not folder or not Path(folder).is_dir():
+        return
+    out = []
+    for r in rows:
+        known = r["reported"] > 0  # an unreported response is left blank, never shown as zero
+        out.append({"step": r["step"], "stage": r["stage"], "model": r["model"], "responses": r["calls"],
+                    "responses_with_usage": r["reported"],
+                    "input_tokens": r["input_tokens"] if known else "",
+                    "output_tokens": r["output_tokens"] if known else "",
+                    "total_tokens": r["total_tokens"] if known else "",
+                    "cached_input_tokens": r["cached_tokens"] if known else "",
+                    "reasoning_output_tokens": r["reasoning_tokens"] if known else "",
+                    "cost_usd": round(r["cost"], 6) if r["has_cost"] else ""})
+    reported = [r for r in rows if r["reported"]]
+    out.append({"step": "", "stage": "TOTAL", "model": "", "responses": sum(r["calls"] for r in rows),
+                "responses_with_usage": sum(r["reported"] for r in rows),
+                "input_tokens": sum(r["input_tokens"] for r in reported) if reported else "",
+                "output_tokens": sum(r["output_tokens"] for r in reported) if reported else "",
+                "total_tokens": sum(r["total_tokens"] for r in reported) if reported else "",
+                "cached_input_tokens": sum(r["cached_tokens"] for r in reported) if reported else "",
+                "reasoning_output_tokens": sum(r["reasoning_tokens"] for r in reported) if reported else "",
+                "cost_usd": round(sum(r["cost"] for r in rows if r["has_cost"]), 6)
+                if any(r["has_cost"] for r in rows) else ""})
+    stages.save_csv(Path(folder), "9_api_usage.csv", out)
 
 
 def say(message):
@@ -255,6 +323,10 @@ def run_in_background(job):
         finally:
             sys.stdout = old
             llm.EVENT_HOOK = old_hook
+            try:
+                save_usage_report()
+            except Exception:
+                pass  # the usage file is a convenience; it must never hide the real result
             set_state()
     threading.Thread(target=wrapper, daemon=True).start()
 
@@ -279,7 +351,29 @@ def job_plan(topic):
     say("Plan ready. Review it before approving.")
 
 
-def job_research(plan):
+def start_plan(topic):
+    """Start the planning job for `topic`. Brainstorming spend is kept, because it happened before the run."""
+    llm.REQUESTS_USED[0] = 0
+    set_state(phase="planning", stage=1, log=[], plan=None, topic=topic, folder="", error="", resumable=False,
+              completed_steps=[], events=[], usage_by_stage={},
+              usage_detail={k: v for k, v in STATE["usage_detail"].items() if v["stage"] == "brainstorm"},
+              active_model="", stage_started="")
+    run_in_background(lambda: job_plan(topic))
+
+
+def resume_kind():
+    """What "continue" would do now: "plan" tries the plan again, "run" continues the research, "" is nothing."""
+    folder = Path(STATE["folder"]) if STATE["folder"] else None
+    if STATE["phase"] == "failed":
+        if STATE["plan"] and folder and folder.is_dir():
+            return "run"
+        return "plan" if STATE["topic"] else ""
+    if STATE["phase"] == "done" and STATE.get("resumable") and STATE["plan"] and folder and folder.is_dir():
+        return "run"  # finished, but a step was skipped after an error (a revision, the red-team check or the full paper)
+    return ""
+
+
+def job_research(plan, resumed=False):
     settings, problem = read_settings()
     if problem:
         raise SystemExit(problem)
@@ -287,13 +381,18 @@ def job_research(plan):
     plan = stages.validate_plan(plan, STATE["topic"])
     (folder / "1_plan.json").write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
     (folder / "1_plan_approved.json").write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
-    say("Plan approved by the researcher.")
+    say("Continuing from the last saved stage; finished stages are not run again." if resumed
+        else "Plan approved by the researcher.")
     # The whole cycle is shared with the terminal version (stages.run_research)
-    stages.run_research(plan, settings, folder, say=say, on_stage=enter_step)
+    review = stages.run_research(plan, settings, folder, say=say, on_stage=enter_step)
+    # A step that failed after its retries was skipped so the run could finish; it can be tried again.
+    unfinished = isinstance(review, dict) and bool(
+        review.get("interrupted") or review.get("paper_status") == "paper_stage_failed"
+        or review.get("status") == "redteam_check_incomplete")
     with LOCK:
         if 10 not in STATE["completed_steps"]:
             STATE["completed_steps"].append(10)
-    set_state(phase="done", stage=len(pipeline.STEPS))
+    set_state(phase="done", stage=len(pipeline.STEPS), resumable=unfinished)
     record_event("done", len(pipeline.STEPS), "Manuscript and audit files are available; researcher verification is still required")
     say("Complete.")
 
@@ -401,9 +500,11 @@ class Handler(BaseHTTPRequestHandler):
             with LOCK:
                 status = dict(STATE, log=STATE["log"][-200:], events=STATE["events"][-80:],
                               completed_steps=list(STATE["completed_steps"]),
-                              usage_by_stage={k: dict(v) for k, v in STATE["usage_by_stage"].items()})
+                              usage_by_stage={k: dict(v) for k, v in STATE["usage_by_stage"].items()},
+                              usage_detail=usage_rows())
             settings, _ = read_settings()
             status["pipeline"] = pipeline.describe(settings or {"DEMO_MODE": True})
+            status["resume"] = resume_kind()
             return self.send(status)
         if self.path == "/api/settings":
             return self.send(public_settings())
@@ -487,13 +588,29 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/models":
             # Public model catalogue; contacted only when the researcher asks for it.
             try:
-                return self.send({"models": llm.list_models(data.get("free_only", True))})
+                return self.send({"models": llm.list_models(data.get("free_only", True), data.get("kind"))})
             except RuntimeError as exc:
                 return self.send({"error": str(exc)[:250]}, 502)
         if self.path == "/api/check":
             if STATE["phase"] in ("planning", "running"):
                 return self.send({"error": "A research run is already active."}, 409)
             return self.send(run_checks())
+        if self.path == "/api/brainstorm":
+            # Optional first move: topic ideas to pick from. Blocked during a run so it cannot
+            # mix its output into the run log or spend the same request quota.
+            if STATE["phase"] in ("planning", "running"):
+                return self.send({"error": "Wait for the current research run to finish."}, 409)
+            idea = str(data.get("idea") or "").strip()
+            if not 3 <= len(idea) <= 1500:
+                return self.send({"error": "Describe your field or idea in 3 to 1500 characters."}, 400)
+            exclude = data.get("exclude") if isinstance(data.get("exclude"), list) else []
+            settings, problem = read_settings()
+            if problem:
+                return self.send({"error": problem[:250]}, 400)
+            try:
+                return self.send({"suggestions": stages.stage_brainstorm(idea, settings, exclude)})
+            except (ValueError, SystemExit) as exc:
+                return self.send({"error": str(exc).strip()[:250] or "The AI request failed."}, 502)
         if self.path == "/api/plan":
             topic = data.get("topic", "").strip()
             if not topic:
@@ -505,10 +622,7 @@ class Handler(BaseHTTPRequestHandler):
                     save_settings(data["research"], allowed=RESEARCH_FIELDS)
                 except ValueError as exc:
                     return self.send({"error": str(exc)[:250]}, 400)
-            llm.REQUESTS_USED[0] = 0
-            set_state(phase="planning", stage=1, log=[], plan=None, topic=topic, folder="", error="",
-                      completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
-            run_in_background(lambda: job_plan(topic))
+            start_plan(topic)
             return self.send({"ok": True})
         if self.path == "/api/approve":
             if STATE["phase"] != "approve" or not data.get("approved_scope"):
@@ -521,11 +635,24 @@ class Handler(BaseHTTPRequestHandler):
             record_event("approval", 1, "Scope approved by the researcher")
             run_in_background(lambda: job_research(plan))
             return self.send({"ok": True})
+        if self.path == "/api/resume":
+            # Retry only what did not finish: earlier stages are read back from the run folder.
+            kind = resume_kind()
+            if not kind:
+                return self.send({"error": "There is no stopped run to continue."}, 409)
+            if kind == "plan":
+                start_plan(STATE["topic"])
+                return self.send({"ok": True, "resumed": "plan"})
+            plan = STATE["plan"]
+            set_state(phase="running", error="", resumable=False, stage=1, completed_steps=[1])
+            record_event("resume", 1, "Continuing from the last saved stage")
+            run_in_background(lambda: job_research(plan, resumed=True))
+            return self.send({"ok": True, "resumed": "run"})
         if self.path == "/api/reset":
             if STATE["phase"] in ("planning", "running"):
                 return self.send({"error": "Cannot reset an active research run."}, 409)
-            set_state(phase="idle", stage=0, log=[], plan=None, topic="", folder="", error="",
-                      completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
+            set_state(phase="idle", stage=0, log=[], plan=None, topic="", folder="", error="", resumable=False,
+                      completed_steps=[], events=[], usage_by_stage={}, usage_detail={}, active_model="", stage_started="")
             return self.send({"ok": True})
         if self.path == "/api/open-folder" and STATE["folder"] and hasattr(os, "startfile"):
             os.startfile(STATE["folder"])  # Windows: opens the results folder
@@ -535,6 +662,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     ensure_env()
+    llm.EVENT_HOOK = on_llm_event  # also counts brainstorming, which runs outside a job
     PROJECTS.mkdir(exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     url = f"http://localhost:{PORT}"

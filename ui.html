@@ -112,11 +112,23 @@ main { max-width: 1680px; margin: 0 auto; padding: 18px 20px 48px; }
 .label { position: absolute; text-align: center; pointer-events: none; line-height: 1.3; }
 .label b { display: block; font-size: 12.5px; font-weight: 600; }
 .label i { display: block; font-style: normal; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vertical .label { text-align: left; }
-.zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
+.zoom { display: flex; gap: 4px; }
 .zoom button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
-.legend { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 12px; font-size: 11px; color: var(--muted);
-  background: color-mix(in srgb, var(--canvas) 85%, transparent); padding: 4px 8px; border-radius: 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--muted); }
+.canvas-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  padding: 8px 12px; border-top: 1px solid var(--line); background: var(--panel); }
+.loop-note { margin: 0; padding: 0 12px 10px; font-size: 12px; color: var(--muted); background: var(--panel); }
+.usage-wrap { overflow-x: auto; padding: 0 14px 4px; }
+table.usage { font-size: 12.5px; }
+.usage th, .usage td { text-align: right; white-space: nowrap; }
+.usage th:nth-child(-n+2), .usage td:nth-child(-n+2) { text-align: left; }
+.usage td.model { max-width: 230px; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+.usage td small { display: block; color: var(--muted); font-size: 11px; }
+.usage tfoot td { font-weight: 700; border-top: 2px solid var(--line); background: var(--panel-2); }
+.usage-note { padding: 6px 14px 12px; margin: 0; }
+.usage-note a { color: var(--accent); }
+.resume-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; }
+.resume-bar .hint { margin: 0; }
 .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--edge-dim); }
 .legend .l-run::before { background: var(--run); } .legend .l-ok::before { background: var(--ok); } .legend .l-bad::before { background: var(--bad); }
 
@@ -220,6 +232,15 @@ th { background: var(--panel-2); position: sticky; top: 0; }
   .legend { display: none; }
   .card { padding: 16px; }
 }
+.ideas { display: grid; gap: 10px; margin-top: 12px; }
+.idea { border: 1px solid var(--line); background: var(--panel-2); border-radius: 10px; padding: 12px 14px; }
+.idea.chosen { border-color: var(--ok); background: var(--ok-soft); }
+.idea b { display: block; font-size: 14px; }
+.idea .angle { color: var(--accent); font-size: 12px; margin-top: 4px; }
+.idea p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.idea .kw { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.idea .kw span { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
+.idea .actions { margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -246,18 +267,24 @@ th { background: var(--panel-2); position: sticky; top: 0; }
   <div class="flow-head"><div><h1 data-i18n="flowTitle">Research workflow</h1>
     <p data-i18n="flowSub">Each box is one stage. Select a stage to see what it does and to choose its AI model.</p></div></div>
   <div id="errorBanner" class="notice bad hidden" role="alert"></div>
+  <div class="resume-bar hidden" id="resumeBar"><button type="button" class="btn primary js-resume"></button>
+    <span class="hint" data-i18n="resumeHint">Stages that already finished are kept and not run again.</span></div>
   <div class="next" id="next"><div><b id="nextTitle">Start with a research question</b><span id="nextDesc"></span></div>
     <button class="btn primary" id="nextBtn">Enter a research topic</button></div>
   <div class="flow-wrap" id="flowWrap">
     <div class="canvas-card">
       <div class="viewport" id="viewport"><div class="spacer" id="spacer"><div class="board" id="board">
         <svg class="edges" id="edges"></svg></div></div></div>
-      <div class="legend" aria-hidden="true"><span data-i18n="lgPending">Waiting</span><span class="l-run" data-i18n="lgRun">Running</span><span class="l-ok" data-i18n="lgDone">Done</span><span class="l-bad" data-i18n="lgFail">Failed</span></div>
-      <div class="zoom"><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomFit" aria-label="Fit to width">⤢</button><button id="zoomIn" aria-label="Zoom in">+</button></div>
+      <div class="canvas-foot">
+        <div class="legend" aria-hidden="true"><span data-i18n="lgPending">Waiting</span><span class="l-run" data-i18n="lgRun">Running</span><span class="l-ok" data-i18n="lgDone">Done</span><span class="l-bad" data-i18n="lgFail">Failed</span></div>
+        <div class="zoom"><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomFit" aria-label="Fit to width">⤢</button><button id="zoomIn" aria-label="Zoom in">+</button></div>
+      </div>
+      <p class="loop-note" id="loopNote"></p>
     </div>
     <aside class="inspector" id="inspector" aria-label="Stage details"></aside>
   </div>
   <details class="activity" open><summary data-i18n="activity">Activity</summary><div class="activity-list" id="activityList"></div></details>
+  <details class="activity hidden" id="usageBox" open><summary data-i18n="u_title">API token usage</summary><div id="usageBody"></div></details>
   <details class="activity"><summary data-i18n="runLog">Run log</summary><pre class="log" id="log"></pre></details>
 </section>
 
@@ -268,8 +295,23 @@ th { background: var(--panel-2); position: sticky; top: 0; }
   <div class="card" id="topicCard">
     <h2 data-i18n="topicTitle">Research topic</h2>
     <p class="hint" data-i18n="topicHint">Describe what you want to investigate. English search terms usually find more papers.</p>
+    <details class="more" id="ideaBox">
+      <summary data-i18n="ideaSummary">Not sure what to research? Brainstorm topic ideas with AI</summary>
+      <p class="hint" style="margin-top:8px" data-i18n="ideaHint">Describe your field or a rough idea.</p>
+      <label for="ideaSeed" data-i18n="ideaLabel">Your field or rough idea</label>
+      <textarea id="ideaSeed" style="min-height:64px" maxlength="1500" data-i18n-ph="ideaPh" placeholder="e.g. public financial management in government agencies"></textarea>
+      <div class="actions" style="margin-top:10px"><button type="button" class="btn" id="ideaBtn" data-i18n="ideaBtn">Suggest topics</button>
+        <button type="button" class="btn hidden" id="ideaMoreBtn" data-i18n="ideaMore">More ideas</button></div>
+      <div id="ideaMsg"></div>
+      <div class="ideas" id="ideaList"></div>
+    </details>
     <label for="topic" data-i18n="topicLabel">Topic</label>
     <textarea id="topic" data-i18n-ph="topicPh" placeholder="e.g. road infrastructure, governance quality and poverty"></textarea>
+    <label for="planModelInput"><span data-i18n="planModelLabel">AI model for brainstorming and the research plan</span><small data-i18n="planModelHint">Leave blank to use the default model.</small></label>
+    <input type="text" id="planModelInput" class="mono" list="modelList" spellcheck="false" autocomplete="off" maxlength="300">
+    <div class="actions" style="margin-top:10px"><button type="button" class="btn small" id="loadFreeBtn" data-i18n="loadFree">Load free models</button>
+      <button type="button" class="btn small" id="loadPaidBtn" data-i18n="loadPaid">Load paid models</button></div>
+    <div id="planModelMsg"></div>
     <div class="actions"><button class="btn primary" id="planBtn" data-i18n="planBtn">Create research plan</button></div>
   </div>
 
@@ -338,7 +380,9 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <h2 data-i18n="progressTitle">Research run</h2>
     <p class="hint" id="progressHint"></p>
     <div id="runMsg"></div>
-    <div class="actions"><button class="btn primary" id="toFlowBtn" data-i18n="toFlow">Open the workflow</button>
+    <p class="hint hidden js-resume-hint" data-i18n="resumeHint">Stages that already finished are kept and not run again.</p>
+    <div class="actions"><button type="button" class="btn primary js-resume hidden"></button>
+      <button class="btn primary" id="toFlowBtn" data-i18n="toFlow">Open the workflow</button>
       <button class="btn hidden" id="againBtn" data-i18n="again">Try again</button></div>
   </div>
 </section>
@@ -421,6 +465,29 @@ const T = {
     lgPending: "Waiting", lgRun: "Running", lgDone: "Done", lgFail: "Failed", activity: "Activity", runLog: "Run log",
     topicTitle: "Research topic", topicHint: "Describe what you want to investigate. English search terms usually find more papers.", topicLabel: "Topic",
     topicPh: "e.g. road infrastructure, governance quality and poverty", planBtn: "Create research plan",
+    freeTag: "free", varTag: "price varies",
+    u_title: "API token usage", u_stage: "Stage", u_model: "Model", u_calls: "Responses", u_in: "Input tokens", u_out: "Output tokens",
+    u_total: "Total", u_cost: "Cost (USD)", u_all: "All stages", u_brain: "Topic brainstorming", u_redteam: "red-team", u_scoring: "scoring",
+    u_cached: "cached {n}", u_reasoning: "reasoning {n}", u_csv: "Download CSV",
+    u_note: "Tokens are the numbers the provider reports for each response. Responses that report nothing, and requests that failed or were retried, are not counted.",
+    u_demo: "Demo mode makes no API requests, so no tokens are used.",
+    u_partial: "{a} of {b} responses did not report usage.",
+    loopNote: "Stages 7 to 9 repeat up to {n} times until the draft passes review. Stages 10 and 11 do the same for the full paper.",
+    resumeRun: "Continue from stage {n}: {name}", resumePlan: "Try the research plan again", resumeDone: "Retry the unfinished step",
+    startOver: "Start over", resumeHint: "Stages that already finished are kept and not run again.",
+    ideaSummary: "Not sure what to research? Brainstorm topic ideas with AI",
+    ideaHint: "Describe your field or a rough idea and the AI will suggest several topics to choose from. Suggestions come from the model's general knowledge, not from a literature search, so the later stages still check what has actually been published.",
+    ideaLabel: "Your field or rough idea", ideaPh: "e.g. public financial management in government agencies",
+    ideaBtn: "Suggest topics", ideaMore: "More ideas", ideaLoading: "Asking the AI for topic ideas...",
+    ideaNeed: "Describe your field or idea first.", ideaUse: "Use this topic",
+    ideaChosen: "Topic filled in below. Edit it if you like, then create the research plan.",
+    ideaDemo: "Demo mode: these are scripted examples, not AI output.",
+    planModelLabel: "AI model for brainstorming and the research plan", planModelHint: "Leave blank to use the default model.",
+    loadFree: "Load free models", loadPaid: "Load paid models",
+    modelsPick: "Loaded {n} models. Click the field above and choose one; the list shows each price.",
+    paidNote: "Paid model: about ${a} per 1M input tokens and ${b} per 1M output tokens, billed to your OpenRouter balance. Check current prices on OpenRouter before long runs.",
+    paidNoPrice: "Paid model with a variable price, billed to your OpenRouter balance.",
+    freeNote: "Free model: availability and daily limits apply.",
     rsTitle: "Research settings", rsHint: "These apply to the next run and are saved when you create a plan.",
     fromYear: "Papers published from", toYear: "Papers published until", workType: "Document type", wtAny: "Any type", wtArticle: "Journal articles",
     wtReview: "Review articles", wtBoth: "Articles and reviews", minCit: "Minimum citations", minCitHint: "0 = no minimum; recent papers have few citations.",
@@ -467,7 +534,7 @@ const T = {
     nextApprove: ["Your plan is ready to review", "Check the scope and search terms before the search starts.", "Review plan"],
     nextRunning: ["Research is running", "Follow the highlighted stage. Your draft appears when the run finishes.", "Show details"],
     nextDone: ["Your draft and evidence are ready", "Review the audit findings and original sources before using the draft.", "Review draft & evidence"],
-    nextFailed: ["Research stopped", "Read the error and run log before trying again.", "View details"],
+    nextFailed: ["Research stopped", "Read the error, then continue from the stage that failed or start over.", "View details"],
     liveNote: "Live mode uses provider services and quotas.",
     noActivity: "No activity yet. Create a research plan to begin.",
     progressRun: "The run continues on the server. You can reload this page at any time.", progressDone: "All stages completed.",
@@ -493,6 +560,29 @@ const T = {
     lgPending: "Menunggu", lgRun: "Berjalan", lgDone: "Selesai", lgFail: "Gagal", activity: "Aktivitas", runLog: "Log proses",
     topicTitle: "Topik riset", topicHint: "Jelaskan hal yang ingin Anda teliti. Kata kunci berbahasa Inggris biasanya menemukan lebih banyak paper.", topicLabel: "Topik",
     topicPh: "mis. infrastruktur jalan, kualitas tata kelola, dan kemiskinan", planBtn: "Buat rencana riset",
+    freeTag: "gratis", varTag: "harga bervariasi",
+    u_title: "Penggunaan token API", u_stage: "Tahap", u_model: "Model", u_calls: "Respons", u_in: "Token masukan", u_out: "Token keluaran",
+    u_total: "Total", u_cost: "Biaya (USD)", u_all: "Semua tahap", u_brain: "Brainstorming topik", u_redteam: "red-team", u_scoring: "penilaian",
+    u_cached: "dari cache {n}", u_reasoning: "penalaran {n}", u_csv: "Unduh CSV",
+    u_note: "Token adalah angka yang dilaporkan penyedia untuk tiap respons. Respons yang tidak melaporkan apa pun, serta permintaan yang gagal atau diulang, tidak dihitung.",
+    u_demo: "Mode demo tidak membuat permintaan API, jadi tidak ada token yang terpakai.",
+    u_partial: "{a} dari {b} respons tidak melaporkan penggunaan.",
+    loopNote: "Tahap 7 sampai 9 diulang hingga {n} kali sampai draf lolos reviu. Tahap 10 dan 11 melakukan hal yang sama untuk naskah lengkap.",
+    resumeRun: "Lanjutkan dari tahap {n}: {name}", resumePlan: "Coba lagi rencana riset", resumeDone: "Ulangi langkah yang belum selesai",
+    startOver: "Mulai dari awal", resumeHint: "Tahap yang sudah selesai disimpan dan tidak dijalankan lagi.",
+    ideaSummary: "Belum tahu mau meneliti apa? Cari ide topik dengan AI",
+    ideaHint: "Tuliskan bidang atau ide kasar Anda, lalu AI akan menyarankan beberapa topik untuk dipilih. Saran berasal dari pengetahuan umum model, bukan dari penelusuran literatur, sehingga tahap berikutnya tetap memeriksa apa yang sudah terbit.",
+    ideaLabel: "Bidang atau ide kasar Anda", ideaPh: "mis. pengelolaan keuangan publik di instansi pemerintah",
+    ideaBtn: "Sarankan topik", ideaMore: "Ide lainnya", ideaLoading: "Meminta ide topik dari AI...",
+    ideaNeed: "Tuliskan bidang atau ide Anda terlebih dahulu.", ideaUse: "Pakai topik ini",
+    ideaChosen: "Topik sudah diisi di bawah. Sunting jika perlu, lalu buat rencana riset.",
+    ideaDemo: "Mode demo: ini contoh yang sudah ditulis, bukan keluaran AI.",
+    planModelLabel: "Model AI untuk brainstorming dan rencana riset", planModelHint: "Kosongkan untuk memakai model bawaan.",
+    loadFree: "Muat model gratis", loadPaid: "Muat model berbayar",
+    modelsPick: "{n} model dimuat. Klik kolom di atas dan pilih satu; daftar menampilkan harga tiap model.",
+    paidNote: "Model berbayar: sekitar ${a} per 1 juta token masukan dan ${b} per 1 juta token keluaran, ditagihkan ke saldo OpenRouter Anda. Cek harga terbaru di OpenRouter sebelum menjalankan riset panjang.",
+    paidNoPrice: "Model berbayar dengan harga yang bervariasi, ditagihkan ke saldo OpenRouter Anda.",
+    freeNote: "Model gratis: berlaku batas ketersediaan dan batas harian.",
     rsTitle: "Pengaturan riset", rsHint: "Pengaturan ini berlaku untuk proses berikutnya dan disimpan saat Anda membuat rencana.",
     fromYear: "Paper terbit mulai tahun", toYear: "Paper terbit sampai tahun", workType: "Jenis dokumen", wtAny: "Semua jenis", wtArticle: "Artikel jurnal",
     wtReview: "Artikel tinjauan (review)", wtBoth: "Artikel dan tinjauan", minCit: "Sitasi minimum", minCitHint: "0 = tanpa batas; paper terbaru biasanya masih sedikit sitasinya.",
@@ -538,7 +628,7 @@ const T = {
     nextApprove: ["Rencana siap ditinjau", "Periksa cakupan dan kata kunci sebelum pencarian dimulai.", "Tinjau rencana"],
     nextRunning: ["Riset sedang berjalan", "Ikuti tahap yang disorot. Draf muncul setelah proses selesai.", "Lihat detail"],
     nextDone: ["Draf dan bukti sudah siap", "Tinjau temuan audit dan sumber asli sebelum memakai draf.", "Tinjau draf & bukti"],
-    nextFailed: ["Riset berhenti", "Baca pesan galat dan log proses sebelum mencoba lagi.", "Lihat detail"],
+    nextFailed: ["Riset berhenti", "Baca pesan galat, lalu lanjutkan dari tahap yang gagal atau mulai dari awal.", "Lihat detail"],
     liveNote: "Mode langsung memakai layanan dan kuota penyedia.",
     noActivity: "Belum ada aktivitas. Buat rencana riset untuk memulai.",
     progressRun: "Proses tetap berjalan di server. Anda bisa memuat ulang halaman ini kapan saja.", progressDone: "Semua tahap selesai.",
@@ -561,7 +651,7 @@ const T = {
 };
 // Stage texts come from the server in English; Indonesian versions live here.
 const STAGE_ID = {
-  1: ["Rencana riset", "Menyusun pertanyaan dan menyetujui cakupan", "Topik riset", "Rencana riset yang disetujui"],
+  1: ["Rencana riset", "Menyarankan topik, menyusun pertanyaan, dan menyetujui cakupan", "Topik riset", "Rencana riset yang disetujui"],
   2: ["Penelusuran literatur", "Mencari publikasi relevan di OpenAlex", "Kata kunci dan filter tahun", "Kandidat artikel"],
   3: ["Metadata & PDF", "Mencocokkan metadata Crossref dan menemukan PDF unggahan", "Kandidat artikel dan PDF lokal", "Artikel dengan metadata cocok"],
   4: ["Seleksi sumber", "Memilih artikel yang relevan dengan pertanyaan riset", "Artikel dengan metadata cocok", "Artikel terpilih"],
@@ -579,7 +669,7 @@ const CRIT = { en: {abstract_consistency: "Abstract matches the paper", coherenc
                id: {abstract_consistency: "Kesesuaian abstrak", coherence: "Koherensi argumen", claim_support: "Dukungan klaim", no_fabrication: "Tanpa fabrikasi", academic_style: "Gaya akademik",
                     synthesis: "Sintesis antarstudi", research_gap: "Celah riset", coverage: "Cakupan pertanyaan riset", evidence_use: "Dukungan bukti", clarity: "Kejelasan tulisan", scope_fidelity: "Kesetiaan cakupan"} };
 const SLOT_INFO = {
-  PLAN_MODEL: {stage: 1, en: "Drafts the research plan", id: "Menyusun rencana riset"},
+  PLAN_MODEL: {stage: 1, en: "Suggests topics and drafts the research plan", id: "Menyarankan topik dan menyusun rencana riset"},
   SCREEN_MODEL: {stage: 4, en: "Selects relevant papers", id: "Memilih paper yang relevan"},
   EVIDENCE_MODEL: {stage: 5, en: "Extracts quotes and findings", id: "Mengekstrak kutipan dan temuan"},
   OUTLINE_MODEL: {stage: 6, en: "Plans themes (falls back to Writer)", id: "Merancang tema (cadangan: Writer)"},
@@ -664,6 +754,7 @@ function fillSettings(s) {
   $("oaKey").placeholder = s.has_openalex_key ? "••••• (saved)" : "";
   $("email").value = s.email || "";
   $("model").value = s.model || "openrouter/free";
+  $("planModelInput").value = s.plan_model || ""; showPlanModelNote();
   $("fromYear").value = s.from_year; $("toYear").value = s.to_year;
   $("fromYear").max = $("toYear").max = (s.current_year || new Date().getFullYear()) + 1;
   $("workType").value = s.work_type || "any"; $("openAccess").checked = !!s.open_access_only;
@@ -704,17 +795,86 @@ $("checkBtn").onclick = async () => {
 $("loadModels").onclick = async () => {
   $("loadModels").disabled = true; note("modelsMsg", t("loading"), "info");
   try {
-    const r = await api("/api/models", { free_only: !$("showPaid").checked });
-    $("modelList").innerHTML = r.models.map(m => `<option value="${esc(m.id)}">${esc(m.name)}${m.free ? " · free" : ""}</option>`).join("");
+    const r = await loadCatalogue($("showPaid").checked ? "all" : "free");
     note("modelsMsg", t("modelsLoaded", {n: r.models.length}), true);
   } catch (e) { note("modelsMsg", e.message, false); } finally { $("loadModels").disabled = false; }
+};
+
+/* ---------------- model catalogue, brainstorming ---------------- */
+let MODEL_INFO = {}, ideaTopics = [];
+const money = (v) => v == null ? "?" : v > 0 && v < 0.01 ? "<0.01" : String(Number(v.toFixed(v < 1 ? 3 : 2)));
+function modelLabel(m) {
+  const price = m.free ? t("freeTag") : m.prompt_price == null ? t("varTag")
+    : `$${money(m.prompt_price)} / $${money(m.completion_price)} per 1M`;
+  return `${m.name} · ${price}`;
+}
+// Every picker shares one datalist, so loading models anywhere fills them all. Free and paid loads add up.
+async function loadCatalogue(kind) {
+  const r = await api("/api/models", { kind });
+  r.models.forEach(m => MODEL_INFO[m.id] = m);
+  $("modelList").innerHTML = Object.values(MODEL_INFO).map(m =>
+    `<option value="${esc(m.id)}" label="${esc(modelLabel(m))}">${esc(modelLabel(m))}</option>`).join("");
+  return r;
+}
+async function loadModelsFor(kind) {
+  const buttons = [$("loadFreeBtn"), $("loadPaidBtn")]; buttons.forEach(b => b.disabled = true);
+  note("planModelMsg", t("loading"), "info");
+  try { const r = await loadCatalogue(kind); note("planModelMsg", t("modelsPick", {n: r.models.length}), true); }
+  catch (e) { note("planModelMsg", e.message, false); }
+  finally { buttons.forEach(b => b.disabled = false); }
+}
+$("loadFreeBtn").onclick = () => loadModelsFor("free");
+$("loadPaidBtn").onclick = () => loadModelsFor("paid");
+function showPlanModelNote() {
+  const id = $("planModelInput").value.split(",")[0].trim(), m = MODEL_INFO[id];
+  const lines = [];
+  if (m && m.free) lines.push(t("freeNote"));
+  else if (m) lines.push(m.prompt_price == null ? t("paidNoPrice") : t("paidNote", {a: money(m.prompt_price), b: money(m.completion_price)}));
+  if (id && SETTINGS.demo) lines.push(t("demoModelNote"));
+  note("planModelMsg", lines.join("\n"), "info");
+}
+$("planModelInput").oninput = showPlanModelNote;
+async function savePlanModel() {
+  const value = $("planModelInput").value.trim();
+  if (value === (SETTINGS.plan_model || "")) return;
+  fillSettings(await api("/api/settings", { plan_model: value }));
+}
+function renderIdeas() {
+  $("ideaList").innerHTML = ideaTopics.map((x, i) => `<div class="idea">
+      <b>${esc(x.topic)}</b>
+      ${x.angle ? `<div class="angle">${esc(x.angle)}</div>` : ""}
+      ${x.why ? `<p>${esc(x.why)}</p>` : ""}
+      ${x.keywords?.length ? `<div class="kw">${x.keywords.map(k => `<span>${esc(k)}</span>`).join("")}</div>` : ""}
+      <div class="actions"><button type="button" class="btn small" data-use="${i}">${esc(t("ideaUse"))}</button></div></div>`).join("");
+  $("ideaMoreBtn").classList.toggle("hidden", !ideaTopics.length);
+}
+async function suggestTopics(more) {
+  const idea = $("ideaSeed").value.trim();
+  if (!idea) return note("ideaMsg", t("ideaNeed"), false);
+  const buttons = [$("ideaBtn"), $("ideaMoreBtn")]; buttons.forEach(b => b.disabled = true);
+  note("ideaMsg", t("ideaLoading"), "info");
+  try {
+    await savePlanModel();
+    const r = await api("/api/brainstorm", { idea, exclude: more ? ideaTopics.map(x => x.topic) : [] });
+    ideaTopics = more ? ideaTopics.concat(r.suggestions) : r.suggestions;
+    renderIdeas(); note("ideaMsg", SETTINGS.demo ? t("ideaDemo") : "", "info");
+  } catch (e) { note("ideaMsg", e.message, false); }
+  finally { buttons.forEach(b => b.disabled = false); }
+}
+$("ideaBtn").onclick = () => suggestTopics(false);
+$("ideaMoreBtn").onclick = () => suggestTopics(true);
+$("ideaList").onclick = (e) => {
+  const button = e.target.closest("[data-use]"); if (!button) return;
+  $("topic").value = ideaTopics[Number(button.dataset.use)].topic;
+  document.querySelectorAll(".idea").forEach(el => el.classList.toggle("chosen", el === button.closest(".idea")));
+  note("ideaMsg", t("ideaChosen"), true); $("topic").focus();
 };
 
 /* ---------------- research actions ---------------- */
 $("planBtn").onclick = async () => {
   const topic = $("topic").value.trim();
   if (!topic) return note("researchMsg", t("needTopic"), false);
-  try { await api("/api/plan", { topic, research: researchPayload() }); await loadSettings(); startPolling(); show("workflow"); }
+  try { await savePlanModel(); await api("/api/plan", { topic, research: researchPayload() }); await loadSettings(); startPolling(); show("workflow"); }
   catch (e) { note("researchMsg", e.message, false); }
 };
 $("approveBtn").onclick = async () => {
@@ -733,6 +893,16 @@ $("redoBtn").onclick = async () => {
   await api("/api/plan", { topic }); lastPhase = ""; startPolling();
 };
 $("againBtn").onclick = async () => { await api("/api/reset", {}); render(await api("/api/status")); };
+// Retry only what did not finish: the server reads the finished stages back from the run folder.
+document.querySelectorAll(".js-resume").forEach(b => b.onclick = async () => {
+  try { const r = await api("/api/resume", {}); lastPhase = r.resumed === "run" ? "running" : ""; startPolling(); show("workflow"); }
+  catch (e) { note("runMsg", e.message, false); }
+});
+function resumeLabel(s, kind) {
+  if (kind === "plan") return t("resumePlan");
+  if (s.phase === "done") return t("resumeDone");
+  return t("resumeRun", {n: s.stage, name: stepInfo(s.stage, s).name || ""});
+}
 $("newBtn").onclick = async () => { await api("/api/reset", {}); $("topic").value = ""; render(await api("/api/status")); show("research"); };
 $("openFolderBtn").onclick = () => api("/api/open-folder", {});
 $("toFlowBtn").onclick = () => show("workflow");
@@ -757,7 +927,12 @@ function render(s) {
   $("approveCard").classList.toggle("hidden", s.phase !== "approve");
   $("progressCard").classList.toggle("hidden", !busy && !["failed", "done"].includes(s.phase));
   $("againBtn").classList.toggle("hidden", !["failed", "done"].includes(s.phase));
-  $("againBtn").textContent = s.phase === "done" ? t("newTopic") : t("again");
+  const rk = s.resume || "";
+  $("againBtn").textContent = s.phase === "done" ? t("newTopic") : rk ? t("startOver") : t("again");
+  document.querySelectorAll(".js-resume").forEach(b => { b.classList.toggle("hidden", !rk); b.disabled = busy; b.textContent = rk ? resumeLabel(s, rk) : ""; });
+  document.querySelectorAll(".js-resume-hint").forEach(h => h.classList.toggle("hidden", !rk));
+  $("resumeBar").classList.toggle("hidden", !rk);
+  $("toFlowBtn").classList.toggle("primary", !rk);
   $("progressHint").textContent = s.phase === "done" ? t("progressDone") : t("progressRun");
   if (s.phase === "failed") note("runMsg", t("runFailed") + "\n" + s.error, false);
   else if (s.phase === "done") note("runMsg", t("runDone", {n: s.requests}), true);
@@ -774,7 +949,7 @@ function render(s) {
   }
   if (s.phase === "done" && lastPhase === "running") setTimeout(() => show("results"), 1200);
   lastPhase = s.phase;
-  $("planBtn").disabled = busy;
+  $("planBtn").disabled = $("ideaBtn").disabled = $("ideaMoreBtn").disabled = $("planModelInput").disabled = busy;
 
   const demo = (s.pipeline?.[0]?.model || "").startsWith("Demo simulator");
   $("modePill").textContent = demo ? t("demoPill") : t("livePill");
@@ -790,8 +965,39 @@ function render(s) {
   if (!slotsRendered && s.pipeline) { slotsRendered = true; renderSlotsTable(); }
   renderFlow(s);
   renderActivity(s);
+  renderUsage(s);
 }
 let slotsRendered = false;
+
+// Token usage per stage and model, as the provider reported it. An unreported response shows a dash, never zero.
+function renderUsage(s) {
+  const rows = s.usage_detail || [];
+  $("usageBox").classList.toggle("hidden", !rows.length);
+  if (!rows.length) return;
+  const n = (v) => Number(v).toLocaleString();
+  const label = (r) => {
+    if (r.stage === "brainstorm") return t("u_brain");
+    const base = `${r.step}. ${stepInfo(r.step, s).name || ""}`;
+    return r.stage === "redteam" ? `${base} · ${t("u_redteam")}` : r.stage === "review" ? `${base} · ${t("u_scoring")}` : base;
+  };
+  const cell = (r, key, extra) => !r.reported ? "—" : `${n(r[key])}${extra && r[extra[0]] ? `<small>${esc(t(extra[1], {n: n(r[extra[0]])}))}</small>` : ""}`;
+  const known = rows.filter(r => r.reported), sum = (key) => known.reduce((a, r) => a + r[key], 0);
+  const body = rows.map(r => `<tr><td>${esc(label(r))}</td>
+    <td class="model" title="${esc(r.model)}">${esc(r.model.startsWith("Demo simulator") ? "demo simulator" : r.model)}</td><td>${n(r.calls)}</td>
+    <td>${cell(r, "input_tokens", ["cached_tokens", "u_cached"])}</td><td>${cell(r, "output_tokens", ["reasoning_tokens", "u_reasoning"])}</td>
+    <td>${cell(r, "total_tokens")}</td><td>${r.has_cost ? "$" + Number(r.cost).toFixed(5) : "—"}</td></tr>`).join("");
+  const costed = rows.filter(r => r.has_cost), calls = rows.reduce((a, r) => a + r.calls, 0), reported = rows.reduce((a, r) => a + r.reported, 0);
+  const foot = `<tr><td colspan="2">${esc(t("u_all"))}</td><td>${n(calls)}</td><td>${known.length ? n(sum("input_tokens")) : "—"}</td>
+    <td>${known.length ? n(sum("output_tokens")) : "—"}</td><td>${known.length ? n(sum("total_tokens")) : "—"}</td>
+    <td>${costed.length ? "$" + costed.reduce((a, r) => a + r.cost, 0).toFixed(5) : "—"}</td></tr>`;
+  const demo = rows.every(r => r.model.startsWith("Demo simulator"));
+  const notes = [demo ? t("u_demo") : t("u_note")];
+  if (!demo && reported < calls) notes.push(t("u_partial", {a: n(calls - reported), b: n(calls)}));
+  const folder = (s.folder || "").split(/[\\/]/).filter(Boolean).pop(), busy = ["planning", "running"].includes(s.phase);
+  const th = ["u_stage", "u_model", "u_calls", "u_in", "u_out", "u_total", "u_cost"].map(k => `<th>${esc(t(k))}</th>`).join("");
+  $("usageBody").innerHTML = `<div class="usage-wrap"><table class="usage"><thead><tr>${th}</tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>
+    <p class="hint usage-note">${esc(notes.join(" "))}${folder && !busy ? ` <a href="/files/${encodeURIComponent(folder)}/9_api_usage.csv">${esc(t("u_csv"))}</a>` : ""}</p>`;
+}
 
 function renderActivity(s) {
   const events = (s.events || []).slice(-40).reverse();
@@ -818,16 +1024,12 @@ const ICONS = {
   12: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
 };
 const svgIcon = (k, cls = "icon") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>`;
-// col = position along the flow, row = lane (0 = side input, 1 = main line)
-const NODES = [
-  {id: "topic", col: 0, row: 1, kind: "start"}, {id: 1, col: 1, row: 1}, {id: 2, col: 2, row: 1},
-  {id: "library", col: 2, row: 0, kind: "source"}, {id: 3, col: 3, row: 1}, {id: 4, col: 4, row: 1},
-  {id: 5, col: 5, row: 1}, {id: 6, col: 6, row: 1}, {id: 7, col: 7, row: 1}, {id: 8, col: 8, row: 1},
-  {id: 9, col: 9, row: 1}, {id: 10, col: 10, row: 1}, {id: 11, col: 11, row: 1}, {id: 12, col: 12, row: 1, kind: "end"},
-];
+// The main line, in order. Wide screens show it as one row; narrower ones wrap it into a snake
+// (left to right, then right to left), so the chart grows downward instead of to the right.
+const MAIN = ["topic", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const NODES = [...MAIN.map(id => ({id, kind: id === "topic" ? "start" : id === 12 ? "end" : ""})), {id: "library", kind: "source"}];
 const EDGES = [["topic", 1], [1, 2, "approve"], [2, 3], ["library", 3, "side"], [3, 4], [4, 5], ["library", 5, "side"],
                [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [9, 7, "loop"], [11, 10, "loop"]];
-const LAST_COL = Math.max(...NODES.map(n => n.col));
 let selected = null, followActive = true, zoom = 1, userZoomed = false, pdfCount = 0, geo = null;
 
 function nodeStatus(id, s) {
@@ -855,16 +1057,35 @@ function subline(id, s) {
   return m.startsWith("Demo simulator") ? "demo simulator" : m;
 }
 
+// How many columns fit the width. Below 6 columns the first two rows hold 3 stages each, which keeps
+// stages 3 to 5 (the ones the PDF library feeds) together in one row.
+function layoutPlan(width) {
+  const small = width < 600;
+  const N = small ? 48 : 64, cellW = small ? 92 : 124, pad = small ? 34 : 46;
+  return {small, N, cellW, pad, cols: Math.max(3, Math.min(MAIN.length, Math.floor((width - pad * 2) / cellW)))};
+}
 function geometry() {
-  const vp = $("viewport"), vertical = vp.clientWidth < 720;
-  if (!vertical) {
-    const N = 76, dx = 124, x0 = 34, rows = [34, 168];
-    const pos = {}; NODES.forEach(n => pos[n.id] = {x: x0 + n.col * dx, y: rows[n.row], w: N, h: N});
-    return {vertical, N, pos, width: x0 + LAST_COL * dx + N + 44, height: 360};
+  const width = Math.max(300, $("viewport").clientWidth);
+  const {small, N, cellW, pad, cols} = layoutPlan(width);
+  const arcH = 36, labelH = 52, rowH = arcH + N + 8 + labelH, laneH = N + 60, top = 6;
+  const lens = cols >= 6 ? [] : [3, 3];
+  const slots = {};
+  let i = 0, row = 0, col = 0, dir = 1;
+  while (i < MAIN.length) {
+    const len = row < lens.length ? lens[row] : cols;
+    let placed = 0;
+    for (; placed < len && i < MAIN.length; placed++, i++) slots[MAIN[i]] = {row, col: col + dir * placed};
+    col += dir * (placed - 1); dir = -dir; row++;  // the next row starts right where this one ended
   }
-  const N = 56, dy = 108, y0 = 26, pos = {};
-  NODES.forEach(n => pos[n.id] = n.row === 1 ? {x: 44, y: y0 + n.col * dy, w: N, h: N} : {x: 262, y: y0 + 1.75 * dy, w: N, h: N});
-  return {vertical, N, pos, width: 340, height: y0 + LAST_COL * dy + N + 40};
+  const libRow = slots[3].row;  // the PDF library sits in its own strip above the row that holds stages 3 to 5
+  const span = Math.max(...Object.values(slots).map(x => x.col)) + 1;
+  const contentW = span * cellW + pad * 2, boardW = Math.max(width, contentW), shift = (boardW - contentW) / 2;
+  const colX = (c) => shift + pad + c * cellW + (cellW - N) / 2;
+  const rowY = (r) => top + r * rowH + (r >= libRow ? laneH : 0) + arcH;
+  const pos = {};
+  for (const id of MAIN) pos[id] = {x: colX(slots[id].col), y: rowY(slots[id].row), w: N, h: N};
+  pos.library = {x: colX(slots[4].col), y: top + libRow * rowH + 38, w: N, h: N};
+  return {cols, N, cellW, small, slots, pos, width: boardW, height: top + row * rowH + laneH + 6};
 }
 function port(p, side) {
   return {right: [p.x + p.w, p.y + p.h / 2, 1, 0], left: [p.x, p.y + p.h / 2, -1, 0],
@@ -875,18 +1096,14 @@ function edgePath(a, b, d, d2 = d) {
   const mid = (t) => [0, 1].map(i => (1 - t) ** 3 * a[i] + 3 * (1 - t) ** 2 * t * c1[i] + 3 * (1 - t) * t ** 2 * c2[i] + t ** 3 * b[i]);
   return {d: `M${a[0]},${a[1]} C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${b[0]},${b[1]}`, mid: mid(.5)};
 }
+// Which side of each node an edge leaves and enters. Null means the edge is not drawn.
 function edgeEnds(from, to, kind, g) {
-  const A = g.pos[from], B = g.pos[to];
-  if (!g.vertical) {
-    if (kind === "loop") return [port(A, "bottom"), port(B, "bottom"), 92];
-    return [port(A, "right"), port(B, "left"), Math.max(40, Math.abs(B.x - A.x) * .45)];
-  }
-  if (kind === "loop") return [port(A, "left"), port(B, "left"), 40];
-  if (kind === "side") {  // drop down beside the labels, then enter under the label text
-    const a = port(A, "bottom"), b = [B.x + B.w, B.y + B.h - 6, 1, 0];
-    return [a, b, (b[1] - a[1]) * .9, (a[0] - b[0]) * .6];
-  }
-  return [port(A, "bottom"), port(B, "top"), 30];
+  const A = g.pos[from], B = g.pos[to], sa = g.slots[from], sb = g.slots[to];
+  if (kind === "side") return {sides: ["bottom", "top"], d: Math.max(16, (B.y - (A.y + A.h)) * .55)};
+  if (kind === "loop") return sa.row === sb.row ? {sides: ["top", "top"], d: 34} : null;  // across rows, the note below explains it
+  if (sa.row === sb.row) return {sides: sb.col > sa.col ? ["right", "left"] : ["left", "right"], d: Math.max(24, Math.abs(B.x - A.x) * .45)};
+  const outer = sa.row % 2 ? "left" : "right";  // the snake turns on its outer edge
+  return {sides: [outer, outer], d: 48};
 }
 function edgeState(from, to, kind, s) {
   if (kind === "loop") {
@@ -901,39 +1118,44 @@ function edgeState(from, to, kind, s) {
   return "";
 }
 
+function portStyle(side, p) {
+  return {left: `left:-6px;top:${p.h / 2 - 5}px`, right: `right:-6px;top:${p.h / 2 - 5}px`,
+          top: `left:${p.w / 2 - 5}px;top:-6px`, bottom: `left:${p.w / 2 - 5}px;bottom:-6px`}[side];
+}
 function renderFlow(s) {
   geo = geometry();
   const g = geo, board = $("board");
-  board.classList.toggle("vertical", g.vertical);
   board.style.width = g.width + "px"; board.style.height = g.height + "px";
   const svg = $("edges"); svg.setAttribute("width", g.width); svg.setAttribute("height", g.height);
   if (followActive && ["planning", "approve", "running", "failed"].includes(s.phase) && s.stage) selected = s.stage;
   let paths = "", tags = "";
+  const used = {};  // the sides of each node that an edge uses; only those get a port dot
   for (const [from, to, kind] of EDGES) {
-    const [a, b, d, d2] = edgeEnds(from, to, kind, g), p = edgePath(a, b, d, d2);
+    const ends = edgeEnds(from, to, kind, g);
+    if (!ends) continue;
+    const a = port(g.pos[from], ends.sides[0]), b = port(g.pos[to], ends.sides[1]), p = edgePath(a, b, ends.d);
+    (used[from] ||= new Set()).add(ends.sides[0]); (used[to] ||= new Set()).add(ends.sides[1]);
     paths += `<path class="edge ${edgeState(from, to, kind, s)}" d="${p.d}"/>`;
-    if (kind === "approve") tags += `<span class="edge-tag ${s.phase === "approve" ? "wait" : ""}" style="${g.vertical ? `left:${p.mid[0] + 14}px;top:${p.mid[1]}px;transform:translate(0,-50%)` : `left:${p.mid[0]}px;top:${p.mid[1] - 58}px`}">${esc(t("approveTag"))}</span>`;
-    if (kind === "loop" && !g.vertical) tags += `<span class="edge-tag" style="left:${p.mid[0]}px;top:${p.mid[1] - 2}px">${esc(t("loopTag", {n: SETTINGS.revision_rounds ?? 3}))}</span>`;
+    if (kind === "approve") tags += `<span class="edge-tag ${s.phase === "approve" ? "wait" : ""}" style="left:${p.mid[0]}px;top:${p.mid[1] - g.N / 2 - 16}px">${esc(t("approveTag"))}</span>`;
+    if (kind === "loop") tags += `<span class="edge-tag" style="left:${p.mid[0]}px;top:${p.mid[1]}px">${esc(t("loopTag", {n: SETTINGS.revision_rounds ?? 3}))}</span>`;
   }
   svg.innerHTML = paths;
+  $("loopNote").textContent = t("loopNote", {n: SETTINGS.revision_rounds ?? 3});
   const focused = board.contains(document.activeElement) ? document.activeElement.dataset.node : null;
+  const lw = g.cellW - 8;
   const nodes = NODES.map(n => {
     const p = g.pos[n.id], st = nodeStatus(n.id, s);
     const step = typeof n.id === "number" ? stepInfo(n.id, s) : null;
     const name = n.id === "topic" ? t("topicNode") : n.id === "library" ? t("library") : step?.name || "";
     const ai = step && (step.model_slots || []).length;
     const stLabel = st === "current" && s.phase === "approve" ? t("st_waiting") : t("st_" + st);
-    const kindCls = n.kind === "start" ? "start" : n.kind === "end" ? "end" : "";
-    const ports = (g.vertical ? `<span class="port" style="left:${p.w / 2 - 5}px;top:-6px"></span><span class="port" style="left:${p.w / 2 - 5}px;bottom:-6px"></span>`
-                               : `<span class="port" style="left:-6px;top:${p.h / 2 - 5}px"></span><span class="port" style="right:-6px;top:${p.h / 2 - 5}px"></span>`);
+    const ports = [...(used[n.id] || [])].map(side => `<span class="port" style="${portStyle(side, p)}"></span>`).join("");
     const badge = ["done", "current", "failed"].includes(st) ? `<span class="badge ${st}">${st === "done" ? "✓" : st === "failed" ? "!" : ""}</span>` : "";
-    const label = g.vertical ? `left:${p.x + p.w + 14}px;top:${p.y + 6}px;width:${n.row === 1 ? 168 : 74}px` : `left:${p.x + p.w / 2 - 58}px;top:${p.y + p.h + 10}px;width:116px`;
-    const labelV = n.row !== 0 ? label : g.vertical ? `left:${p.x - 9}px;top:${p.y - 40}px;width:74px;text-align:center`
-      : `left:${p.x - 136}px;top:${p.y + p.h / 2 - 17}px;width:122px;text-align:right`;
-    return `<button type="button" class="node ${kindCls} ${st === "optional" ? "optional" : st} ${selected === n.id ? "selected" : ""}" data-node="${n.id}"
+    const labelAt = n.id === "library" ? p.y - 38 : p.y + p.h + 8;  // the library label sits above its node
+    return `<button type="button" class="node ${n.kind} ${st === "optional" ? "optional" : st} ${selected === n.id ? "selected" : ""}" data-node="${n.id}"
         style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" aria-pressed="${selected === n.id}"
-        aria-label="${esc(name)}: ${esc(stLabel)}">${ai && !g.vertical ? '<span class="ai-tag">AI</span>' : ""}${svgIcon(n.id)}${ports}${badge}</button>
-      <div class="label" style="${labelV}"><b>${typeof n.id === "number" ? n.id + ". " : ""}${esc(name)}</b><i class="mono" title="${esc(subline(n.id, s))}">${esc(subline(n.id, s))}</i></div>`;
+        aria-label="${esc(name)}: ${esc(stLabel)}">${ai && !g.small ? '<span class="ai-tag">AI</span>' : ""}${svgIcon(n.id)}${ports}${badge}</button>
+      <div class="label" style="left:${p.x + p.w / 2 - lw / 2}px;top:${labelAt}px;width:${lw}px"><b>${typeof n.id === "number" ? n.id + ". " : ""}${esc(name)}</b><i class="mono" title="${esc(subline(n.id, s))}">${esc(subline(n.id, s))}</i></div>`;
   }).join("");
   board.querySelectorAll(".node,.label,.edge-tag").forEach(el => el.remove());
   board.insertAdjacentHTML("beforeend", nodes + tags);
@@ -944,13 +1166,15 @@ function renderFlow(s) {
 }
 function layoutFlow(refit) {
   if (!geo) return;
-  const vp = $("viewport"), vertical = vp.clientWidth < 720;
-  if (vertical !== geo.vertical && latest) { renderFlow(latest); return; }
-  if (refit || !userZoomed) zoom = Math.max(.82, Math.min(1, (vp.clientWidth - 8) / geo.width));
+  const vp = $("viewport");
+  // A different number of columns means a different layout, so draw it again.
+  if (layoutPlan(Math.max(300, vp.clientWidth)).cols !== geo.cols && latest) { renderFlow(latest); return; }
+  if (refit || !userZoomed) zoom = Math.max(.5, Math.min(1, vp.clientWidth / geo.width));
   $("board").style.transform = `scale(${zoom})`;
-  vp.style.height = Math.min(geo.vertical ? 620 : 520, Math.ceil(geo.height * zoom) + 16) + "px";
+  vp.style.height = Math.ceil(geo.height * zoom) + 16 + "px";
   $("spacer").style.width = geo.width * zoom + "px"; $("spacer").style.height = geo.height * zoom + "px";
 }
+if (typeof ResizeObserver === "function") new ResizeObserver(() => layoutFlow(false)).observe($("viewport"));
 function setZoom(z) { userZoomed = true; zoom = Math.max(.4, Math.min(1.6, z)); layoutFlow(false); }
 $("zoomIn").onclick = () => setZoom(zoom + .1);
 $("zoomOut").onclick = () => setZoom(zoom - .1);
@@ -1018,7 +1242,9 @@ function renderInspector(s) {
     }
     if (slots.length) html += `<div class="insp-sec"><h3>${esc(t("usage"))}</h3>
       <div class="kv"><span>${esc(t("responses"))}</span><b>${usage.calls ?? "—"}</b></div>
-      <div class="kv"><span>${esc(t("tokens"))}</span><b>${usage.has_tokens ? Number(usage.total_tokens || (usage.prompt_tokens + usage.completion_tokens)).toLocaleString() : esc(t("notReported"))}</b></div>
+      <div class="kv"><span>${esc(t("u_in"))}</span><b>${usage.has_tokens ? Number(usage.prompt_tokens || 0).toLocaleString() : esc(t("notReported"))}</b></div>
+      <div class="kv"><span>${esc(t("u_out"))}</span><b>${usage.has_tokens ? Number(usage.completion_tokens || 0).toLocaleString() : esc(t("notReported"))}</b></div>
+      <div class="kv"><span>${esc(t("u_total"))}</span><b>${usage.has_tokens ? Number(usage.total_tokens || (usage.prompt_tokens + usage.completion_tokens)).toLocaleString() : esc(t("notReported"))}</b></div>
       <div class="kv"><span>${esc(t("cost"))}</span><b>${usage.has_cost ? "$" + Number(usage.cost).toFixed(5) : esc(t("notReported"))}</b></div>
       ${liveModel(step, s) && st !== "pending" ? `<p class="hint mono" style="margin-top:8px">${esc(liveModel(step, s))}</p>` : ""}</div>`;
   }

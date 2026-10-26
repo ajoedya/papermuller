@@ -15,6 +15,7 @@ Runs after the literature review has been written and reviewed.
            have both passed; until then it is stamped as a draft.
 """
 
+import hashlib
 import json
 import re
 
@@ -223,18 +224,21 @@ Return JSON:
     return result
 
 
-def run_paper(plan, lit_review, matrix, lit_accepted, settings, folder, say=print, on_stage=lambda n: None):
+def run_paper(plan, lit_review, matrix, lit_accepted, settings, folder, say=print, on_stage=lambda n: None, resume=None):
     """Draft, review and revise the full paper; return the best review with release status."""
     best, previous, fixes = None, None, ""
+    # A retry reuses finished rounds, but only if the author's text and the literature review are unchanged.
+    inputs = [plan.get("author_methods"), plan.get("author_results"), hashlib.sha256(lit_review.encode("utf-8")).hexdigest()]
+    step = resume.step if resume else (lambda name, make, extra=None: make())
     for attempt in range(1, settings["REVISION_ROUNDS"] + 2):
         on_stage(10)
         say(f"Stage 10: {'drafting' if attempt == 1 else 'revising'} the full paper (round {attempt})...")
-        sections = stage_paper_draft(plan, lit_review, matrix, settings, folder, attempt, previous, fixes)
+        sections = step(f"paper_draft_{attempt}", lambda: stage_paper_draft(plan, lit_review, matrix, settings, folder, attempt, previous, fixes), inputs)
         paper_md = assemble_paper(sections, plan, lit_review, matrix)
 
         on_stage(11)
         say(f"Stage 11: final AI review of the full paper (round {attempt})...")
-        review = stage_paper_review(sections, paper_md, plan, matrix, settings, folder, attempt)
+        review = step(f"paper_review_{attempt}", lambda: stage_paper_review(sections, paper_md, plan, matrix, settings, folder, attempt), inputs)
         say(f"Paper score: {review['score']}/10; automated checks: "
             f"{'PASSED' if review['checks']['passed'] else 'NOT PASSED'}; "
             f"no-fabrication: {'PASSED' if review['fabrication_gate_passed'] else 'NOT PASSED'}.")
