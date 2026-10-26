@@ -1,5 +1,21 @@
 # Changelog
 
+## Full-text reading, editorial outputs, and Windows setup
+
+- Retrieve available open-access PDFs for selected papers, with uploaded/cached
+  PDFs preferred. Read all extracted text in page-labelled chunks and save
+  processing coverage and per-page evidence notes.
+- Add optional full-text requirements, explicit abstract-only fallback, and source
+  access/reading status in the results view. Papers without abstracts can use PDFs.
+- Add local editorial diagnostics, metadata-only BibTeX export, and a current
+  research-output ZIP that excludes settings, logs, original PDFs, and symlinks.
+- Add Setup.bat and update Start.bat to use a Windows virtual environment while
+  preserving existing settings, source PDFs, and projects. Add laptop setup and
+  update documentation.
+- Validate with 53 Python tests, browser demo/strict-mode checks, and real PLOS
+  PDF retrieval/extraction. Native Windows launcher execution remains unverified.
+
+
 ## Unreleased — Full paper draft and final review gate
 
 - Two new stages after the critical review. **10 Full paper draft:** the writing model drafts the title, abstract, keywords, introduction, discussion and conclusion around the reviewed literature review, citing only source-matrix IDs. Methods and Results are copied from the author's text unchanged, or stay as placeholders; with no author results, the abstract must say results are pending. **11 Final paper review:** code checks unknown citations, empty sections, leftover placeholders and abstract length; a reviewer model scores six criteria and the score is computed by code. The paper passes only with all checks passed, `no_fabrication` and `scope_fidelity` at 8 or more, and the average at `TARGET_SCORE`. Failing papers are revised up to `REVISION_ROUNDS` times and the best round is kept.

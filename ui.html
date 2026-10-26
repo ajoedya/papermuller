@@ -287,6 +287,10 @@ th { background: var(--panel-2); position: sticky; top: 0; }
       <div><label for="minCitations"><span data-i18n="minCit">Minimum citations</span><small data-i18n="minCitHint">0 = no minimum; recent papers have few citations.</small></label><input type="number" id="minCitations" min="0" step="1"></div>
     </div>
     <label class="check"><input type="checkbox" id="openAccess"><span data-i18n="oaOnly">Open-access papers only (easier to get full-text PDFs)</span></label>
+    <label class="check"><input type="checkbox" id="fetchFulltext"><span data-i18n="fetchFulltext">Download available open-access full text for selected papers</span></label>
+    <label class="check"><input type="checkbox" id="requireFulltext"><span data-i18n="requireFulltext">Require full text before drafting (stop if any selected PDF is unavailable)</span></label>
+    <p class="hint" data-i18n="fulltextHint">All extracted PDF text is sent to your model in page-labelled chunks. This may use more API calls. Image-only pages need OCR; inaccessible papers stay abstract-only unless full text is required.</p>
+
     <div class="grid3">
       <div><label for="candidates"><span data-i18n="cand">Candidates to check</span><small>1–100</small></label><input type="number" id="candidates" min="1" max="100"></div>
       <div><label for="maxPapers"><span data-i18n="maxPapers">Papers to keep</span><small>1–40</small></label><input type="number" id="maxPapers" min="1" max="40"></div>
@@ -365,6 +369,14 @@ th { background: var(--panel-2); position: sticky; top: 0; }
       <div id="humanProgress" class="hint"></div><div id="paperChecks"></div><div id="globalChecks"></div>
       <label for="verificationNotes" data-i18n="notes">Review notes</label><textarea id="verificationNotes" style="min-height:70px"></textarea>
       <div class="actions"><button class="btn" id="saveVerification" data-i18n="saveChecklist">Save review checklist</button></div><div id="verificationMsg"></div></div>
+    <div class="card hidden" id="sourceAccessCard"><h2 data-i18n="accessTitle">Full-text access & reading</h2>
+      <p class="hint" data-i18n="accessHint">Full text means extracted PDF text, not visual inspection of figures or scanned pages. The report shows what reached the model; it does not certify comprehension.</p>
+      <div class="table-wrap"><table id="sourceAccessTable"></table></div>
+    </div>
+    <div class="card hidden" id="editorialCard"><h2 data-i18n="editorialTitle">Editorial checks</h2>
+      <p class="hint" data-i18n="editorialHint">Local suggestions with source line numbers. Quotes, numbers, citations, and author text are never rewritten. This is not an AI detector or a scientific review.</p>
+      <p id="editorialStats"></p><p class="hint" id="editorialSource"></p><div id="editorialFindings"></div>
+    </div>
     <div class="card"><h2 data-i18n="files">Download files</h2><div class="files" id="files"></div>
       <div class="actions"><button class="btn" id="openFolderBtn" data-i18n="openFolder">Open results folder (Windows)</button>
         <button class="btn primary" id="newBtn" data-i18n="newTopic">Research a new topic</button></div></div>
@@ -435,6 +447,16 @@ const T = {
     methods: "Methods", results: "Results", confirmScope: "I have reviewed and approved this research plan and scope.", approveBtn: "Approve and continue", redoBtn: "Regenerate plan",
     progressTitle: "Research run", toFlow: "Open the workflow", again: "Try again",
     noResults: "No results yet", noResultsHint: "Your draft and evidence appear here when the run finishes.", startResearch: "Start research",
+    fetchFulltext: "Download available open-access full text for selected papers", requireFulltext: "Require full text before drafting (stop if any selected PDF is unavailable)",
+    fulltextHint: "All extracted PDF text is sent to your model in page-labelled chunks. This may use more API calls. Image-only pages need OCR; inaccessible papers stay abstract-only unless full text is required.",
+    accessTitle: "Full-text access & reading", accessHint: "Full text means extracted PDF text, not visual inspection of figures or scanned pages. The report shows what reached the model; it does not certify comprehension.",
+    accessSource: "Source", accessStatus: "Access / reading", accessPages: "Text pages / PDF pages", accessChunks: "Chunks processed", accessReason: "Details", accessDemo: "Demo simulation", accessAbstract: "Abstract only", accessFull: "Full text processed", accessPending: "Not completed", accessUploaded: "Uploaded / cached PDF", accessDownload: "Open-access PDF",
+    editorialTitle: "Editorial checks", editorialHint: "Local suggestions with source line numbers. Quotes, numbers, citations, and author text are never rewritten. This is not an AI detector or a scientific review.",
+    editorialStats: "{words} prose words · {headings} headings · {cited}/{available} sources cited",
+    editorialSource: "Checked file: {file}. Line numbers refer to this Markdown file.",
+    editorialClear: "No issues matched the local checks. This does not establish publication readiness.",
+    editorialLine: "Line {n}", editorialMore: "Showing the first 50 findings; download the JSON report for the complete list.",
+    researchBundle: "Download research bundle (ZIP)",
     paperTitle: "Full paper", paperGate: "Final AI review gate",
     paperPassed: "Passed the AI review gate. Complete and save the researcher checklist below to release the final version.",
     paperFailed: "Did not pass the AI review gate. The draft is stamped and cannot be released; see the fixes below.",
@@ -507,6 +529,16 @@ const T = {
     methods: "Metode", results: "Hasil", confirmScope: "Saya sudah memeriksa dan menyetujui rencana serta cakupan riset ini.", approveBtn: "Setujui dan lanjutkan", redoBtn: "Buat ulang rencana",
     progressTitle: "Proses riset", toFlow: "Buka alur kerja", again: "Coba lagi",
     noResults: "Belum ada hasil", noResultsHint: "Draf dan bukti akan muncul di sini setelah proses selesai.", startResearch: "Mulai riset",
+    fetchFulltext: "Unduh full text open access untuk paper terpilih", requireFulltext: "Wajib full text sebelum menulis (berhenti bila PDF terpilih tidak tersedia)",
+    fulltextHint: "Seluruh teks PDF yang diekstrak dikirim ke model per bagian berlabel halaman. Ini dapat menambah panggilan API. Halaman gambar perlu OCR; paper yang tidak bisa diakses tetap berbasis abstrak kecuali full text diwajibkan.",
+    accessTitle: "Akses & pembacaan full text", accessHint: "Full text berarti teks hasil ekstraksi PDF, bukan pemeriksaan visual gambar atau halaman pindai. Laporan menunjukkan bagian yang dikirim ke model, bukan menjamin pemahaman.",
+    accessSource: "Sumber", accessStatus: "Akses / pembacaan", accessPages: "Halaman teks / PDF", accessChunks: "Bagian diproses", accessReason: "Rincian", accessDemo: "Simulasi demo", accessAbstract: "Hanya abstrak", accessFull: "Full text diproses", accessPending: "Belum selesai", accessUploaded: "PDF unggahan / cache", accessDownload: "PDF open access",
+    editorialTitle: "Pemeriksaan editorial", editorialHint: "Saran lokal disertai nomor baris. Kutipan, angka, sitasi, dan teks penulis tidak ditulis ulang. Ini bukan detektor AI atau telaah ilmiah.",
+    editorialStats: "{words} kata prosa · {headings} judul · {cited}/{available} sumber disitasi",
+    editorialSource: "Berkas diperiksa: {file}. Nomor baris merujuk ke berkas Markdown ini.",
+    editorialClear: "Tidak ada masalah yang cocok dengan pemeriksaan lokal. Ini tidak menjamin kesiapan publikasi.",
+    editorialLine: "Baris {n}", editorialMore: "Menampilkan 50 temuan pertama; unduh laporan JSON untuk daftar lengkap.",
+    researchBundle: "Unduh paket riset (ZIP)",
     paperTitle: "Naskah lengkap", paperGate: "Gerbang reviu akhir AI",
     paperPassed: "Lolos gerbang reviu AI. Lengkapi dan simpan daftar periksa peneliti di bawah untuk merilis versi final.",
     paperFailed: "Tidak lolos gerbang reviu AI. Draf diberi cap dan tidak dapat dirilis; lihat perbaikan di bawah.",
@@ -667,6 +699,7 @@ function fillSettings(s) {
   $("fromYear").value = s.from_year; $("toYear").value = s.to_year;
   $("fromYear").max = $("toYear").max = (s.current_year || new Date().getFullYear()) + 1;
   $("workType").value = s.work_type || "any"; $("openAccess").checked = !!s.open_access_only;
+  $("fetchFulltext").checked = s.fetch_fulltext !== false; $("requireFulltext").checked = !!s.require_fulltext;
   $("minCitations").value = s.min_citations; $("candidates").value = s.candidates; $("maxPapers").value = s.max_papers;
   $("minVerified").value = s.min_verified; $("rounds").value = s.revision_rounds; $("target").value = s.target;
   $("language").value = s.language === "Indonesian" ? "Indonesian" : "English";
@@ -675,7 +708,7 @@ function fillSettings(s) {
 async function loadSettings() { const s = await api("/api/settings"); fillSettings(s); return s; }
 function researchPayload() {
   return { from_year: $("fromYear").value, to_year: $("toYear").value, work_type: $("workType").value,
-           open_access_only: $("openAccess").checked, min_citations: $("minCitations").value,
+           open_access_only: $("openAccess").checked, fetch_fulltext: $("fetchFulltext").checked, require_fulltext: $("requireFulltext").checked, min_citations: $("minCitations").value,
            candidates: $("candidates").value, max_papers: $("maxPapers").value, min_verified: $("minVerified").value,
            revision_rounds: $("rounds").value, target: $("target").value, language: $("language").value };
 }
@@ -1075,7 +1108,8 @@ function markdown(md) {
 }
 async function loadResults() {
   const r = await api("/api/results");
-  const has = r.draft || (r.matrix && r.matrix.length);
+  const has = r.draft || (r.matrix && r.matrix.length) || r.source_access?.length;
+  renderSourceAccess(r);
   $("emptyResults").classList.toggle("hidden", !!has); $("resultView").classList.toggle("hidden", !has);
   if (!has) return;
   const rv = r.review, ev = r.evidence;
@@ -1094,13 +1128,37 @@ async function loadResults() {
   }
   $("draftView").innerHTML = markdown(r.draft || t("noDraft"));
   renderPaper(r);
+  renderEditorial(r.editorial);
   renderHumanChecks(r);
   const cols = [["id", "ID"], ["authors", LANG === "id" ? "Penulis" : "Authors"], ["year", LANG === "id" ? "Tahun" : "Year"], ["title", LANG === "id" ? "Judul" : "Title"],
     ["method", LANG === "id" ? "Metode" : "Method"], ["main_finding", LANG === "id" ? "Temuan utama" : "Main finding"], ["limitation", LANG === "id" ? "Keterbatasan" : "Limitations"],
     ["source_type", LANG === "id" ? "Jenis sumber" : "Source type"], ["source_page", LANG === "id" ? "Halaman (0 = abstrak)" : "Page (0 = abstract)"],
     ["evidence_quote", LANG === "id" ? "Kutipan bukti" : "Evidence quote"], ["quote_verified", LANG === "id" ? "Kutipan cocok?" : "Quote matched?"]];
   $("matrix").innerHTML = `<tr>${cols.map(c => `<th>${c[1]}</th>`).join("")}</tr>` + (r.matrix || []).map(row => `<tr>${cols.map(c => `<td>${esc(row[c[0]])}</td>`).join("")}</tr>`).join("");
-  $("files").innerHTML = (r.files || []).filter(f => /\.(md|csv|json|docx)$|^log\.txt$/.test(f)).map(f => fileLink(r, f)).join("");
+  $("files").innerHTML = (r.files || []).filter(f => /\.(md|csv|json|docx|bib)$|^log\.txt$/.test(f)).map(f => fileLink(r, f)).join("")
+    + `<a download="9_research_bundle.zip" href="/files/${encodeURIComponent(r.folder_name)}/9_research_bundle.zip">${esc(t("researchBundle"))}</a>`;
+}
+function renderSourceAccess(r) {
+  const entries = r.source_access || [];
+  $("sourceAccessCard").classList.toggle("hidden", !entries.length);
+  const titles = ["accessSource", "accessStatus", "accessPages", "accessChunks", "accessReason"];
+  $("sourceAccessTable").innerHTML = `<tr>${titles.map(k=>`<th>${esc(t(k))}</th>`).join("")}</tr>` + entries.map(entry=>{
+    const reading = (r.fulltext_reading || []).find(x=>x.id===entry.id);
+    const status = entry.type==='abstract_only' ? t('accessAbstract') : reading?.simulated ? t('accessDemo') : entry.reading_status==='full_text_processed' ? t('accessFull') : t('accessPending');
+    const detail = entry.access?.reason || (entry.access?.origin==='open_access' ? t('accessDownload') : t('accessUploaded'));
+    return `<tr><td>${esc(entry.id)}</td><td>${esc(status)}</td><td>${reading ? esc(reading.text_pages)+' / '+esc(reading.total_pages) : '—'}</td><td>${reading ? esc(reading.processed_chunks)+' / '+esc(reading.total_chunks) : '—'}</td><td>${esc(detail)}</td></tr>`;
+  }).join('');
+}
+function renderEditorial(report) {
+  $("editorialCard").classList.toggle("hidden", !report);
+  if (!report) return;
+  const stats = report.stats;
+  $("editorialStats").textContent = t("editorialStats", {words:stats.words, headings:stats.headings, cited:stats.cited_sources, available:stats.available_sources});
+  $("editorialSource").textContent = t("editorialSource", {file:report.filename});
+  $("editorialFindings").innerHTML = report.findings.length
+    ? `<ol>${report.findings.slice(0,50).map(f => `<li><b>${esc(t("editorialLine", {n:f.line}))}</b> · ${esc(f.category)}<br><q>${esc(f.excerpt)}</q><p>${esc(f.suggestion)}</p></li>`).join("")}</ol>`
+      + (report.findings.length > 50 ? `<p>${esc(t("editorialMore"))}</p>` : "")
+    : `<p class="hint">${esc(t("editorialClear"))}</p>`;
 }
 const fileLink = (r, f) => `<a href="/files/${encodeURIComponent(r.folder_name)}/${encodeURIComponent(f)}">${esc(f)}</a>`;
 function renderPaper(r) {

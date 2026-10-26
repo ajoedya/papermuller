@@ -40,7 +40,9 @@ def _author_text(plan):
 
 
 def _evidence(matrix):
-    return "\n".join(f"[{r['id']}] {r['authors']} ({r['year']}). {r['title']}. Finding: {r['main_finding']}"
+    return "\n".join(f"[{r['id']}] {r['authors']} ({r['year']}). {r['title']}. Finding: {r['main_finding']}. "
+                     f"Source: {r.get('source_type', 'unknown')}, page {r.get('source_page', 'unknown')}. "
+                     f"Verbatim evidence: {r.get('evidence_quote', '')}"
                      for r in matrix)
 
 

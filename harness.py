@@ -63,6 +63,8 @@ def parse_settings(raw):
         "FROM_YEAR": from_year,
         "TO_YEAR": to_year,
         "WORK_TYPE": work_type,
+        "FETCH_FULLTEXT": str(raw.get("FETCH_FULLTEXT", "true")).lower() == "true",
+        "REQUIRE_FULLTEXT": str(raw.get("REQUIRE_FULLTEXT", "false")).lower() == "true",
         "OPEN_ACCESS_ONLY": str(raw.get("OPEN_ACCESS_ONLY", "false")).lower() == "true",
         "MIN_CITATIONS": number("MIN_CITATIONS", 0, 0, 100000),
         "MAX_PAPERS": number("MAX_PAPERS", 12, 1, 40),

@@ -37,6 +37,7 @@ import sources
 import manuscript
 import paper
 import pipeline
+import editorial
 
 HERE = Path(__file__).parent
 ENV_FILE = HERE / ".env"
@@ -94,8 +95,8 @@ TEXT_FIELDS = {"model": "MODEL", "language": "LANGUAGE", "email": "EMAIL",
                "min_citations": "MIN_CITATIONS", "candidates": "CANDIDATES",
                "max_papers": "MAX_PAPERS", "min_verified": "MIN_VERIFIED",
                "revision_rounds": "REVISION_ROUNDS", "target": "TARGET_SCORE"}
-BOOL_FIELDS = {"demo": "DEMO_MODE", "open_access_only": "OPEN_ACCESS_ONLY"}
-RESEARCH_FIELDS = {"from_year", "to_year", "work_type", "open_access_only", "min_citations",
+BOOL_FIELDS = {"demo": "DEMO_MODE", "open_access_only": "OPEN_ACCESS_ONLY", "fetch_fulltext": "FETCH_FULLTEXT", "require_fulltext": "REQUIRE_FULLTEXT"}
+RESEARCH_FIELDS = {"from_year", "to_year", "work_type", "open_access_only", "fetch_fulltext", "require_fulltext", "min_citations",
                    "candidates", "max_papers", "min_verified", "revision_rounds", "target", "language"}
 MODEL_ID = re.compile(r"[A-Za-z0-9._:/@+\-]+(?:\s*,\s*[A-Za-z0-9._:/@+\-]+)*")
 
@@ -147,6 +148,8 @@ def public_settings():
     data = {"demo": raw.get("DEMO_MODE", "true").lower() == "true",
             "has_openrouter_key": raw.get("OPENROUTER_API_KEY", "").startswith("sk-or-"),
             "has_openalex_key": bool(raw.get("OPENALEX_API_KEY")),
+            "fetch_fulltext": raw.get("FETCH_FULLTEXT", "true").lower() == "true",
+            "require_fulltext": raw.get("REQUIRE_FULLTEXT", "false").lower() == "true",
             "open_access_only": raw.get("OPEN_ACCESS_ONLY", "false").lower() == "true",
             "problem": problem, "current_year": harness.CURRENT_YEAR}
     for field, key in TEXT_FIELDS.items():
@@ -341,6 +344,9 @@ def read_results():
     section_file = folder / '8_section_status.json'
     paper_file = folder / '9_paper_review.json'
     return {
+        "source_access": json.loads((folder / "4_source_manifest.json").read_text(encoding="utf-8")) if (folder / "4_source_manifest.json").exists() else [],
+        "fulltext_reading": json.loads((folder / "4_fulltext_reading.json").read_text(encoding="utf-8")) if (folder / "4_fulltext_reading.json").exists() else [],
+        "editorial": json.loads((folder / "9_editorial_report.json").read_text(encoding="utf-8")) if (folder / "9_editorial_report.json").exists() else None,
         "paper_review": json.loads(paper_file.read_text(encoding='utf-8')) if paper_file.exists() else None,
         "verification": verification,
         "verification_progress": manuscript.verified_count(verification) if verification else None,
@@ -414,10 +420,12 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 4:
                 run, name = unquote(parts[2]), unquote(parts[3])
                 allowed_run = re.fullmatch(r"\d{8}_\d{6}(?:_\d{6})?", run)
-                allowed_file = re.fullmatch(r"[1-9]_[a-z0-9_]+\.(?:md|csv|json|docx)|log\.txt", name)
+                allowed_file = re.fullmatch(r"[1-9]_[a-z0-9_]+\.(?:md|csv|json|docx|bib)|9_research_bundle\.zip|log\.txt", name)
                 current = Path(STATE["folder"]).name if STATE["folder"] else None
                 if allowed_run and allowed_file and run == current:
                     target = PROJECTS / run / name
+                    if name == "9_research_bundle.zip":
+                        return self.send(editorial.research_bundle(PROJECTS / run), kind="application/zip")
                     if target.is_file() and target.resolve().parent == (PROJECTS / run).resolve():
                         body = target.read_bytes()
                         self.send_response(200)
@@ -475,6 +483,10 @@ class Handler(BaseHTTPRequestHandler):
             progress = manuscript.verified_count(record)
             # The final paper exists only after both the AI gate and the researcher checklist pass.
             released = progress['all_checked'] and paper.release_final(folder, say=say)
+            if released:
+                old_report = folder / '9_editorial_report.json'
+                language = json.loads(old_report.read_text(encoding='utf-8')).get('language', 'English') if old_report.exists() else 'English'
+                editorial.save_outputs(folder, matrix, language)
             return self.send({'ok': True, 'progress': progress, 'released': bool(released)})
         if self.path == "/api/settings":
             if STATE["phase"] in ("planning", "running"):

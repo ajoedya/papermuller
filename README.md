@@ -42,7 +42,9 @@ python app.py
 
 Open **http://localhost:8765** in your browser. By default, the server binds to **127.0.0.1** (your own computer).
 
-On Windows, you can also double-click `Start.bat` after installing the dependencies.
+On Windows, extract the project and double-click `Setup.bat` once, then `Start.bat`.
+The launchers use a local `.venv`, preserve existing settings and research files,
+and require Python 3.11 or newer. See [the laptop setup guide](docs/LOCAL-LAPTOP.md).
 
 ### Demo mode vs. live mode
 
@@ -125,7 +127,32 @@ The filters are sent to OpenAlex and the year range is re-checked locally. Each 
 
 **Approve the research plan.** Edit the working title, research questions, assumptions, and search terms before proceeding. The assistant must not silently invent a study location, time period, or research population.
 
-**Import source PDFs.** The local library supports text-based PDF files up to **12 MB and 150 pages**, linked to their publication DOI. Scanned/image-only PDFs are not OCR-processed in this release.
+**Read selected papers in full text.** Papermuller first uses uploaded PDFs, then
+tries up to three OpenAlex locations explicitly marked open access for each selected
+paper. It does not bypass logins or paywalls. Downloaded files must match the
+selected DOI or title in their first pages. Available extracted text is sent to
+the evidence model in page-labelled chunks, including the final chunk; validated
+chunk notes are combined into a source summary. This uses more API calls than
+abstract-only extraction. Other stages use the resulting evidence summary and
+page-grounded excerpts, not every full PDF in one prompt.
+
+Under **Topic & sources → Research settings**, automatic retrieval is enabled by
+`FETCH_FULLTEXT=true`. Enable **Require full text** (`REQUIRE_FULLTEXT=true`) to stop
+before drafting when any selected paper lacks usable PDF text. Otherwise unavailable
+sources remain explicitly **abstract only**, with a reason. In demo mode, no PDFs
+are fetched and reading is simulated. Uploaded PDFs can also be used offline.
+
+**Full-text access & reading** in the results shows access status, extracted text
+pages, and processed/total chunks. `4_source_manifest.json` records access and
+provenance; `4_fulltext_reading.json` records chunk coverage and grounded notes.
+Failed model calls leave the reading status **incomplete**. Downloads are cached
+in the ignored local PDF library. A PDF without an abstract is eligible if an
+uploaded PDF or an open-access PDF location exists.
+
+PDFs are limited to 12 MB, 150 pages, and 900,000 extracted characters. Text is not
+silently truncated per page. Scanned pages, visual figures, and non-extractable
+tables require separate OCR/visual review. Full-text availability does not certify
+scientific accuracy or that extracted text includes every visual detail.
 
 **Inspect the evidence ledger.** Check quotations, source identifiers, and PDF page or abstract provenance. A matching text span establishes traceability, **not necessarily that a claim is scientifically justified**.
 
@@ -140,6 +167,26 @@ Files are stored locally under `projects/<timestamp>/`. Depending on the workflo
 - `8_manuscript_working.md` — working manuscript.
 - `8_evidence_ledger.csv` — source-linked evidence entries, if generated.
 - `8_human_verification.json` — human-review checklist.
+
+## Editorial checks and portable research files
+
+After a run, **Draft & evidence → Editorial checks** shows local writing suggestions,
+heading gaps, unknown citation IDs, missing author sections, and approximate prose
+statistics. Each finding names the checked Markdown file and its line number.
+The checker never rewrites text and is not an AI detector or scientific review.
+
+Download `9_editorial_report.json` for the complete report and `9_references.bib`
+for BibTeX metadata keyed by source IDs such as `P1`. Author displays may be
+incomplete; check the records before using them in a submission.
+**Download research bundle (ZIP)** packages the current numbered research outputs,
+including available Markdown, Word, evidence files, and BibTeX. It excludes API
+settings, logs, original PDFs, and symlinks. The archive reflects the current
+run's review/release status; it does not certify that the manuscript is complete.
+
+These additions adopt document-checking and packaging ideas from
+[MenulisCep4t](https://github.com/FRCHN-GSTN/MenulisCep4t) using an original Python
+implementation. See [the comparison and adoption review](docs/MENULISCEPAT-ADOPTION.md)
+for source snapshots, implementation scope, and remaining issues.
 
 ## Development and tests
 
@@ -156,7 +203,7 @@ The project currently uses a lightweight Python backend (`app.py`, `harness.py`,
 
 ## Limitations and responsible use
 
-- PDF processing uses **selected text excerpts**, not exhaustive whole-document understanding; always read the original paper.
+- Full-text extraction processes all available PDF text in chunks. Later drafting and auditing use summaries and selected page-grounded excerpts; figures and scanned content still need human review.
 - OCR for scanned/image-only PDFs is **not yet included**.
 - Matching DOI metadata or locating a quotation does **not** guarantee that an interpretation is correct.
 - Literature selection may omit important studies, and AI review scores do **not** guarantee publishable academic quality.
@@ -171,3 +218,14 @@ See [LICENSE](LICENSE) for the repository's license.
 ---
 
 **Papermuller's guiding principle:** make AI-assisted research easier to inspect and audit—not harder to question.
+
+### Network access for full text
+
+Live use needs HTTPS access to `api.openalex.org`, `api.crossref.org`,
+`openrouter.ai`, and the actual open-access PDF hosts and their redirect
+destinations. For example, PLOS uses `journals.plos.org`. Restricted cloud
+allowlists must include each needed host. Unknown PDF hosts fail closed when
+public DNS cannot be checked; managed proxy-side DNS is supported only for a
+small explicit set of public publishing services (see `fulltext.py`). Keep TLS
+verification enabled. Server error pages and inaccessible PDFs are reported as
+abstract-only access failures, not as successfully read full text.

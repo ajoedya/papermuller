@@ -82,6 +82,18 @@ def within_filters(paper, settings):
     return int(paper.get("cited_by") or 0) >= int(settings.get("MIN_CITATIONS") or 0)
 
 
+def open_access_pdf_urls(item):
+    """Use only locations explicitly marked open access; never guess publisher URLs."""
+    locations = [item.get('best_oa_location'), item.get('primary_location')] + (item.get('locations') or [])
+    urls = []
+    for location in locations:
+        if isinstance(location, dict) and location.get('is_oa') and location.get('pdf_url'):
+            url = location['pdf_url']
+            if isinstance(url, str) and url.startswith('https://') and url not in urls:
+                urls.append(url)
+    return urls[:3]
+
+
 def search_papers(keyword, settings, how_many=8):
     """Search OpenAlex for papers matching `keyword`. Returns a list of paper dictionaries."""
     if settings["DEMO_MODE"]:
@@ -117,6 +129,7 @@ def search_papers(keyword, settings, how_many=8):
             "abstract": _rebuild_abstract(item.get("abstract_inverted_index")),
             "cited_by": item.get("cited_by_count", 0),
             "openalex_id": item.get("id", ""),
+            "oa_pdf_urls": open_access_pdf_urls(item),
             "publication_date": item.get("publication_date", ""),
         })
     time.sleep(0.5)  # be polite to the free service
