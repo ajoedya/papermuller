@@ -307,6 +307,8 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     </details>
     <label for="topic" data-i18n="topicLabel">Topic</label>
     <textarea id="topic" data-i18n-ph="topicPh" placeholder="e.g. road infrastructure, governance quality and poverty"></textarea>
+    <label for="language"><span data-i18n="draftLang">Language of the plan and draft</span><small data-i18n="langHint">Auto writes in the language of your topic. Search terms always stay in English.</small></label>
+    <select id="language"><option value="Auto" data-i18n="langAuto">Auto (same as my topic)</option><option value="English">English</option><option value="Indonesian">Indonesian</option></select>
     <label for="planModelInput"><span data-i18n="planModelLabel">AI model for brainstorming and the research plan</span><small data-i18n="planModelHint">Leave blank to use the default model.</small></label>
     <input type="text" id="planModelInput" class="mono" list="modelList" spellcheck="false" autocomplete="off" maxlength="300">
     <div class="actions" style="margin-top:10px"><button type="button" class="btn small" id="loadFreeBtn" data-i18n="loadFree">Load free models</button>
@@ -337,8 +339,6 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <div class="grid3">
       <div><label for="rounds"><span data-i18n="rounds">Revision rounds</span><small>0–10</small></label><input type="number" id="rounds" min="0" max="10"></div>
       <div><label for="target"><span data-i18n="target">AI review threshold</span><small data-i18n="targetHint">Not a measure of accuracy.</small></label><input type="number" id="target" min="1" max="10" step="0.5"></div>
-      <div><label for="language" data-i18n="draftLang">Draft language</label>
-        <select id="language"><option value="English">English</option><option value="Indonesian">Indonesian</option></select></div>
     </div>
     <div class="actions"><button class="btn" id="saveResearch" data-i18n="saveResearch">Save research settings</button></div>
     <div id="researchMsg"></div>
@@ -358,6 +358,7 @@ th { background: var(--panel-2); position: sticky; top: 0; }
 
   <div class="card hidden" id="approveCard">
     <h2 data-i18n="approveTitle">Review the plan</h2>
+    <p class="hint hidden" id="estimateNote"></p>
     <p class="hint" data-i18n="approveHint">Check the title, questions, assumptions, and scope. Remove any location or time period you did not ask for.</p>
     <div class="plan-view" id="planView"></div>
     <label for="approvedTitle" data-i18n="wTitle">Working title</label><input id="approvedTitle" maxlength="350">
@@ -473,6 +474,8 @@ const T = {
     u_demo: "Demo mode makes no API requests, so no tokens are used.",
     u_partial: "{a} of {b} responses did not report usage.",
     loopNote: "Stages 7 to 9 repeat up to {n} times until the draft passes review. Stages 10 and 11 do the same for the full paper.",
+    estimateNote: "Estimated AI requests for the rest of this run: {a} to {b}, depending on how many revision rounds are needed. A request that is repeated after an error counts again. Free models have daily request limits, and paid models are billed per token.",
+    estimateUsed: "Used so far: {n}.", estimateDemo: "Demo mode makes no AI requests.",
     resumeRun: "Continue from stage {n}: {name}", resumePlan: "Try the research plan again", resumeDone: "Retry the unfinished step",
     startOver: "Start over", resumeHint: "Stages that already finished are kept and not run again.",
     ideaSummary: "Not sure what to research? Brainstorm topic ideas with AI",
@@ -493,7 +496,7 @@ const T = {
     wtReview: "Review articles", wtBoth: "Articles and reviews", minCit: "Minimum citations", minCitHint: "0 = no minimum; recent papers have few citations.",
     oaOnly: "Open-access papers only (easier to get full-text PDFs)", cand: "Candidates to check", maxPapers: "Papers to keep", minVer: "Minimum usable papers",
     minVerHint: "The run stops below this.", rounds: "Revision rounds", target: "AI review threshold", targetHint: "Not a measure of accuracy.",
-    draftLang: "Draft language", saveResearch: "Save research settings",
+    draftLang: "Language of the plan and draft", langAuto: "Auto (same as my topic)", langHint: "Auto writes in the language of your topic. Search terms always stay in English.", saveResearch: "Save research settings",
     pdfTitle: "Full-text PDFs (optional)", pdfHint: "Add PDFs before starting. Enter the article's exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). In live mode, selected excerpts are sent to your AI provider.",
     doi: "Article DOI", pdfFile: "PDF you have permission to use", importPdf: "Import PDF",
     approveTitle: "Review the plan", approveHint: "Check the title, questions, assumptions, and scope. Remove any location or time period you did not ask for.",
@@ -568,6 +571,8 @@ const T = {
     u_demo: "Mode demo tidak membuat permintaan API, jadi tidak ada token yang terpakai.",
     u_partial: "{a} dari {b} respons tidak melaporkan penggunaan.",
     loopNote: "Tahap 7 sampai 9 diulang hingga {n} kali sampai draf lolos reviu. Tahap 10 dan 11 melakukan hal yang sama untuk naskah lengkap.",
+    estimateNote: "Perkiraan permintaan AI untuk sisa run ini: {a} sampai {b}, tergantung berapa putaran revisi yang diperlukan. Permintaan yang diulang setelah galat dihitung lagi. Model gratis punya batas permintaan harian, dan model berbayar ditagih per token.",
+    estimateUsed: "Sudah terpakai: {n}.", estimateDemo: "Mode demo tidak membuat permintaan AI.",
     resumeRun: "Lanjutkan dari tahap {n}: {name}", resumePlan: "Coba lagi rencana riset", resumeDone: "Ulangi langkah yang belum selesai",
     startOver: "Mulai dari awal", resumeHint: "Tahap yang sudah selesai disimpan dan tidak dijalankan lagi.",
     ideaSummary: "Belum tahu mau meneliti apa? Cari ide topik dengan AI",
@@ -588,7 +593,7 @@ const T = {
     wtReview: "Artikel tinjauan (review)", wtBoth: "Artikel dan tinjauan", minCit: "Sitasi minimum", minCitHint: "0 = tanpa batas; paper terbaru biasanya masih sedikit sitasinya.",
     oaOnly: "Hanya paper akses terbuka (lebih mudah mendapat PDF lengkap)", cand: "Kandidat yang diperiksa", maxPapers: "Paper yang dipertahankan", minVer: "Paper layak minimum",
     minVerHint: "Proses berhenti jika di bawah angka ini.", rounds: "Putaran revisi", target: "Ambang skor reviu AI", targetHint: "Bukan ukuran ketepatan ilmiah.",
-    draftLang: "Bahasa draf", saveResearch: "Simpan pengaturan riset",
+    draftLang: "Bahasa rencana dan draf", langAuto: "Otomatis (sama dengan topik saya)", langHint: "Otomatis menulis dalam bahasa topik Anda. Kata kunci pencarian selalu tetap dalam bahasa Inggris.", saveResearch: "Simpan pengaturan riset",
     pdfTitle: "PDF teks lengkap (opsional)", pdfHint: "Tambahkan PDF sebelum mulai. Masukkan DOI artikel yang tepat. PDF harus memiliki lapisan teks (maks. 12 MB dan 150 halaman). Pada mode langsung, kutipan terpilih dikirim ke penyedia AI Anda.",
     doi: "DOI artikel", pdfFile: "PDF yang boleh Anda gunakan", importPdf: "Impor PDF",
     approveTitle: "Periksa rencana", approveHint: "Periksa judul, pertanyaan, asumsi, dan cakupan. Hapus lokasi atau periode yang tidak Anda minta.",
@@ -760,7 +765,7 @@ function fillSettings(s) {
   $("workType").value = s.work_type || "any"; $("openAccess").checked = !!s.open_access_only;
   $("minCitations").value = s.min_citations; $("candidates").value = s.candidates; $("maxPapers").value = s.max_papers;
   $("minVerified").value = s.min_verified; $("rounds").value = s.revision_rounds; $("target").value = s.target;
-  $("language").value = s.language === "Indonesian" ? "Indonesian" : "English";
+  $("language").value = ["Auto", "English", "Indonesian"].includes(s.language) ? s.language : "Auto";
   renderSlotsTable(); toggleReal();
 }
 async function loadSettings() { const s = await api("/api/settings"); fillSettings(s); return s; }
@@ -966,8 +971,19 @@ function render(s) {
   renderFlow(s);
   renderActivity(s);
   renderUsage(s);
+  renderEstimate(s);
 }
 let slotsRendered = false;
+
+// Before the run starts, say how many AI requests it will need, so a free quota or a budget is not a surprise.
+function renderEstimate(s) {
+  const e = s.estimate, show = s.phase === "approve" && !!e;
+  $("estimateNote").classList.toggle("hidden", !show);
+  if (!show) return;
+  const demo = (s.pipeline?.[0]?.model || "").startsWith("Demo simulator");
+  $("estimateNote").textContent = demo ? t("estimateDemo")
+    : t("estimateNote", {a: e.min, b: e.max}) + (s.requests ? " " + t("estimateUsed", {n: s.requests}) : "");
+}
 
 // Token usage per stage and model, as the provider reported it. An unreported response shows a dash, never zero.
 function renderUsage(s) {

@@ -109,6 +109,30 @@ ROLE_KEYS = {"planner": "PLAN_MODEL", "screen": "SCREEN_MODEL", "evidence": "EVI
              "paper_writer": "PAPER_MODEL", "paper_reviewer": "PAPER_REVIEW_MODEL"}
 
 
+def estimate_requests(settings):
+    """How many AI requests the research run needs once the plan is approved.
+
+    Gives the fewest and the most, with the parts they are made of. The fewest is a run whose first
+    draft and first paper pass review (or that has no revision rounds to spend); the most uses every
+    revision round. A request that is repeated after an error counts again, so the real number can
+    be higher."""
+    fewest_papers = max(1, int(settings.get("MIN_VERIFIED") or 1))
+    most_papers = max(fewest_papers, int(settings.get("MAX_PAPERS") or fewest_papers))
+    rounds = int(settings.get("REVISION_ROUNDS") or 0) + 1
+    batches = lambda n: -(-n // 4)  # evidence is extracted four articles per request
+    parts = [
+        {"part": "screen", "min": 1, "max": 1},
+        {"part": "evidence", "min": batches(fewest_papers), "max": batches(most_papers)},
+        {"part": "outline", "min": 1, "max": 1},
+        # Per round: draft, claim audit, review. A round that fails the citation check costs only the draft,
+        # so with few rounds the fewest can be below 3.
+        {"part": "review_rounds", "min": min(3, rounds), "max": 3 * rounds},
+        {"part": "redteam", "min": 1, "max": 1},
+        {"part": "paper_rounds", "min": 2, "max": 2 * rounds},    # per round: paper draft, paper review
+    ]
+    return {"min": sum(p["min"] for p in parts), "max": sum(p["max"] for p in parts), "parts": parts}
+
+
 def resolve(chain, settings):
     for key in chain:
         if str(settings.get(key) or "").strip():

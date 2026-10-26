@@ -227,20 +227,61 @@ def list_models(free_only=True, kind=None):
     return routers + [m for m in models if m["id"] not in ("openrouter/free", "openrouter/auto")]
 
 
+_DECODER = json.JSONDecoder(strict=False)  # strict=False accepts raw line breaks inside strings, a common slip
+_FENCE = re.compile(r"```(?:json)?", re.I)
+_TRAILING_COMMA = re.compile(r",(\s*[}\]])")
+
+
+def _balanced(text):
+    return text.count("{") == text.count("}") and text.count("[") == text.count("]")
+
+
+def extract_json(reply):
+    """The JSON object in a model reply, or None.
+
+    Models wrap JSON in prose or code fences, leave a trailing comma, or put raw line breaks in a string.
+    The object that starts at the first "{" is accepted wherever it ends, so text after it is fine.
+    An object further on is accepted only when it is the last thing in the reply and everything before it is
+    balanced: that skips a stray "{like this}" in front of the answer. It never returns an inner piece of a
+    broken or cut-off object, because a wrong structure that looks fine is worse than an error."""
+    clean = _FENCE.sub("", str(reply or "")).replace("\ufeff", "")
+    for candidate in (clean, _TRAILING_COMMA.sub(r"\1", clean)):
+        first, last = candidate.find("{"), candidate.rfind("}")
+        if first != -1 and candidate[:first].rstrip().endswith("["):
+            continue  # a bare list of objects is not the object the caller asked for
+        position = first
+        for _ in range(40):
+            if position == -1:
+                break
+            try:
+                value, end = _DECODER.raw_decode(candidate, position)
+            except ValueError:
+                value, end = None, 0
+            if isinstance(value, dict) and (position == first or (end == last + 1 and _balanced(candidate[first:position]))):
+                return value
+            position = candidate.find("{", position + 1)
+    return None
+
+
 def ask_for_json(prompt, settings, stage="general"):
     """
-    Same as ask(), but we expect the AI to answer in JSON (structured data).
-    AI models sometimes wrap JSON in extra words or break it, so we cut out the
-    {...} part, and if it is still broken we ask the model again (max 3 tries).
+    Same as ask(), but the answer must be a JSON object (structured data).
+
+    A reply that is malformed is not simply asked for again from scratch, which would resend the whole
+    prompt: the second try shows the model its own reply and asks only for a corrected copy. A reply that
+    is cut off, or that has no JSON in it, is asked for again with the original prompt. Three tries at most.
     """
+    full = prompt + "\n\nAnswer ONLY with valid JSON, no extra text."
     reply = ""
     for attempt in (1, 2, 3):
-        reply = ask(prompt + "\n\nAnswer ONLY with valid JSON, no extra text.", settings, stage)
-        start, end = reply.find("{"), reply.rfind("}")
-        if start != -1 and end != -1:
-            try:
-                return json.loads(reply[start:end + 1])
-            except json.JSONDecodeError:
-                pass
+        if attempt == 2 and "{" in reply and reply.count("{") <= reply.count("}"):
+            question = ("Your previous reply was not valid JSON. Return ONLY the corrected JSON object, with the same "
+                        "content and no extra text.\n\nPREVIOUS REPLY:\n" + reply[:12000])
+        else:
+            question = full
+        reply = ask(question, settings, stage)
+        found = extract_json(reply)
+        if found is not None:
+            return found
         print(f"   ! The AI returned broken JSON. Asking again ({attempt}/3)...")
     raise SystemExit(f"\n[AI ERROR] Expected JSON but got:\n{reply[:500]}\n")

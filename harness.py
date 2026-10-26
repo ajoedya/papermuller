@@ -16,6 +16,8 @@ The flow:
 
 import sys
 import json
+
+from language import clean_name
 from datetime import datetime
 from pathlib import Path
 
@@ -33,6 +35,17 @@ STAGE_MODEL_KEYS = ["PLAN_MODEL", "SCREEN_MODEL", "EVIDENCE_MODEL", "OUTLINE_MOD
                     "WRITER_MODEL", "VERIFIER_MODEL", "REVIEW_MODEL", "REDTEAM_MODEL",
                     "PAPER_MODEL", "PAPER_REVIEW_MODEL"]
 WORK_TYPES = {"any": "", "article": "article", "review": "review", "article_review": "article|review"}
+
+
+def language_setting(value):
+    """"Auto" (follow the topic), or a language name such as English or Indonesian."""
+    text = str(value or "").strip()
+    if not text:
+        return "Auto"
+    name = clean_name(text)
+    if not name:
+        raise ValueError("LANGUAGE must be a language name such as Auto, English or Indonesian.")
+    return name
 
 
 def parse_settings(raw):
@@ -58,7 +71,7 @@ def parse_settings(raw):
         "DEMO_MODE": str(raw.get("DEMO_MODE", "true")).lower() == "true",
         "OPENROUTER_API_KEY": raw.get("OPENROUTER_API_KEY", ""),
         "MODEL": raw.get("MODEL", "") or "openrouter/free",
-        "LANGUAGE": raw.get("LANGUAGE", "English") or "English",
+        "LANGUAGE": language_setting(raw.get("LANGUAGE")),
         # Publication window and document filters for the literature search
         "FROM_YEAR": from_year,
         "TO_YEAR": to_year,

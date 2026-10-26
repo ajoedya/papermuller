@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — Steadier lookups and JSON replies, request estimate
+
+- **A real article is no longer dropped because the network blinked.** OpenAlex and Crossref requests are tried up to 3 times, pausing between tries (and as long as the server asks after a rate limit, up to 30 s) when the problem is probably temporary: a dropped connection, a timeout, a cut-off or unreadable answer, or an HTTP 429 or 5xx. A 404 or a refusal (401, 403) is not retried. Before, any failure looked like "DOI not found in Crossref" and the article was left out.
+- Crossref now answers one of four ways: match, mismatch, not found, or **unreachable**. Articles it did not answer for are marked `unchecked` (not `no`) in `3_verification_report.csv`, get one more try after a pause, and are left out with a warning if it still fails. If it fails for 3 articles or half of them, the stage stops with a plain message and can be continued, instead of ending with a misleading "fewer relevant articles". The same for a search where OpenAlex answers for none of the search terms. Crossref requests also carry your email (`mailto`) when one is set, which gives a steadier service, and the user agent is now `Papermuller`.
+- **JSON replies are read more carefully** (`llm.extract_json`): code fences, text before or after the object, trailing commas and raw line breaks inside strings are accepted. A cut-off or broken object is never replaced by an object found inside it, and a bare list is refused, so a wrong structure cannot slip through looking fine. After a broken reply the second try sends the model only its own reply to correct, not the whole prompt again; a cut-off reply or one with no JSON is asked for again in full. Still three tries at most.
+- **The plan approval card shows how many AI requests the rest of the run needs**, as a range (for the default settings 10 to 26), with how many were already used. The range follows the number of selected articles and the revision rounds, and was checked against the real number of requests a demo run makes for 12 combinations of settings. Requests repeated after an error count again.
+
+## Unreleased — One writing language
+
+- A topic written in Indonesian now gets an Indonesian plan. Before, only the literature review and the full paper used the `LANGUAGE` setting; the plan stage ignored it and answered in English.
+- `LANGUAGE` is now `Auto` (default: the language of the topic, detected in the plan stage and stored in the plan), `English` or `Indonesian`. The choice moved from Research settings to the topic card. One module, `language.py`, decides the language for every stage, so the plan, outline, literature review, paper, and the reviewer, audit and red-team comments agree. Search terms stay English whatever the language.
+- The full paper follows the language too: section headings, keyword label, author placeholders and the status banner. The "no results yet" abstract check used to require the English word "pending", so a correct Indonesian abstract ("menunggu analisis penulis") was marked wrong; it now accepts both and asks for the phrase in the paper's language.
+- PDF excerpts are now matched with the English search terms as well as the plan text. With an Indonesian plan and an English PDF, nothing matched and the excerpts were chosen almost at random.
+- An existing `.env` that says `LANGUAGE=English` keeps writing in English. Choose Auto or Indonesian under the topic to change it.
+
 ## Unreleased — Continue a stopped run
 
 - **Try again no longer starts over.** Every finished stage of a run is saved in the run folder (`_checkpoints/`): search, Crossref checks, selection, evidence extraction, outline, and each round's draft, claim audit and review, plus the red-team check and the full-paper rounds. After an error, **Continue from stage N** reads those back and repeats only the stage that failed. The old button is now **Start over**.

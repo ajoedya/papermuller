@@ -10,6 +10,8 @@
 - **Literature discovery and verification:** Search OpenAlex and check publication identifiers against Crossref.
 - **PDF-assisted evidence extraction:** Upload text-based academic PDFs, link them to a DOI, and trace extracted passages to their PDF page.
 - **Evidence-first checks:** Flag unknown citation IDs, missing references, unsupported or incomplete evidence mapping, and high-risk reviewer findings.
+- **Steadier lookups:** OpenAlex and Crossref requests are retried when the problem is probably temporary, and an article Crossref could not answer for is marked unchecked instead of being treated as invalid.
+- **Request estimate:** Before a run starts, the plan approval card shows how many AI requests the rest of the run needs, so a free daily limit or a paid budget is not a surprise.
 - **Continue after an error:** Finished stages are saved in the run folder. If a stage fails, **Continue from stage N** repeats only that stage instead of the whole run. Changing the plan, search filters, language or PDF library starts the affected work again.
 - **Token usage detail:** A table under the flowchart lists input and output tokens per stage and per model, with a CSV copy in the run folder (`9_api_usage.csv`). Only what the provider reports is counted.
 - **Topic brainstorming:** Not sure what to research? Describe a field and the AI suggests several topics to pick from, using the model you choose. Suggestions are not a literature search.
@@ -119,7 +121,7 @@ Under **Topic & sources → Research settings** (or in `.env`):
 | `MIN_CITATIONS` | Skip works with fewer citations (0 = no minimum). |
 | `CANDIDATES`, `MAX_PAPERS`, `MIN_VERIFIED` | How many works to check, keep, and require before drafting. |
 | `REVISION_ROUNDS`, `TARGET_SCORE` | Revision limit and AI review threshold. |
-| `LANGUAGE` | Draft language (English or Indonesian). |
+| `LANGUAGE` | Language of the plan, outline, literature review and paper: `Auto` (the language you write the topic in, the default), `English` or `Indonesian`. Search terms are always English. |
 
 The filters are sent to OpenAlex and the year range is re-checked locally. Each run saves the filters it used in `2_search_settings.json`.
 

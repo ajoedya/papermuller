@@ -109,8 +109,11 @@ def quote_location(source, quote, requested_page=None):
 
 def relevant_snippets(source, plan, limit=4):
     """Select limited page-grounded text to manage token costs, not entire PDF."""
+    # The search terms are always English, so they still match an English PDF when the plan is written
+    # in another language.
     terms = set(re.findall(r'\w{4,}', normalize_text(
-        plan.get('title', '') + ' ' + ' '.join(plan.get('research_questions', [])))))
+        plan.get('title', '') + ' ' + ' '.join(plan.get('research_questions', []))
+        + ' ' + ' '.join(plan.get('keywords', [])))))
     candidates = []
     for item in source['pages']:
         page = item['page']

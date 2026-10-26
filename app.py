@@ -505,6 +505,7 @@ class Handler(BaseHTTPRequestHandler):
             settings, _ = read_settings()
             status["pipeline"] = pipeline.describe(settings or {"DEMO_MODE": True})
             status["resume"] = resume_kind()
+            status["estimate"] = pipeline.estimate_requests(settings) if settings else None
             return self.send(status)
         if self.path == "/api/settings":
             return self.send(public_settings())
