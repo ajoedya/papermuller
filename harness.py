@@ -37,6 +37,10 @@ STAGE_MODEL_KEYS = ["PLAN_MODEL", "SCREEN_MODEL", "EVIDENCE_MODEL", "OUTLINE_MOD
 WORK_TYPES = {"any": "", "article": "article", "review": "review", "article_review": "article|review"}
 
 
+class MissingAPIKeyError(ValueError):
+    """An incomplete live configuration can still be saved for later setup."""
+
+
 def parse_settings(raw):
     """Turn raw KEY=value strings into checked settings. Raises ValueError."""
     def number(key, default, low, high, kind=int):
@@ -60,7 +64,7 @@ def parse_settings(raw):
         "DEMO_MODE": str(raw.get("DEMO_MODE", "true")).lower() == "true",
         "OPENROUTER_API_KEY": raw.get("LLM_API_KEY") or raw.get("OPENROUTER_API_KEY", ""),
         "LLM_API_KEY": raw.get("LLM_API_KEY") or raw.get("OPENROUTER_API_KEY", ""),
-        "LLM_BASE_URL": (raw.get("LLM_BASE_URL") or "https://openrouter.ai/api/v1").rstrip("/"),
+        "LLM_BASE_URL": str(raw.get("LLM_BASE_URL") or "https://openrouter.ai/api/v1").strip().rstrip("/"),
         "MODEL": raw.get("MODEL", "") or "openrouter/free",
         "LANGUAGE": writing.validate_language(raw.get("LANGUAGE", "English")),
         # Publication window and document filters for the literature search
@@ -92,8 +96,29 @@ def parse_settings(raw):
     url = urlparse(settings["LLM_BASE_URL"])
     if url.scheme != "https" or not url.hostname or url.username or url.password or url.query or url.fragment:
         raise ValueError("LLM_BASE_URL must be a valid HTTPS API base URL.")
+    if any(c.isspace() or ord(c) < 32 for c in settings["LLM_BASE_URL"]):
+        raise ValueError("LLM_BASE_URL cannot contain whitespace or control characters.")
+    if url.path.endswith(("/models", "/chat/completions")):
+        raise ValueError("Use the API base URL ending in /v1, without /models or /chat/completions.")
+    is_openrouter = settings["LLM_BASE_URL"] == "https://openrouter.ai/api/v1"
+    if not is_openrouter:
+        # A legacy OpenRouter credential does not belong to another gateway.
+        settings["LLM_API_KEY"] = str(raw.get("LLM_API_KEY") or "").strip()
+    key = str(settings["LLM_API_KEY"]).strip()
+    if key and any(c.isspace() or ord(c) < 32 for c in key):
+        raise ValueError("Invalid AI provider API key format.")
+    if url.hostname == "api.wflabs.ai.id" and key and not key.startswith("wf-"):
+        raise ValueError("WFLabs requires its own API key starting with wf-. Enter a WFLabs key in Settings.")
+    if is_openrouter and key.startswith("wf-"):
+        raise ValueError("A wf- API key belongs to WFLabs. Set AI API base URL to https://api.wflabs.ai.id/v1.")
+    for field in ["MODEL"] + STAGE_MODEL_KEYS:
+        for model in str(settings[field]).split(","):
+            if is_openrouter and model.strip().startswith("wf/"):
+                raise ValueError(f"{field} uses a WFLabs model. Set AI API base URL to https://api.wflabs.ai.id/v1.")
+            if url.hostname == "api.wflabs.ai.id" and model.strip().startswith("openrouter/"):
+                raise ValueError(f"{field} uses an OpenRouter router. Choose an ID from the WFLabs model list, or leave stage models blank to inherit.")
     if not settings["DEMO_MODE"] and not str(settings["LLM_API_KEY"]).strip():
-        raise ValueError("Real mode needs LLM_API_KEY (or legacy OPENROUTER_API_KEY).")
+        raise MissingAPIKeyError("Real mode needs an AI provider API key (LLM_API_KEY in .env; legacy OPENROUTER_API_KEY works for OpenRouter).")
     return settings
 
 

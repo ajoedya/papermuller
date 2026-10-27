@@ -22,8 +22,10 @@ a folder such as `C:\Users\YourName\Documents\papermuller`. Then:
    app in your browser. If setup is missing, it invokes Setup.bat automatically.
 3. Keep the terminal window open while the app is running. The address printed
    there is on your own laptop; this is a local application, not a hosted site.
-4. In **Settings**, turn **Demo mode** off and enter your OpenRouter API key
-   and OpenAlex API key where needed. Save and test the connections. Never send
+4. In **Settings**, select **WFLabs**, **OpenRouter**, or a compatible provider,
+   turn **Demo mode** off, and enter that provider's API key. WFLabs uses
+   `https://api.wflabs.ai.id/v1` and a `wf-…` key. Load its model list and choose an
+   available ID. Add an OpenAlex API key where needed, then save and test. Never send
    API keys in chat or commit them to Git.
 5. Under **Topic & sources**, select local PDF files or enter a research topic.
    AI, discovery, DOI checks, and OA downloads use the Internet. `projects/` and
@@ -57,12 +59,12 @@ printed by the server in your laptop's browser. Stop the server with Ctrl+C.
 | Mode | Works with current code? | Internet requirements |
 | --- | --- | --- |
 | Offline demo | Yes, after dependencies are installed | None for the scripted demo |
-| Local app with OpenRouter | Yes | AI requests, paper discovery, DOI checks, and OA PDF downloads |
+| Local app with an online AI gateway | Yes | AI requests, paper discovery, DOI checks, and OA PDF downloads |
 | Actual local AI with uploaded PDFs | Not yet | Requires a local-model backend and a local-only research path |
 
 `DEMO_MODE=true` uses fictional, scripted responses. It is not an installed local
-AI model. Turning demo mode off currently selects OpenRouter, which needs Internet
-access and a key. Ollama/LM Studio integration is not implemented in the current
+AI model. Turning demo mode off uses your configured gateway (WFLabs, OpenRouter,
+or a compatible service), which needs Internet access and a key. Ollama/LM Studio integration is not implemented in the current
 code. Installing one of those tools alone does not connect it to Papermuller.
 
 For genuinely offline research, model weights and Python dependencies must be

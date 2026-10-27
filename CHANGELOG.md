@@ -1,5 +1,23 @@
 # Changelog
 
+## WFLabs router connection fixes
+
+- Load models using the API base URL and key currently entered in Settings,
+  including unsaved edits. Keep catalogue lookup independent of unrelated research
+  settings and an outdated model selection.
+- Add WFLabs/OpenRouter presets while preserving other HTTPS OpenAI-compatible
+  gateways. Test connections saves visible settings before testing them.
+- Report authentication, denied-model access, and quota errors for the actual
+  gateway. Validate known provider/key/model mismatches and avoid sending a saved
+  credential to a newly entered endpoint. Keep legacy OpenRouter keys scoped to
+  OpenRouter.
+- Try explicit model fallbacks for generic gateways after unknown models or
+  exhausted transient retries. Preserve OpenRouter's server-side fallback array.
+- Replace the placeholder default model with the WFLabs guide's example and
+  document provider setup. Missing catalogue pricing does not imply free access.
+- Validate with 80 Python tests and Chromium connection-form checks using mocked
+  gateways; live WFLabs account access still needs the user's active key.
+
 ## Paper languages and reliability optimizations
 
 - Free-form paper language/locale with persistent custom values, independent of

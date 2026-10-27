@@ -131,13 +131,15 @@ def save_settings(data, allowed=None):
                 if len(value) > 300 or any(c.isspace() for c in value):
                     raise ValueError("Invalid API key format.")
                 updates[key] = value
-    merged = dict(raw_env(), **updates)
+    previous = raw_env()
+    merged = dict(previous, **updates)
+    if llm._base(previous) != llm._base(merged) and previous.get("LLM_API_KEY") and "LLM_API_KEY" not in updates:
+        raise ValueError("Enter a new AI provider API key when changing the base URL. The saved key belongs to the previous endpoint.")
     try:
         harness.parse_settings(merged)
-    except ValueError as problem:
+    except harness.MissingAPIKeyError:
         # A missing live key is reported, not blocking, so demo users can switch modes later.
-        if "LLM_API_KEY" not in str(problem):
-            raise
+        pass
     if updates:
         update_env(updates)
 
@@ -161,6 +163,28 @@ def public_settings():
         data["target"] = settings["TARGET_SCORE"]
         data["model"] = settings["MODEL"]
     return data
+
+
+def model_catalogue(data):
+    """Use the visible URL and key, including edits not yet saved by the user."""
+    previous = raw_env()
+    raw = dict(previous)
+    if "llm_base_url" in data:
+        raw["LLM_BASE_URL"] = str(data["llm_base_url"] or "").strip()
+    key = str(data.get("openrouter_key") or "").strip()
+    if key:
+        raw["LLM_API_KEY"] = key
+    elif llm._base(previous) != llm._base(raw):
+        # Never send a saved secret to a newly typed endpoint.
+        raw.pop("LLM_API_KEY", None)
+        raw.pop("OPENROUTER_API_KEY", None)
+    # Model discovery must not depend on unrelated run settings or an old model
+    # ID. Validate just this connection; the catalogue resolves the model choice.
+    settings = harness.parse_settings({"DEMO_MODE": "true", "MODEL": "catalogue",
+                                      "LLM_BASE_URL": llm._base(raw),
+                                      "LLM_API_KEY": raw.get("LLM_API_KEY", ""),
+                                      "OPENROUTER_API_KEY": raw.get("OPENROUTER_API_KEY", "")})
+    return llm.list_models(data.get("free_only", True), settings)
 
 
 # ---------------------------------------------------------------------------
@@ -312,9 +336,9 @@ def run_checks():
     results = []
     try:
         reply = llm.ask("Reply with the single word: OK", settings, stage="check")
-        results.append({"name": "AI model (configured provider)", "ok": True, "note": f"Response: {reply.strip()[:40]}"})
+        results.append({"name": f"AI model ({llm.provider_name(settings)})", "ok": True, "note": f"Response: {reply.strip()[:40]}"})
     except SystemExit as stop:
-        results.append({"name": "AI model (configured provider)", "ok": False, "note": str(stop).strip()})
+        results.append({"name": f"AI model ({llm.provider_name(settings)})", "ok": False, "note": str(stop).strip()})
     try:
         found = tools.search_papers("public policy", settings, how_many=2)
         results.append({"name": "Literature search (OpenAlex)", "ok": bool(found),
@@ -501,9 +525,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send({"error": str(exc)[:250]}, 400)
             return self.send(dict(public_settings(), ok=True))
         if self.path == "/api/models":
-            # Public model catalogue; contacted only when the researcher asks for it.
+            # Contact the visible endpoint with its key only on user request.
             try:
-                return self.send({"models": llm.list_models(data.get("free_only", True))})
+                return self.send({"models": model_catalogue(data)})
+            except ValueError as exc:
+                return self.send({"error": str(exc)[:250]}, 400)
             except RuntimeError as exc:
                 return self.send({"error": str(exc)[:250]}, 502)
         if self.path == "/api/check":

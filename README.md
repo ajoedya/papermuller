@@ -23,7 +23,7 @@ or publication readiness.
 - Read extracted PDF text in page-labelled chunks and record processing coverage.
 - Build a source matrix, literature review, claim audit, and evidence ledger.
 - Draft a working paper with localized headings and a configurable writing language.
-- Route each AI stage to its own OpenRouter model or inherit a default model.
+- Use WFLabs, OpenRouter, or another HTTPS OpenAI-compatible AI gateway, with per-stage models.
 - Export Markdown, Word, BibTeX metadata, editorial diagnostics, and a research ZIP.
 
 ## Install and run
@@ -79,17 +79,33 @@ terminal to stop it.
 | Mode | What happens | Internet during a run |
 | --- | --- | --- |
 | Demo, the default | Fictional papers and scripted English AI responses | Not required |
-| Live research | OpenRouter models, OpenAlex search, Crossref checks, and available OA PDFs | Required |
+| Live research | Your AI gateway, OpenAlex search, Crossref checks, and available OA PDFs | Required |
 | Fully offline local AI | Ollama/LM Studio integration is not implemented | Not available |
 
-To use live research, open **Settings**, enter your `OPENROUTER_API_KEY` and an
-`OPENALEX_API_KEY` where needed, turn **Demo mode** off, then save and test the
-connections. You can also configure these in `.env`; see [env.example](env.example).
-Existing `.env` settings are preserved by setup.
+To use live research, open **Settings**, choose your **AI provider**, enter its API
+key, turn **Demo mode** off, and load its model list. Select an exact model ID, then
+save and test the connections. Add an OpenAlex API key where needed. Setup preserves
+existing `.env` settings; new copies use the WFLabs example in [env.example](env.example).
 
-The default model for a new configuration is `openrouter/free`, subject to provider
-availability and quotas. `openrouter/auto` may choose paid models. Existing model
-choices are preserved. Review pricing before starting live runs.
+| Provider | `LLM_BASE_URL` | `LLM_API_KEY` | Model |
+| --- | --- | --- | --- |
+| WFLabs | `https://api.wflabs.ai.id/v1` | WFLabs key starting with `wf-` | Choose from its authenticated catalogue; guide example: `wf/glm-5.3-flash` |
+| OpenRouter | `https://openrouter.ai/api/v1` | OpenRouter key starting with `sk-or-` | `openrouter/free` or an available catalogue ID |
+| Other compatible gateway | Its HTTPS API base URL | A key from that gateway | An ID from that gateway |
+
+WFLabs requires `Authorization: Bearer` for both `/models` and `/chat/completions`.
+The app adds those paths automatically: enter only the base URL ending in `/v1`.
+**Load model list from provider** uses the URL and key currently in the form,
+including unsaved edits. **Test connections** saves the visible settings first.
+When changing the endpoint, enter a key for the new endpoint. A legacy
+`OPENROUTER_API_KEY` remains supported for OpenRouter only.
+
+A `401` means the gateway rejected authentication: confirm the base URL, use a key
+issued by that gateway, and check that it is active. WFLabs `wf/…` model IDs do not
+work on OpenRouter. A `403` can indicate an inactive key or denied model access;
+`429` can indicate quota, rate, or balance limits. The PDF guide's example model
+does not guarantee access in your account. Models without catalogue pricing are
+not assumed free. Review pricing before live runs; `openrouter/auto` may cost.
 
 ## Research workflow
 
@@ -190,7 +206,10 @@ Each run records its search filters in `2_search_settings.json`.
 | `FETCH_FULLTEXT`, `REQUIRE_FULLTEXT` | Automatic PDF retrieval and strict full-text requirement. |
 
 Set models under **Settings → AI models** or by selecting an AI stage in the
-workflow. Comma-separated model IDs provide fallbacks. Blank stage settings inherit
+workflow. Comma-separated model IDs provide fallbacks: OpenRouter handles its
+fallback array; other gateways try the configured IDs in order after an unknown
+model or exhausted transient retries. Authentication failures stop immediately.
+Blank stage settings inherit
 from the following chain:
 
 | Setting | Stage | Fallback |
@@ -206,7 +225,7 @@ from the following chain:
 | `PAPER_MODEL` | Full paper draft | `WRITER_MODEL`, then `MODEL` |
 | `PAPER_REVIEW_MODEL` | Final paper review | `REVIEW_MODEL`, then `MODEL` |
 
-**Load model list from OpenRouter** provides catalogue suggestions. Configured and
+**Load model list from provider** provides catalogue suggestions. Configured and
 provider-reported model names are shown separately when available. Separate passes
 can use the same model and are not independent scientific validation.
 
@@ -270,7 +289,8 @@ Rename-Item -Path ".venv" -NewName (".venv-backup-" + (Get-Date -Format "yyyyMMd
 This preserves the old environment as a backup and leaves settings/research files
 in place. Run commands from the project folder, not `C:\Windows\System32`.
 
-Live use needs HTTPS access to `openrouter.ai`, `api.openalex.org`,
+Live use needs HTTPS access to your selected AI gateway (`api.wflabs.ai.id`,
+`openrouter.ai`, or your configured host), `api.openalex.org`,
 `api.crossref.org`, and the selected PDF hosts/redirect destinations. Restricted
 networks may need those hosts allowed. Literature-service authorization, quota,
 and connection failures are reported as unavailable lookups, not missing papers.
@@ -287,11 +307,14 @@ python -m unittest discover -s tests -v
 Use `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows if
 the virtual environment is not activated.
 
-The latest implementation checks passed **68 Python tests**, plus Chromium checks
+The latest implementation checks passed **80 Python tests**, plus Chromium checks
 for the demo, custom-language persistence, full-text status, and incomplete-paper
-release prevention. A real five-page PLOS PDF was fetched and extracted in the
+release prevention. Router checks cover unsaved connection edits, WFLabs Bearer
+authentication, provider-specific errors, saved/reloaded settings, and OpenRouter
+and custom gateways. A real five-page PLOS PDF was fetched and extracted in the
 full-text validation. Provider calls are mocked in the regression suite; live
-multilingual model quality and native Windows launcher execution remain unverified.
+WFLabs account access, multilingual model quality, and native Windows launcher
+execution remain unverified.
 
 The app uses Python's standard-library HTTP server with a local HTML/JavaScript
 interface. Runtime dependencies are pypdf, python-docx, and fontTools. Extracted PDF

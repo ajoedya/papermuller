@@ -161,7 +161,7 @@ pre.log { margin: 0 14px 14px; padding: 10px; background: var(--field); border: 
 .card .hint, .hint { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
 label { display: block; font-weight: 600; margin: 14px 0 6px; font-size: 13px; }
 label small { display: block; font-weight: 400; color: var(--muted); }
-input[type=text], input[type=password], input[type=email], input[type=number], input:not([type]), select, textarea {
+input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], input:not([type]), select, textarea {
   width: 100%; padding: 9px 11px; border: 1px solid var(--field-line); border-radius: 9px; background: var(--field); color: var(--ink); }
 textarea { min-height: 90px; resize: vertical; }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
@@ -392,10 +392,12 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <p class="hint" data-i18n="connHint">Settings and API keys are stored in .env on the machine running the app.</p>
     <label class="switch"><input type="checkbox" id="demo"><div><span style="color:var(--ink);font-weight:600" data-i18n="demoMode">Demo mode</span>
       <span data-i18n="demoHint">Fictional sample data, no API calls or charges. Turn off to use live services.</span></div></label>
+    <label for="aiProvider" data-i18n="aiProvider">AI provider</label>
+    <select id="aiProvider"><option value="openrouter">OpenRouter</option><option value="wflabs">WFLabs</option><option value="custom" data-i18n="customProvider">Other OpenAI-compatible provider</option></select>
     <div id="realFields">
       <div class="grid2">
-        <div><label for="orKey"><span data-i18n="orKey">AI provider API key</span><small>OpenRouter, WFLabs, or OpenAI-compatible</small></label><input type="password" id="orKey" autocomplete="off"></div>
-        <div><label for="llmBaseUrl">AI API base URL</label><input type="url" id="llmBaseUrl" placeholder="https://api.wflabs.ai.id/v1" autocomplete="off"><small class="hint">OpenRouter: https://openrouter.ai/api/v1 · WFLabs: https://api.wflabs.ai.id/v1</small></div>
+        <div><label for="orKey"><span data-i18n="orKey">AI provider API key</span><small id="providerKeyHint">OpenRouter: sk-or-… · WFLabs: wf-…</small></label><input type="password" id="orKey" autocomplete="off"></div>
+        <div><label for="llmBaseUrl" data-i18n="apiBaseUrl">AI API base URL</label><input type="url" id="llmBaseUrl" placeholder="https://api.wflabs.ai.id/v1" autocomplete="off"><small class="hint" data-i18n="apiBaseHint">Use the base URL ending in /v1; do not add /models or /chat/completions.</small></div>
         <div><label for="oaKey"><span data-i18n="oaKey">OpenAlex API key</span><small>openalex.org/settings/api</small></label><input type="password" id="oaKey" autocomplete="off"></div>
       </div>
       <label for="email"><span>Email</span><small data-i18n="emailHint">Optional, for polite OpenAlex access.</small></label><input type="email" id="email" autocomplete="off">
@@ -407,7 +409,8 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <label for="model"><span data-i18n="defaultModel">Default model</span><small data-i18n="defaultModelHint">openrouter/free uses free models only; openrouter/auto may choose paid models.</small></label>
     <input type="text" id="model" list="modelList" spellcheck="false" class="mono">
     <div class="actions" style="margin-top:10px"><button class="btn small" id="loadModels" data-i18n="loadModels">Load model list from provider</button>
-      <label class="check" style="margin:0;align-items:center"><input type="checkbox" id="showPaid"><span data-i18n="showPaid">Include paid models</span></label></div>
+      <label class="check" id="paidModelsField" style="margin:0;align-items:center"><input type="checkbox" id="showPaid"><span data-i18n="showPaid">Include paid models</span></label></div>
+    <p class="hint hidden" id="providerPricingHint" data-i18n="providerPricingHint">This provider lists all available models. Missing prices do not mean free; check pricing and balance in your provider account.</p>
     <div id="modelsMsg"></div>
     <h3 style="font-size:14px;margin:20px 0 4px" data-i18n="stageModels">Per-stage models</h3>
     <p class="hint" data-i18n="stageModelsHint">Leave blank to inherit. You can also set these by selecting a stage on the workflow.</p>
@@ -475,6 +478,10 @@ const T = {
     notes: "Review notes", saveChecklist: "Save review checklist", files: "Download files", openFolder: "Open results folder (Windows)", newTopic: "Research a new topic",
     connTitle: "Connections", connHint: "Settings and API keys are stored in .env on the machine running the app.", demoMode: "Demo mode",
     demoHint: "Fictional sample data, no API calls or charges. Turn off to use live services.", orKey: "AI provider API key", oaKey: "OpenAlex API key",
+    aiProvider: "AI provider", customProvider: "Other OpenAI-compatible provider", apiBaseUrl: "AI API base URL",
+    apiBaseHint: "Use the base URL ending in /v1; do not add /models or /chat/completions.",
+    providerPricingHint: "This provider lists all available models. Missing prices do not mean free; check pricing and balance in your provider account.",
+    providerModelHint: "Use an exact model ID from your provider's model list. WFLabs example: wf/glm-5.3-flash. Availability depends on your account.",
     emailHint: "Optional, for polite OpenAlex access.", modelsTitle: "AI models",
     modelsHint: "The default model is used by every AI stage unless a stage has its own. Use provider/model IDs; separate fallbacks with commas.",
     defaultModel: "Default model", defaultModelHint: "Enter a model ID supported by your configured provider.",
@@ -560,6 +567,10 @@ const T = {
     notes: "Catatan pemeriksaan", saveChecklist: "Simpan daftar periksa", files: "Unduh berkas", openFolder: "Buka folder hasil (Windows)", newTopic: "Riset topik baru",
     connTitle: "Koneksi", connHint: "Pengaturan dan kunci API disimpan di berkas .env pada komputer yang menjalankan aplikasi.", demoMode: "Mode demo",
     demoHint: "Data contoh fiktif, tanpa panggilan API dan tanpa biaya. Matikan untuk memakai layanan sungguhan.", orKey: "Kunci API provider", oaKey: "Kunci API OpenAlex",
+    aiProvider: "Penyedia AI", customProvider: "Penyedia lain yang kompatibel dengan OpenAI", apiBaseUrl: "URL dasar API AI",
+    apiBaseHint: "Gunakan URL dasar berakhiran /v1; jangan tambahkan /models atau /chat/completions.",
+    providerPricingHint: "Penyedia ini menampilkan semua model yang tersedia. Harga yang tidak tercantum bukan berarti gratis; cek harga dan saldo di akun penyedia.",
+    providerModelHint: "Gunakan ID persis dari daftar model penyedia. Contoh WFLabs: wf/glm-5.3-flash. Ketersediaan bergantung pada akun Anda.",
     emailHint: "Opsional, untuk akses OpenAlex yang sopan.", modelsTitle: "Model AI",
     modelsHint: "Model bawaan dipakai semua tahap AI, kecuali tahap yang punya model sendiri. Gunakan ID provider/model; pisahkan model cadangan dengan koma.",
     defaultModel: "Model bawaan", defaultModelHint: "Masukkan ID model yang tersedia di provider pilihan.",
@@ -643,6 +654,7 @@ function applyLang() {
   document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll("[data-lang]").forEach(b => b.classList.toggle("on", b.dataset.lang === LANG));
   renderSlotsTable();
+  updateProviderInfo();
   if (latest) render(latest);
   if (currentView === "results") loadResults();
   refreshLibrary().catch(() => {});
@@ -698,7 +710,36 @@ function renderSlotsTable() {
 }
 function toggleReal() { $("realFields").classList.toggle("hidden", $("demo").checked); }
 $("demo").onchange = toggleReal;
+const PROVIDER_BASES = {openrouter: "https://openrouter.ai/api/v1", wflabs: "https://api.wflabs.ai.id/v1"};
+function updateProviderInfo(resetCatalogue = false) {
+  const base = $("llmBaseUrl").value.trim().replace(/\/+$/, "");
+  const provider = Object.keys(PROVIDER_BASES).find(k => PROVIDER_BASES[k] === base) || "custom";
+  $("aiProvider").value = provider;
+  const openrouter = provider === "openrouter";
+  $("paidModelsField").classList.toggle("hidden", !openrouter);
+  $("showPaid").disabled = !openrouter;
+  $("providerPricingHint").classList.toggle("hidden", openrouter);
+  $("providerKeyHint").textContent = provider === "wflabs" ? "api.wflabs.ai.id/app/keys (wf-…)" : openrouter ? "openrouter.ai → Keys (sk-or-…)" : "Authorization: Bearer API_KEY";
+  const sameEndpoint = base === (SETTINGS.llm_base_url || PROVIDER_BASES.openrouter).replace(/\/+$/, "");
+  $("orKey").placeholder = sameEndpoint && SETTINGS.has_openrouter_key ? "••••• (saved)" : provider === "wflabs" ? "wf-…" : openrouter ? "sk-or-…" : "API key";
+  document.querySelector('[data-i18n="defaultModelHint"]').textContent = t(openrouter ? "defaultModelHint" : "providerModelHint");
+  if (resetCatalogue) {
+    $("modelList").innerHTML = openrouter ? '<option value="openrouter/free"></option><option value="openrouter/auto"></option>' : "";
+    note("modelsMsg", ""); $("checkList").innerHTML = "";
+  }
+}
+$("aiProvider").onchange = () => {
+  const provider = $("aiProvider").value;
+  $("llmBaseUrl").value = PROVIDER_BASES[provider] || "";
+  const model = $("model").value.trim();
+  if (!model || ["openrouter/free", "openrouter/auto", "wf/glm-5.3-flash", "REPLACE_WITH_PROVIDER_MODEL_ID"].includes(model))
+    $("model").value = provider === "wflabs" ? "wf/glm-5.3-flash" : provider === "openrouter" ? "openrouter/free" : "";
+  updateProviderInfo(true);
+  if (provider === "custom") { toggleReal(); $("llmBaseUrl").focus(); }
+};
+$("llmBaseUrl").oninput = () => updateProviderInfo(true);
 function fillSettings(s) {
+  const endpointChanged = $("llmBaseUrl").value !== (s.llm_base_url || PROVIDER_BASES.openrouter);
   SETTINGS = s;
   $("demo").checked = s.demo;
   $("orKey").placeholder = s.has_openrouter_key ? "••••• (saved)" : "Provider API key";
@@ -713,7 +754,7 @@ function fillSettings(s) {
   $("minCitations").value = s.min_citations; $("candidates").value = s.candidates; $("maxPapers").value = s.max_papers;
   $("minVerified").value = s.min_verified; $("rounds").value = s.revision_rounds; $("target").value = s.target;
   $("language").value = s.language || "English";
-  renderSlotsTable(); toggleReal();
+  renderSlotsTable(); toggleReal(); updateProviderInfo(endpointChanged);
 }
 async function loadSettings() { const s = await api("/api/settings"); fillSettings(s); return s; }
 function researchPayload() {
@@ -726,13 +767,18 @@ $("saveResearch").onclick = async () => {
   try { fillSettings(await api("/api/settings", researchPayload())); note("researchMsg", t("researchSaved"), true); }
   catch (e) { note("researchMsg", e.message, false); }
 };
-$("saveBtn").onclick = async () => {
+async function saveConnectionSettings() {
+  if (!$("llmBaseUrl").value.trim()) throw Error(t("apiBaseHint"));
   const data = { demo: $("demo").checked, openrouter_key: $("orKey").value, llm_base_url: $("llmBaseUrl").value, openalex_key: $("oaKey").value,
                  email: $("email").value, model: $("model").value.trim() };
   document.querySelectorAll("[data-slot]").forEach(el => data[fieldOf(el.dataset.slot)] = el.value.trim());
+  const s = await api("/api/settings", data);
+  $("orKey").value = ""; $("oaKey").value = ""; fillSettings(s);
+  return s;
+}
+$("saveBtn").onclick = async () => {
   try {
-    const s = await api("/api/settings", data);
-    $("orKey").value = ""; $("oaKey").value = ""; fillSettings(s);
+    const s = await saveConnectionSettings();
     note("setupMsg", s.problem || t("settingsSaved"), !s.problem);
     refreshStatus();
   } catch (e) { note("setupMsg", e.message, false); }
@@ -740,14 +786,18 @@ $("saveBtn").onclick = async () => {
 $("checkBtn").onclick = async () => {
   $("checkBtn").disabled = true; $("checkBtn").textContent = t("checking"); $("checkList").innerHTML = ""; note("setupMsg", "");
   try {
+    const s = await saveConnectionSettings();
+    if (s.problem) throw Error(s.problem);
     const results = await api("/api/check", {});
     $("checkList").innerHTML = results.map(r => `<li><b style="color:${r.ok ? "var(--ok)" : "var(--bad)"}">${r.ok ? "✓" : "✗"}</b> ${esc(r.name)}<br><small>${esc(r.note)}</small></li>`).join("");
-  } catch (_) {} finally { $("checkBtn").disabled = false; $("checkBtn").textContent = t("testConn"); }
+  } catch (e) { note("setupMsg", e.message, false); } finally { $("checkBtn").disabled = false; $("checkBtn").textContent = t("testConn"); }
 };
 $("loadModels").onclick = async () => {
   $("loadModels").disabled = true; note("modelsMsg", t("loading"), "info");
   try {
-    const r = await api("/api/models", { free_only: !$("showPaid").checked });
+    if (!$("llmBaseUrl").value.trim()) throw Error(t("apiBaseHint"));
+    const r = await api("/api/models", { free_only: !$("showPaid").checked,
+                                      llm_base_url: $("llmBaseUrl").value, openrouter_key: $("orKey").value });
     $("modelList").innerHTML = r.models.map(m => `<option value="${esc(m.id)}">${esc(m.name)}${m.free ? " · free" : ""}</option>`).join("");
     note("modelsMsg", t("modelsLoaded", {n: r.models.length}), true);
   } catch (e) { note("modelsMsg", e.message, false); } finally { $("loadModels").disabled = false; }
