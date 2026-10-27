@@ -173,7 +173,7 @@ def list_models(free_only=True, settings=None):
         pricing = item.get("pricing") or {}
         free = model_id.endswith(":free") or (str(pricing.get("prompt")) in ("0", "0.0")
                                               and str(pricing.get("completion")) in ("0", "0.0"))
-        if model_id and (free or not free_only):
+        if model_id and (free or not free_only or not _is_openrouter(settings)):
             models.append({"id": model_id, "name": str(item.get("name") or model_id)[:120],
                            "free": free, "context": item.get("context_length")})
     models.sort(key=lambda m: (not m["free"], m["id"]))
