@@ -1,5 +1,25 @@
 # Changelog
 
+## Laptop workflow, session panel, and idea exploration
+
+- Replace the wide zoomable canvas with vertical, readable stage cards, approval
+  and revision links, and stage details that adapt to laptop and smaller screens.
+- Move activity, the run log, token input/output and totals, provider-reported
+  USD cost, API requests, and per-stage usage into a shared left session panel.
+  Derive token totals per response only when both components are known, distinguish
+  missing from zero usage, and mark partial reports. Preserve counts from idea
+  exploration and connection checks when creating a plan.
+- Add conversational AI brainstorming before problem formulation. Select a
+  proposed direction, edit its questions, then generate and approve a plan with
+  an explicit editable research problem. Preserve recent brainstorming context
+  in the project's downloadable `0_brainstorm.json` and research ZIP.
+- Use the planner model and selected paper language for brainstorming. Keep demo
+  suggestions clearly scripted, and require approval before literature discovery.
+- Admit one model job at a time so brainstorming, connection checks, planning and
+  research do not overlap observers or logs. Bound in-memory log/context history.
+- Validate with 89 Python tests and Chromium checks including 1366/1280 laptop
+  widths, responsive stage details, idea refinement/selection, and a full demo.
+
 ## WFLabs router connection fixes
 
 - Load models using the API base URL and key currently entered in Settings,

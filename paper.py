@@ -68,6 +68,7 @@ STRICT RULES:
     common = f"""
 Working title: {plan['title']}
 Research questions: {plan['research_questions']}
+Researcher's approved problem framing (context to investigate, not evidence): {plan.get('problem_statement', '')}
 APPROVED scope: {plan['scope_note']}
 Original topic: {plan.get('original_topic', '')}
 
@@ -200,6 +201,7 @@ You are a strict, fair journal reviewer reading a COMPLETE draft article before 
 You did NOT write it. Methods and Results come from the author and may be placeholders;
 judge whether the AI-written sections stay honest about that.
 Research questions: {plan['research_questions']}
+Researcher's approved problem framing (context to investigate, not evidence): {plan.get('problem_statement', '')}
 APPROVED scope: {plan['scope_note']}
 Citable evidence:
 {_evidence(matrix)}

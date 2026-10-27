@@ -53,10 +53,23 @@ def fake_verify(doi):
 
 def fake_llm_answer(stage, prompt):
     import re
+    if stage == "brainstorm":
+        return json.dumps({"reply": "Demo ideas only: these are scripted examples, not verified research gaps. Which direction fits your interests and available data?",
+            "ideas": [
+                {"title": "Road access and local livelihoods", "angle": "Explore how transport access may relate to livelihood opportunities.",
+                 "questions": ["How might road access relate to livelihood opportunities?", "Which indicators of access and livelihoods can be measured?"],
+                 "feasibility": "Confirm the location and timeframe; investigate whether transport and livelihood data are available."},
+                {"title": "Governance and public investment", "angle": "Consider how local administrative capacity may relate to public investment outcomes.",
+                 "questions": ["How might governance capacity relate to public investment outcomes?"],
+                 "feasibility": "Choose a defensible governance measure and check access to investment data before specifying a method."},
+                {"title": "Comparing measures of service access", "angle": "Explore a methodological comparison of service-access indicators.",
+                 "questions": ["How do alternative service-access indicators change the description of inequality?"],
+                 "feasibility": "Identify comparable indicator definitions and accessible data; a location and period remain to be chosen."}]})
     if stage == "plan":
         _counter.update(draft=0, review=0, paper=0, paper_review=0)  # each new run starts the demo story again
         return json.dumps({
             "title": "Road Infrastructure, Governance Quality and Poverty Outcomes",
+            "problem_statement": "This demo explores whether road access and governance quality are useful directions for investigating poverty outcomes. The setting, data and relationships require confirmation before a real study can be specified.",
             "research_questions": [
                 "How is road infrastructure associated with poverty outcomes?",
                 "How does governance quality moderate these relationships?"],

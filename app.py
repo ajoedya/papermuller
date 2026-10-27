@@ -38,6 +38,9 @@ import manuscript
 import paper
 import pipeline
 import editorial
+import ideation
+import usage as token_usage
+import writing
 
 HERE = Path(__file__).parent
 ENV_FILE = HERE / ".env"
@@ -48,8 +51,19 @@ PORT = 8765
 STATE = {"phase": "idle", "stage": 0, "log": [], "plan": None, "topic": "",
          "folder": "", "error": "", "requests": 0,
          "completed_steps": [], "events": [], "usage_by_stage": {}, "active_model": "",
-         "stage_started": ""}
+         "stage_started": "", "brainstorm": {"messages": [], "ideas": [], "error": "", "requests": 0},
+         "seed_questions": []}
 LOCK = threading.Lock()
+# Jobs share stdout and the LLM observer. Admit only one model job at a time.
+JOB_LOCK = threading.Lock()
+
+
+def claim_job(allowed, **changes):
+    with LOCK:
+        if STATE["phase"] not in allowed or not JOB_LOCK.acquire(blocking=False):
+            return False
+        STATE.update(changes)
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +215,7 @@ class PageLog(io.TextIOBase):
                 stamped = f"[{datetime.now():%H:%M:%S}] {line.strip()}"
                 with LOCK:
                     STATE["log"].append(stamped)
+                    STATE["log"] = STATE["log"][-400:]
                 if self.folder:
                     with open(self.folder / "log.txt", "a", encoding="utf-8") as f:
                         f.write(stamped + "\n")
@@ -209,7 +224,7 @@ class PageLog(io.TextIOBase):
 
 LLM_STAGE_TO_STEP = {"plan": 1, "screen": 4, "matrix": 5, "outline": 6,
                      "draft": 7, "evidence_audit": 8, "review": 9, "redteam": 9,
-                     "paper_draft": 10, "paper_review": 11, "check": 0}
+                     "paper_draft": 10, "paper_review": 11, "check": "check", "brainstorm": "brainstorm"}
 
 
 def record_event(kind, step, message, **extra):
@@ -234,23 +249,10 @@ def enter_step(step):
 def on_llm_event(event):
     step = LLM_STAGE_TO_STEP.get(event.get("stage"), 0)
     model = str(event.get("model", ""))[:200]
-    usage = event.get("usage") or {}
-    values = {k: usage.get(k) for k in ("prompt_tokens", "completion_tokens", "total_tokens", "cost")
-              if isinstance(usage.get(k), (int, float)) and not isinstance(usage.get(k), bool)}
     with LOCK:
         STATE["active_model"] = model
-        if step:
-            old = STATE["usage_by_stage"].setdefault(str(step), {"calls": 0, "prompt_tokens": 0,
-                                                               "completion_tokens": 0, "total_tokens": 0,
-                                                               "cost": 0, "has_cost": False, "has_tokens": False})
-            old["calls"] += 1
-            for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                if k in values:
-                    old[k] += values[k]
-                    old["has_tokens"] = True
-            if "cost" in values:
-                old["cost"] += values["cost"]
-                old["has_cost"] = True
+        values = token_usage.add_response(STATE["usage_by_stage"], step or "other", event.get("usage"),
+                                          simulated=bool(event.get("simulated")))
     record_event("model", step, "Model response received" if not event.get("simulated")
                  else "Demo response received", model=model, simulated=bool(event.get("simulated")),
                  usage=values)
@@ -266,13 +268,13 @@ def set_state(**changes):
         STATE["requests"] = llm.REQUESTS_USED[0]
 
 
-def run_in_background(job):
+def run_in_background(job, log_folder=True):
     """Run `job` in a separate thread, turning any error into a clear message."""
     def wrapper():
         old = sys.stdout
         old_hook = llm.EVENT_HOOK
         llm.EVENT_HOOK = on_llm_event
-        sys.stdout = PageLog(Path(STATE["folder"]) if STATE["folder"] else None)
+        sys.stdout = PageLog(Path(STATE["folder"]) if STATE["folder"] and log_folder else None)
         try:
             job()
         except SystemExit as stop:
@@ -283,12 +285,33 @@ def run_in_background(job):
             sys.stdout = old
             llm.EVENT_HOOK = old_hook
             set_state()
+            JOB_LOCK.release()
     threading.Thread(target=wrapper, daemon=True).start()
 
 
 # ---------------------------------------------------------------------------
 # The jobs
 # ---------------------------------------------------------------------------
+def job_brainstorm(message, settings, previous_phase):
+    snapshot = STATE["brainstorm"]
+    history = list(snapshot["messages"])
+    before = llm.REQUESTS_USED[0]
+    record_event("brainstorm", "brainstorm", "Exploring research directions")
+    try:
+        result = ideation.brainstorm(message, history, settings)
+        history.extend([{"role": "user", "content": message},
+                        {"role": "assistant", "content": json.dumps(result, ensure_ascii=False)}])
+        set_state(brainstorm={"messages": history[-8:], "ideas": result["ideas"], "error": "",
+                              "requests": snapshot.get("requests", 0) + llm.REQUESTS_USED[0] - before})
+        record_event("brainstorm", "brainstorm", "Research directions ready; choose one or refine your interests")
+    except (SystemExit, Exception) as problem:
+        set_state(brainstorm=dict(snapshot, error=str(problem)[:500],
+                                  requests=snapshot.get("requests", 0) + llm.REQUESTS_USED[0] - before))
+        record_event("error", "brainstorm", "Brainstorming stopped; check the error and try again")
+    finally:
+        set_state(phase=previous_phase)
+
+
 def job_plan(topic):
     settings, problem = read_settings()
     if problem:
@@ -301,7 +324,10 @@ def job_plan(topic):
     say(f"Topic: {topic}")
     say(f"Mode: {'DEMO (fictional sample data)' if settings['DEMO_MODE'] else 'LIVE'}")
     say("Stage 1: preparing the research plan...")
-    plan = stages.stage_plan(topic, settings, folder)
+    if STATE["brainstorm"]["messages"]:
+        stages.save_json(folder, "0_brainstorm.json", dict(STATE["brainstorm"], selected_topic=topic,
+                                                        seed_questions=STATE["seed_questions"]))
+    plan = stages.stage_plan(topic, settings, folder, seed_questions=STATE["seed_questions"])
     set_state(phase="approve", plan=plan, stage=1)
     say("Plan ready. Review it before approving.")
 
@@ -436,6 +462,8 @@ class Handler(BaseHTTPRequestHandler):
                 status = dict(STATE, log=STATE["log"][-200:], events=STATE["events"][-80:],
                               completed_steps=list(STATE["completed_steps"]),
                               usage_by_stage={k: dict(v) for k, v in STATE["usage_by_stage"].items()})
+                status["usage_totals"] = token_usage.totals(STATE["usage_by_stage"])
+                status["requests"] = llm.REQUESTS_USED[0]
             settings, _ = read_settings()
             status["pipeline"] = pipeline.describe(settings or {"DEMO_MODE": True})
             return self.send(status)
@@ -448,7 +476,7 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 4:
                 run, name = unquote(parts[2]), unquote(parts[3])
                 allowed_run = re.fullmatch(r"\d{8}_\d{6}(?:_\d{6})?", run)
-                allowed_file = re.fullmatch(r"[1-9]_[a-z0-9_]+\.(?:md|csv|json|docx|bib)|9_research_bundle\.zip|log\.txt", name)
+                allowed_file = re.fullmatch(r"0_brainstorm\.json|[1-9]_[a-z0-9_]+\.(?:md|csv|json|docx|bib)|9_research_bundle\.zip|log\.txt", name)
                 current = Path(STATE["folder"]).name if STATE["folder"] else None
                 if allowed_run and allowed_file and run == current:
                     target = PROJECTS / run / name
@@ -474,7 +502,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self.same_origin():
             return self.send({"error": "Origin not allowed."}, 403)
         if self.path == '/api/upload-pdf':
-            if STATE['phase'] in ('planning', 'running'):
+            if JOB_LOCK.locked():
                 return self.send({'error': 'Upload PDFs before starting the research run.'}, 409)
             if self.headers.get('Content-Type', '').split(';')[0].strip().lower() != 'application/pdf':
                 return self.send({'error': 'Content-Type must be application/pdf.'}, 415)
@@ -517,13 +545,16 @@ class Handler(BaseHTTPRequestHandler):
                 editorial.save_outputs(folder, matrix, language)
             return self.send({'ok': True, 'progress': progress, 'released': bool(released)})
         if self.path == "/api/settings":
-            if STATE["phase"] in ("planning", "running"):
+            if not JOB_LOCK.acquire(blocking=False):
                 return self.send({"error": "Settings cannot be changed during a research run."}, 409)
             try:
-                save_settings(data)
-            except ValueError as exc:
-                return self.send({"error": str(exc)[:250]}, 400)
-            return self.send(dict(public_settings(), ok=True))
+                try:
+                    save_settings(data)
+                except ValueError as exc:
+                    return self.send({"error": str(exc)[:250]}, 400)
+                return self.send(dict(public_settings(), ok=True))
+            finally:
+                JOB_LOCK.release()
         if self.path == "/api/models":
             # Contact the visible endpoint with its key only on user request.
             try:
@@ -533,23 +564,57 @@ class Handler(BaseHTTPRequestHandler):
             except RuntimeError as exc:
                 return self.send({"error": str(exc)[:250]}, 502)
         if self.path == "/api/check":
-            if STATE["phase"] in ("planning", "running"):
+            if not claim_job(("idle", "failed", "done", "approve")):
                 return self.send({"error": "A research run is already active."}, 409)
-            return self.send(run_checks())
+            old_hook = llm.EVENT_HOOK
+            llm.EVENT_HOOK = on_llm_event
+            try:
+                return self.send(run_checks())
+            finally:
+                llm.EVENT_HOOK = old_hook
+                JOB_LOCK.release()
+        if self.path == "/api/brainstorm":
+            message = data.get("message")
+            if not isinstance(message, str) or not message.strip() or len(message) > 3000:
+                return self.send({"error": "Describe your interests or refinement in 1–3,000 characters."}, 400)
+            settings, problem = read_settings()
+            if problem:
+                return self.send({"error": problem}, 400)
+            if "language" in data:
+                try:
+                    settings = dict(settings, LANGUAGE=writing.validate_language(data["language"]))
+                except ValueError as error:
+                    return self.send({"error": str(error)}, 400)
+            previous_phase = STATE["phase"]
+            if not claim_job(("idle", "failed"), phase="brainstorming"):
+                return self.send({"error": "Finish the current task or start a new research session before brainstorming."}, 409)
+            set_state(brainstorm=dict(STATE["brainstorm"], error=""))
+            run_in_background(lambda: job_brainstorm(message.strip(), settings, previous_phase), log_folder=False)
+            return self.send({"ok": True})
         if self.path == "/api/plan":
             topic = data.get("topic", "").strip()
             if not topic:
                 return self.send({"error": "Enter a research topic."}, 400)
-            if STATE["phase"] not in ("idle", "failed", "done"):
+            if STATE["phase"] not in ("idle", "failed", "done") or JOB_LOCK.locked():
                 return self.send({"error": "Finish or reset the current plan before starting another."}, 409)
-            if isinstance(data.get("research"), dict):
-                try:
+            questions = data.get("seed_questions", [])
+            if not isinstance(questions, list) or len(questions) > 5 or any(
+                not isinstance(q, str) or not q.strip() or len(q) > 500 for q in questions
+            ):
+                return self.send({"error": "Starting questions must contain at most five questions of up to 500 characters."}, 400)
+            if not claim_job(("idle", "failed", "done")):
+                return self.send({"error": "Another task is already active."}, 409)
+            try:
+                if isinstance(data.get("research"), dict):
                     save_settings(data["research"], allowed=RESEARCH_FIELDS)
-                except ValueError as exc:
+            except Exception as exc:
+                JOB_LOCK.release()
+                if isinstance(exc, ValueError):
                     return self.send({"error": str(exc)[:250]}, 400)
-            llm.REQUESTS_USED[0] = 0
-            set_state(phase="planning", stage=1, log=[], plan=None, topic=topic, folder="", error="",
-                      completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
+                raise
+            set_state(phase="planning", stage=1, plan=None, topic=topic, folder="", error="",
+                      completed_steps=[], active_model="", stage_started="",
+                      seed_questions=[q.strip() for q in questions])
             run_in_background(lambda: job_plan(topic))
             return self.send({"ok": True})
         if self.path == "/api/approve":
@@ -559,16 +624,22 @@ class Handler(BaseHTTPRequestHandler):
                 plan = stages.validate_plan(data.get("plan") or STATE["plan"], STATE["topic"])
             except ValueError as exc:
                 return self.send({"error": str(exc)}, 400)
-            set_state(phase="running", plan=plan)
+            if not claim_job(("approve",), phase="running", plan=plan):
+                return self.send({"error": "Another task is already active."}, 409)
             record_event("approval", 1, "Scope approved by the researcher")
             run_in_background(lambda: job_research(plan))
             return self.send({"ok": True})
         if self.path == "/api/reset":
-            if STATE["phase"] in ("planning", "running"):
+            if not JOB_LOCK.acquire(blocking=False):
                 return self.send({"error": "Cannot reset an active research run."}, 409)
-            set_state(phase="idle", stage=0, log=[], plan=None, topic="", folder="", error="",
-                      completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="")
-            return self.send({"ok": True})
+            try:
+                llm.REQUESTS_USED[0] = 0
+                set_state(phase="idle", stage=0, log=[], plan=None, topic="", folder="", error="",
+                          completed_steps=[], events=[], usage_by_stage={}, active_model="", stage_started="",
+                          brainstorm={"messages": [], "ideas": [], "error": "", "requests": 0}, seed_questions=[])
+                return self.send({"ok": True})
+            finally:
+                JOB_LOCK.release()
         if self.path == "/api/open-folder" and STATE["folder"] and hasattr(os, "startfile"):
             os.startfile(STATE["folder"])  # Windows: opens the results folder
             return self.send({"ok": True})

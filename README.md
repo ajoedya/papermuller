@@ -12,6 +12,7 @@ or publication readiness.
 ![Papermuller research workflow](docs/screenshots/workspace-desktop.png)
 
 [Windows setup](#windows) · [Paper language](#choose-the-paper-language) ·
+[Brainstorming](#explore-ideas-before-planning) ·
 [Full-text reading](#read-selected-papers-in-full-text) ·
 [Outputs](#outputs-and-final-release) · [Tests](#development-and-validation)
 
@@ -22,6 +23,8 @@ or publication readiness.
 - Use uploaded PDFs or retrieve available open-access PDFs for selected papers.
 - Read extracted PDF text in page-labelled chunks and record processing coverage.
 - Build a source matrix, literature review, claim audit, and evidence ledger.
+- Brainstorm research directions, refine them in conversation, and carry editable questions into problem formulation.
+- Monitor activity, logs, reported tokens, and cost in a persistent left panel.
 - Draft a working paper with localized headings and a configurable writing language.
 - Use WFLabs, OpenRouter, or another HTTPS OpenAI-compatible AI gateway, with per-stage models.
 - Export Markdown, Word, BibTeX metadata, editorial diagnostics, and a research ZIP.
@@ -109,13 +112,48 @@ not assumed free. Review pricing before live runs; `openrouter/auto` may cost.
 
 ## Research workflow
 
-Start under **Topic & sources**. Enter your topic, adjust research settings, and
-add PDFs if you have them. Generate a plan, review its questions and scope, and
-approve it before the search proceeds.
+The workflow runs **down the page** at readable text sizes, including laptop
+screens. Select a stage card to inspect its inputs, model, and status. Revision
+links lead back to the writing stage. On narrower screens, stage details open in
+a dismissible panel rather than squeezing the flowchart.
+
+Activity, the run log, and usage live in the **Session monitor** on the left,
+including while using other tabs. On small screens the monitor moves above the
+content and can be collapsed. Token input/output, total, and USD cost use only
+provider-reported values; a total is derived from input plus output only when
+both are present. Missing values show `—`; `+` marks partial reported totals.
+Brainstorming, connection checks, and research calls accumulate in the same
+session until **New research** / reset. Demo responses consume no API tokens.
+Failed requests may be billed without returning usage, so this is not a billing
+statement. Session counters and activity do not survive a server restart.
+
+### Explore ideas before planning
+
+Under **Topic & sources**, use **Explore ideas with AI** to describe an interest,
+a practical problem, or available data. Ask follow-up questions to narrow or
+compare directions. The AI returns possible titles, angles, tentative questions,
+and data/feasibility notes. It uses the planner model (`PLAN_MODEL`, falling back
+to `MODEL`) and the selected paper language. Demo suggestions remain scripted.
+
+Choose **Use this direction** to copy an idea and its questions into editable
+topic fields. You can also select **I already have a topic** and skip brainstorming.
+Then create a plan: AI formulates the proposed research problem, questions, scope,
+and search terms for your review. Edit the **Research problem** and questions
+before approving. No literature search starts until approval, and proposed ideas
+or gaps are not treated as established evidence.
+
+Brainstorming retains up to four recent exchanges during the running server
+session. When a plan is created, `0_brainstorm.json` records this context, selected
+topic, and starting questions in the project folder and research ZIP. Failed
+requests preserve the prior conversation for another attempt.
+
+![Brainstorming before research planning](docs/screenshots/brainstorming.png)
+
+### Approved research stages
 
 | Stage | What happens |
 | --- | --- |
-| 1. Research plan | Propose questions, scope, and search terms for researcher approval. |
+| 1. Research plan | Formulate a research problem, questions, scope, and search terms for researcher approval. |
 | 2. Literature discovery | Search OpenAlex using the selected filters. |
 | 3. Metadata & PDFs | Match DOI/title metadata and locate existing PDF sources. |
 | 4. Source selection | Select articles relevant to the approved questions. |
@@ -236,6 +274,7 @@ text are cached in `library/`. Available outputs depend on how far the run compl
 
 | File | Contents |
 | --- | --- |
+| `0_brainstorm.json` | Recent idea discussion and starting questions used to create the plan, if brainstorming was used. |
 | `4_literature_matrix.csv` | Extracted methods, findings, limitations, and source quotes. |
 | `4_source_manifest.json` | Source access, identity/provenance, page counts, and reading status. |
 | `4_fulltext_reading.json` | Per-chunk coverage and grounded notes. |
@@ -307,11 +346,13 @@ python -m unittest discover -s tests -v
 Use `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows if
 the virtual environment is not activated.
 
-The latest implementation checks passed **80 Python tests**, plus Chromium checks
+The latest implementation checks passed **89 Python tests**, plus Chromium checks
 for the demo, custom-language persistence, full-text status, and incomplete-paper
 release prevention. Router checks cover unsaved connection edits, WFLabs Bearer
 authentication, provider-specific errors, saved/reloaded settings, and OpenRouter
-and custom gateways. A real five-page PLOS PDF was fetched and extracted in the
+and custom gateways. Workspace checks cover brainstorming/refinement, editable
+idea selection, problem approval, a full demo run, session usage, and vertical
+layouts at 1366, 1280, 1024, 768, and 390 pixels. A real five-page PLOS PDF was fetched and extracted in the
 full-text validation. Provider calls are mocked in the regression suite; live
 WFLabs account access, multilingual model quality, and native Windows launcher
 execution remain unverified.

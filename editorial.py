@@ -115,6 +115,6 @@ def research_bundle(folder):
     with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(Path(folder).iterdir()):
             if (path.is_file() and not path.is_symlink()
-                    and re.fullmatch(r'[1-9]_[a-z0-9_]+\.(?:md|csv|json|docx|bib)', path.name)):
+                    and re.fullmatch(r'0_brainstorm\.json|[1-9]_[a-z0-9_]+\.(?:md|csv|json|docx|bib)', path.name)):
                 archive.write(path, arcname=path.name)
     return buffer.getvalue()

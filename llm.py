@@ -25,6 +25,7 @@ def _report(event):
 # Which settings key chooses the model for each AI call. The first non-empty
 # key wins; MODEL is the final fallback.
 ROLE_MODELS = {
+    "brainstorm": ("PLAN_MODEL",),
     "plan": ("PLAN_MODEL",), "screen": ("SCREEN_MODEL",),
     "matrix": ("EVIDENCE_MODEL",), "outline": ("OUTLINE_MODEL", "WRITER_MODEL"),
     "draft": ("WRITER_MODEL",), "evidence_audit": ("VERIFIER_MODEL",),

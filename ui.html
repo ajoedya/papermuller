@@ -54,76 +54,89 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .icon-btn:hover { color: var(--ink); background: var(--panel-2); }
 .icon-btn svg { width: 16px; height: 16px; }
 
-main { max-width: 1680px; margin: 0 auto; padding: 18px 20px 48px; }
+/* ---------- workspace ---------- */
+.app-shell { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 24px; max-width: 1600px; margin: 0 auto; padding: 22px 24px 48px; align-items: start; }
+main { min-width: 0; }
+.run-panel { position: sticky; top: 88px; max-height: calc(100vh - 108px); overflow-y: auto; min-width: 0; scrollbar-width: thin; }
+.monitor { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.monitor > summary { padding: 14px 16px; cursor: pointer; font-weight: 650; }
+.monitor-body { padding: 0 16px 14px; }
+.monitor .hint { font-size: 12px; }
+.usage-total { display: block; font-size: 30px; line-height: 1.2; font-variant-numeric: tabular-nums; letter-spacing: -.04em; margin: 8px 0 2px; }
+.usage-label { color: var(--muted); font-size: 12px; }
+.usage-split { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 16px 0 10px; }
+.usage-split b { display: block; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.usage-detail { font-size: 12px; margin: 14px 0; }
+.usage-detail summary { cursor: pointer; color: var(--muted); }
+.usage-stage { padding: 9px 0; border-bottom: 1px solid var(--line); }
+.usage-stage strong { display: block; font-size: 12px; }
+.usage-stage span { color: var(--muted); overflow-wrap: anywhere; }
+.monitor .activity { border: 0; border-radius: 0; border-top: 1px solid var(--line); margin-top: 12px; }
+.monitor .activity summary { padding: 12px 0; }
+.monitor .activity-list { max-height: 235px; overflow-y: auto; padding: 0; }
+.monitor .act { display: block; overflow-wrap: anywhere; font-size: 12px; }
+.monitor .act time { font-size: 11px; }
+.monitor .act b { font-weight: 500; }
+.monitor pre.log { margin: 0; padding: 8px; max-height: 220px; overflow-wrap: anywhere; font-size: 11px; }
 
 /* ---------- workflow ---------- */
-.flow-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
-.flow-head h1 { margin: 0; font-size: 20px; }
-.flow-head p { margin: 2px 0 0; color: var(--muted); max-width: 70ch; }
+.flow-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.flow-head h1 { margin: 0; font-size: 23px; letter-spacing: -.025em; }
+.flow-head p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
 .next { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
-  border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+  border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 16px; margin-bottom: 18px; }
 .next b { display: block; }
 .next span { color: var(--muted); font-size: 13px; }
-.notice { padding: 10px 12px; border-radius: 9px; margin: 10px 0; font-size: 13px; white-space: pre-wrap; }
+.notice { padding: 10px 12px; border-radius: 9px; margin: 10px 0; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .notice.ok { background: var(--ok-soft); color: var(--ok); }
 .notice.bad { background: var(--bad-soft); color: var(--bad); }
 .notice.info { background: var(--panel-2); color: var(--muted); }
-
-.flow-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
-@media (min-width: 1500px) { .flow-wrap { grid-template-columns: minmax(0, 1fr) 340px; } .flow-wrap.closed { grid-template-columns: minmax(0, 1fr); } }
-.canvas-card { position: relative; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--canvas); }
-.viewport { overflow: auto; height: 380px; cursor: grab; touch-action: pan-x pan-y;
-  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.3px); background-size: 22px 22px; }
-.viewport.dragging { cursor: grabbing; user-select: none; }
-.spacer { position: relative; }
-.board { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
-.board svg.edges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
-.edge { fill: none; stroke: var(--edge-dim); stroke-width: 2; }
-.edge.done { stroke: var(--edge); }
-.edge.active { stroke: var(--run); stroke-dasharray: 6 6; animation: flow 1s linear infinite; }
-.edge.loop { stroke-dasharray: 4 5; }
-.edge.loop.active { stroke: var(--run); }
-@keyframes flow { to { stroke-dashoffset: -12; } }
-.edge-tag { position: absolute; transform: translate(-50%, -50%); font-size: 11px; padding: 2px 7px; border-radius: 999px;
-  background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; pointer-events: none; }
-.edge-tag.wait { color: var(--run); border-color: var(--run); background: var(--run-soft); }
-
-.node { position: absolute; display: grid; place-items: center; background: var(--node); border: 1.5px solid var(--line);
-  border-radius: 14px; color: var(--ink); padding: 0; transition: background .15s, border-color .15s; }
+.flow-wrap { display: grid; grid-template-columns: minmax(0,1fr); gap: 20px; align-items: start; }
+.canvas-card { min-width: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--canvas); padding: 20px; }
+.flow-caption { margin: 0 0 20px; color: var(--muted); font-size: 12px; }
+.flow-inputs { display: grid; gap: 10px; margin-bottom: 22px; }
+.board { display: grid; gap: 22px; list-style: none; margin: 0; padding: 0; }
+.flow-row { position: relative; min-width: 0; scroll-margin-top: 90px; }
+.flow-row:not(:last-child)::after { content: '↓'; position: absolute; bottom: -23px; left: 26px; color: var(--faint); line-height: 22px; font-size: 16px; }
+.node { display: flex; width: 100%; align-items: flex-start; gap: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--node); padding: 15px; text-align: left; color: var(--ink); }
 .node:hover { background: var(--node-hover); }
-.node svg.icon { width: 40%; height: 40%; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.node.start { border-radius: 50px 14px 14px 50px; }
-.node.end { border-radius: 14px 50px 50px 14px; }
-.node.optional { border-style: dashed; color: var(--muted); }
-.node.selected { border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 18%, transparent); }
-.node.done { border-color: color-mix(in srgb, var(--ok) 55%, var(--line)); }
-.node.current { border-color: var(--run); box-shadow: 0 0 0 4px var(--run-soft); }
-.node.current.selected { box-shadow: 0 0 0 4px var(--run-soft), 0 0 0 1px var(--ink); }
-.node.failed { border-color: var(--bad); box-shadow: 0 0 0 4px var(--bad-soft); }
-.port { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--edge); border: 2px solid var(--canvas); }
-.badge { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
-  font-size: 11px; font-weight: 700; border: 2px solid var(--canvas); }
-.badge.done { background: var(--ok); color: #06210f; }
-.badge.failed { background: var(--bad); color: #2a0606; }
-.badge.current { background: var(--run); color: #2a1c00; }
-.badge.current::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #2a1c00; animation: blink 1s ease-in-out infinite; }
-@keyframes blink { 50% { opacity: .2; } }
-.ai-tag { position: absolute; left: 7px; top: 6px; font-size: 9px; font-weight: 700; letter-spacing: .04em; color: var(--faint); }
-.label { position: absolute; text-align: center; pointer-events: none; line-height: 1.3; }
-.label b { display: block; font-size: 12.5px; font-weight: 600; }
-.label i { display: block; font-style: normal; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vertical .label { text-align: left; }
-.zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
-.zoom button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
-.legend { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 12px; font-size: 11px; color: var(--muted);
-  background: color-mix(in srgb, var(--canvas) 85%, transparent); padding: 4px 8px; border-radius: 8px; }
-.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--edge-dim); }
-.legend .l-run::before { background: var(--run); } .legend .l-ok::before { background: var(--ok); } .legend .l-bad::before { background: var(--bad); }
+.node.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.node.current { border-color: var(--run); background: var(--run-soft); }
+.node.failed { border-color: var(--bad); }
+.node.done .node-number { background: var(--ok-soft); color: var(--ok); }
+.node.optional { background: transparent; border-style: dashed; }
+.node-number { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 8px; background: var(--panel-2); color: var(--muted); font-size: 13px; font-weight: 650; }
+.node-number svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.node-copy { min-width: 0; flex: 1; }
+.node-copy strong { display: block; font-size: 14px; line-height: 1.4; font-weight: 650; }
+.node-copy .node-description { display: block; color: var(--muted); margin-top: 4px; font-size: 12.5px; line-height: 1.5; }
+.node-state { display: block; color: var(--faint); font-size: 11px; margin-top: 7px; }
+.node.current .node-state { color: var(--run); }
+.flow-note { margin: 8px 0 0 54px; color: var(--muted); font-size: 12px; }
+.flow-note.approval { color: var(--run); }
+.flow-note a { color: var(--accent); }
+@media (min-width: 1250px) {
+  .flow-wrap { grid-template-columns: minmax(0,1fr) 300px; }
+  .flow-wrap.closed { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 1050px) {
+  .app-shell { grid-template-columns: 232px minmax(0,1fr); padding: 18px 16px 40px; gap: 18px; }
+  .brand small { display: none; }
+}
+@media (max-width: 800px) {
+  .app-shell { grid-template-columns: minmax(0,1fr); padding: 14px 16px 40px; }
+  .run-panel { position: static; max-height: none; }
+  .monitor-body { max-height: 60vh; overflow-y: auto; }
+}
 
 /* inspector */
 .inspector { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 16px; }
-@media (min-width: 1500px) { .inspector { position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow: auto; } }
-@media (min-width: 900px) and (max-width: 1499px) { .insp-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; } }
+@media (min-width: 1250px) { .inspector { position: sticky; top: 88px; max-height: calc(100vh - 108px); overflow: auto; } }
+.inspector:empty { display: none; }
+.inspector { min-width: 0; scroll-margin-top: 90px; }
+@media (max-width: 1249px) {
+  .inspector:not(:empty) { position: fixed; bottom: 16px; right: 16px; z-index: 30; width: min(520px,calc(100vw - 32px)); max-height: 65vh; overflow-y: auto; box-shadow: var(--shadow); }
+}
 .insp-head { display: flex; gap: 12px; align-items: center; }
 .insp-icon { width: 42px; height: 42px; border-radius: 10px; background: var(--node); border: 1px solid var(--line); display: grid; place-items: center; flex: none; }
 .insp-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -185,6 +198,20 @@ textarea { min-height: 90px; resize: vertical; }
 details.more { margin-top: 12px; }
 details.more summary { cursor: pointer; color: var(--accent); }
 
+/* brainstorming */
+.eyebrow { display: block; font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: .05em; margin-bottom: 7px; text-transform: uppercase; }
+.brainstorm-conversation:empty { display: none; }
+.brainstorm-conversation { margin-top: 20px; }
+.brain-turn { padding: 12px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.brain-turn small { color: var(--muted); }
+.brain-turn p { margin: 4px 0 0; white-space: pre-wrap; }
+.idea-grid { display: grid; gap: 12px; margin-top: 14px; }
+.idea-card { padding: 16px; border: 1px solid var(--line); background: var(--field); border-radius: 10px; }
+.idea-card h3 { font-size: 15px; margin: 0 0 8px; }
+.idea-card p { margin: 8px 0; }
+.idea-card ol { padding-left: 20px; }
+#topicCard, #brainstormCard { scroll-margin-top: 90px; }
+
 /* results */
 .score { display: flex; align-items: center; gap: 14px; }
 .score .num { font-size: 32px; font-weight: 700; }
@@ -203,7 +230,7 @@ th { background: var(--panel-2); position: sticky; top: 0; }
 .files a { display: inline-block; margin: 4px 6px 4px 0; padding: 6px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 13px; }
 .plan-view p { margin: 4px 0 10px; }
 
-@media (prefers-reduced-motion: reduce) { .edge.active, .badge.current::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 @media (max-width: 1100px) {
   .tabs button { padding: 7px 9px; }
 }
@@ -212,7 +239,7 @@ th { background: var(--panel-2); position: sticky; top: 0; }
   .brand small { display: none; }
   .tabs { order: 3; width: 100%; overflow-x: auto; }
   .tabs button { flex: 1; font-size: 12.5px; }
-  main { padding: 14px 16px 40px; }
+
 
   .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
   .slots-table .slot-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
@@ -240,6 +267,26 @@ th { background: var(--panel-2); position: sticky; top: 0; }
   </div>
 </header>
 
+<div class="app-shell">
+<aside class="run-panel" aria-label="Session activity and usage">
+  <details class="monitor" id="monitorPanel" open>
+    <summary data-i18n="sessionMonitor">Session monitor</summary>
+    <div class="monitor-body">
+      <span class="usage-label" data-i18n="reportedTokens">Reported tokens</span>
+      <strong class="usage-total" id="tokenTotal">—</strong>
+      <div class="usage-split">
+        <div><span class="usage-label" data-i18n="inputTokens">Input</span><b id="tokenInput">—</b></div>
+        <div><span class="usage-label" data-i18n="outputTokens">Output</span><b id="tokenOutput">—</b></div>
+      </div>
+      <div class="kv"><span data-i18n="cost">API cost (USD)</span><b id="usageCost">—</b></div>
+      <div class="kv"><span data-i18n="apiRequests">API requests</span><b id="apiRequests">0</b></div>
+      <p class="hint" id="usageNote" style="margin:10px 0"></p>
+      <details class="usage-detail"><summary data-i18n="stageUsage">Usage by stage</summary><div id="usageStages"></div></details>
+      <details class="activity" open><summary data-i18n="activity">Activity</summary><div class="activity-list" id="activityList"></div></details>
+      <details class="activity"><summary data-i18n="runLog">Run log</summary><pre class="log" id="log"></pre></details>
+    </div>
+  </details>
+</aside>
 <main>
 <!-- ================= WORKFLOW ================= -->
 <section id="workflow">
@@ -250,26 +297,39 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <button class="btn primary" id="nextBtn">Enter a research topic</button></div>
   <div class="flow-wrap" id="flowWrap">
     <div class="canvas-card">
-      <div class="viewport" id="viewport"><div class="spacer" id="spacer"><div class="board" id="board">
-        <svg class="edges" id="edges"></svg></div></div></div>
-      <div class="legend" aria-hidden="true"><span data-i18n="lgPending">Waiting</span><span class="l-run" data-i18n="lgRun">Running</span><span class="l-ok" data-i18n="lgDone">Done</span><span class="l-bad" data-i18n="lgFail">Failed</span></div>
-      <div class="zoom"><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomFit" aria-label="Fit to width">⤢</button><button id="zoomIn" aria-label="Zoom in">+</button></div>
+      <p class="flow-caption" data-i18n="flowCaption">Follow the steps down the page. Select a card to inspect it.</p>
+      <div class="flow-inputs" id="flowInputs"></div>
+      <ol class="board" id="board" aria-label="Research stages"></ol>
     </div>
     <aside class="inspector" id="inspector" aria-label="Stage details"></aside>
   </div>
-  <details class="activity" open><summary data-i18n="activity">Activity</summary><div class="activity-list" id="activityList"></div></details>
-  <details class="activity"><summary data-i18n="runLog">Run log</summary><pre class="log" id="log"></pre></details>
 </section>
 
 <div id="requestError" class="notice bad hidden page" role="alert"></div>
 
 <!-- ================= RESEARCH ================= -->
 <section id="research" class="hidden page">
+  <div class="card" id="brainstormCard">
+    <span class="eyebrow" data-i18n="beforeYouBegin">Before the research plan</span>
+    <h2 data-i18n="brainstormTitle">Explore ideas with AI</h2>
+    <p class="hint" data-i18n="brainstormHint">Start with an interest, a practical problem, or the data you have. Discuss possible directions before choosing a research question.</p>
+    <div id="brainstormConversation" class="brainstorm-conversation" aria-live="polite" aria-busy="false"></div>
+    <label for="brainstormInput" data-i18n="brainstormPrompt">What would you like to explore?</label>
+    <textarea id="brainstormInput" maxlength="3000" data-i18n-ph="brainstormPh" placeholder="e.g. I am interested in local public spending and have district-level budget data. Help me explore possible angles."></textarea>
+    <div class="actions"><button class="btn primary" id="brainstormBtn" data-i18n="brainstormBtn">Explore ideas</button>
+      <button class="btn" id="skipBrainstorm" data-i18n="skipBrainstorm">I already have a topic</button></div>
+    <div id="brainstormMsg" role="status"></div>
+    <p class="hint" data-i18n="brainstormCaveat" style="margin-top:12px">Ideas are proposals, not verified research gaps. You will review the problem and scope before any literature search starts.</p>
+  </div>
+
   <div class="card" id="topicCard">
     <h2 data-i18n="topicTitle">Research topic</h2>
     <p class="hint" data-i18n="topicHint">Describe what you want to investigate. English search terms usually find more papers.</p>
     <label for="topic" data-i18n="topicLabel">Topic</label>
     <textarea id="topic" data-i18n-ph="topicPh" placeholder="e.g. road infrastructure, governance quality and poverty"></textarea>
+    <label for="seedQuestions"><span data-i18n="seedQuestions">Starting research questions (optional)</span><small data-i18n="seedQuestionsHint">One per line. Edit the suggested questions before asking AI to formulate a plan.</small></label>
+    <textarea id="seedQuestions" placeholder="" rows="3"></textarea>
+    <div id="ideaSelectedMsg" role="status"></div>
     <div class="actions"><button class="btn primary" id="planBtn" data-i18n="planBtn">Create research plan</button></div>
   </div>
 
@@ -325,6 +385,8 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <p class="hint" data-i18n="approveHint">Check the title, questions, assumptions, and scope. Remove any location or time period you did not ask for.</p>
     <div class="plan-view" id="planView"></div>
     <label for="approvedTitle" data-i18n="wTitle">Working title</label><input id="approvedTitle" maxlength="350">
+    <label for="approvedProblem"><span data-i18n="problemStatement">Research problem</span><small data-i18n="problemStatementHint">A proposed problem to investigate, not a verified gap or finding. Edit it before approving the plan.</small></label>
+    <textarea id="approvedProblem" maxlength="2000"></textarea>
     <label for="approvedQuestions"><span data-i18n="rqs">Research questions</span><small data-i18n="onePerLine">One per line.</small></label>
     <textarea id="approvedQuestions"></textarea>
     <label for="approvedScope" data-i18n="scope">Approved scope</label><textarea id="approvedScope"></textarea>
@@ -424,6 +486,7 @@ th { background: var(--panel-2); position: sticky; top: 0; }
   </div>
 </section>
 </main>
+</div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -435,7 +498,22 @@ const store = { get(k) { try { return localStorage.getItem(k); } catch (_) { ret
 const T = {
   en: {
     tagline: "Literature reviews with traceable sources", tabWorkflow: "Workflow", tabResearch: "Topic & sources", tabResults: "Draft & evidence", tabSettings: "Settings",
-    flowTitle: "Research workflow", flowSub: "Each box is one stage. Select a stage to see what it does and to choose its AI model.",
+    flowTitle: "Research workflow", flowSub: "Explore an idea, approve a plan, then follow the research stages.",
+    flowCaption: "Follow the steps down the page. Select a card to inspect it.",
+    sessionMonitor: "Session monitor", reportedTokens: "Reported tokens", inputTokens: "Input", outputTokens: "Output", apiRequests: "API requests",
+    stageUsage: "Usage by stage", usageUnreported: "Tokens and cost appear when the provider reports them. Failed requests may still be billed.",
+    usagePartial: "Reported usage only. Some responses are missing token or cost data; + marks an incomplete total.",
+    usageDemo: "Demo responses are scripted. No API tokens or charges are used.",
+    beforeYouBegin: "Before the research plan", brainstormTitle: "Explore ideas with AI",
+    brainstormHint: "Start with an interest, a practical problem, or the data you have. Discuss possible directions before choosing a research question.",
+    brainstormFlowHint: "Discuss interests, compare possible directions, then choose a topic and starting questions.",
+    brainstormPrompt: "What would you like to explore?", brainstormPh: "e.g. I am interested in local public spending and have district-level budget data. Help me explore possible angles.",
+    brainstormBtn: "Explore ideas", brainstormRefine: "Refine ideas", brainstorming: "Exploring ideas…", skipBrainstorm: "I already have a topic",
+    brainstormCaveat: "Ideas are proposals, not verified research gaps. You will review the problem and scope before any literature search starts.",
+    seedQuestions: "Starting research questions (optional)", seedQuestionsHint: "One per line. Edit the suggested questions before asking AI to formulate a plan.",
+    you: "You", ideaAssistant: "AI research partner", chooseIdea: "Use this direction", feasibility: "Data and feasibility", suggestedQuestions: "Possible questions",
+    ideaSelected: "Direction selected. Edit the topic and questions below, then create a research plan.", needInterest: "Describe an interest, problem, or refinement first.",
+    revisionNote: "Up to {n} revision rounds if checks fail.", backToStage: "Return to stage {n}", checkUsage: "Connection checks",
     lgPending: "Waiting", lgRun: "Running", lgDone: "Done", lgFail: "Failed", activity: "Activity", runLog: "Run log",
     topicTitle: "Research topic", topicHint: "Describe what you want to investigate. English search terms usually find more papers.", topicLabel: "Topic",
     topicPh: "e.g. road infrastructure, governance quality and poverty", planBtn: "Create research plan",
@@ -450,6 +528,7 @@ const T = {
     doi: "Article DOI", pdfFile: "PDF you have permission to use", importPdf: "Import PDF",
     approveTitle: "Review the plan", approveHint: "Check the title, questions, assumptions, and scope. Remove any location or time period you did not ask for.",
     wTitle: "Working title", rqs: "Research questions", onePerLine: "One per line.", scope: "Approved scope", terms: "Search terms", commaSep: "Separate with commas.",
+    problemStatement: "Research problem", problemStatementHint: "A proposed problem to investigate, not a verified gap or finding. Edit it before approving the plan.",
     authorSecs: "Author-supplied manuscript sections (optional)", authorHint: "Your Methods and Results are copied as supplied, without translation or verification. Both sections are required for final release; drafts may leave them unfilled.",
     methods: "Methods", results: "Results", confirmScope: "I have reviewed and approved this research plan and scope.", approveBtn: "Approve and continue", redoBtn: "Regenerate plan",
     progressTitle: "Research run", toFlow: "Open the workflow", again: "Try again",
@@ -495,16 +574,17 @@ const T = {
     status: "Status", st_pending: "Not started", st_current: "Running", st_waiting: "Awaiting your approval", st_done: "Completed", st_failed: "Failed",
     st_optional: "Optional", filters: "Search filters", years: "Years", type: "Document type", oa: "Open access only", yes: "Yes", no: "No",
     minCitShort: "Min. citations", candShort: "Candidates", edit: "Edit research settings", topicNode: "Research topic", topicNone: "No topic yet",
-    library: "PDF library", pdfCount: "{n} PDFs", noPdfs: "No PDFs added yet. The run then uses abstracts only.", managePdfs: "Add or view PDFs",
+    library: "PDF library", pdfCount: "{n} PDFs", noPdfs: "No local PDFs yet. Add files or enable open-access full-text retrieval.", managePdfs: "Add or view PDFs",
     approveTag: "your approval", loopTag: "revise ≤ {n}×", close: "Close",
-    nextIdle: ["Start with a research question", "Enter a topic, check the research settings, then review the plan.", "Enter a research topic"],
+    nextIdle: ["Start with an idea", "Brainstorm possible directions with AI, or go straight to a topic you already have.", "Explore ideas & topics"],
+    nextBrainstorming: ["Exploring research directions", "AI is considering your interests. You can refine its suggestions before creating a plan.", "View brainstorming"],
     nextPlanning: ["Preparing your research plan", "The plan appears for review in a moment.", "View research"],
     nextApprove: ["Your plan is ready to review", "Check the scope and search terms before the search starts.", "Review plan"],
     nextRunning: ["Research is running", "Follow the highlighted stage. Your draft appears when the run finishes.", "Show details"],
     nextDone: ["Your draft and evidence are ready", "Review the audit findings and original sources before using the draft.", "Review draft & evidence"],
     nextFailed: ["Research stopped", "Read the error and run log before trying again.", "View details"],
     liveNote: "Live mode uses provider services and quotas.",
-    noActivity: "No activity yet. Create a research plan to begin.",
+    noActivity: "No activity yet. Explore an idea or create a research plan.",
     progressRun: "The run continues on the server. You can reload this page at any time.", progressDone: "All stages completed.",
     runFailed: "The run stopped.", runDone: "Complete. AI API requests used: {n}.",
     needTopic: "Enter a research topic first.", needConfirm: "Review and confirm the scope first.", needPlan: "Enter a title, research questions, scope, and search terms.",
@@ -524,7 +604,22 @@ const T = {
   },
   id: {
     tagline: "Tinjauan pustaka dengan sumber yang dapat dilacak", tabWorkflow: "Alur kerja", tabResearch: "Topik & sumber", tabResults: "Draf & bukti", tabSettings: "Pengaturan",
-    flowTitle: "Alur kerja riset", flowSub: "Setiap kotak adalah satu tahap. Pilih tahap untuk melihat fungsinya dan memilih model AI-nya.",
+    flowTitle: "Alur kerja riset", flowSub: "Eksplorasi ide, setujui rencana, lalu ikuti tahapan riset.",
+    flowCaption: "Ikuti tahapan ke bawah. Pilih kartu untuk melihat detailnya.",
+    sessionMonitor: "Panel sesi", reportedTokens: "Token yang dilaporkan", inputTokens: "Input", outputTokens: "Output", apiRequests: "Permintaan API",
+    stageUsage: "Pemakaian per tahap", usageUnreported: "Token dan biaya ditampilkan jika dilaporkan penyedia. Permintaan gagal tetap dapat dikenakan biaya.",
+    usagePartial: "Hanya pemakaian yang dilaporkan. Sebagian respons tidak menyertakan token atau biaya; + menandai jumlah yang belum lengkap.",
+    usageDemo: "Respons demo memakai skrip. Tidak ada token API atau biaya yang dipakai.",
+    beforeYouBegin: "Sebelum rencana riset", brainstormTitle: "Eksplorasi ide bersama AI",
+    brainstormHint: "Mulai dari minat, masalah praktis, atau data yang Anda miliki. Diskusikan arah riset sebelum memilih pertanyaan penelitian.",
+    brainstormFlowHint: "Diskusikan minat, bandingkan arah riset, lalu pilih topik dan pertanyaan awal.",
+    brainstormPrompt: "Apa yang ingin Anda eksplorasi?", brainstormPh: "Misalnya, saya tertarik belanja daerah dan memiliki data anggaran kabupaten. Bantu saya mencari beberapa sudut penelitian.",
+    brainstormBtn: "Eksplorasi ide", brainstormRefine: "Pertajam ide", brainstorming: "Mengeksplorasi ide…", skipBrainstorm: "Saya sudah punya topik",
+    brainstormCaveat: "Ide masih berupa usulan, bukan celah riset yang terverifikasi. Masalah dan cakupan tetap ditinjau sebelum pencarian literatur dimulai.",
+    seedQuestions: "Pertanyaan riset awal (opsional)", seedQuestionsHint: "Satu per baris. Edit pertanyaan usulan sebelum meminta AI merumuskan rencana.",
+    you: "Anda", ideaAssistant: "Mitra riset AI", chooseIdea: "Gunakan arah ini", feasibility: "Data dan kelayakan", suggestedQuestions: "Pertanyaan yang mungkin diteliti",
+    ideaSelected: "Arah dipilih. Edit topik dan pertanyaan di bawah, lalu buat rencana riset.", needInterest: "Tuliskan minat, masalah, atau hal yang ingin dipertajam terlebih dahulu.",
+    revisionNote: "Maksimal {n} putaran revisi jika pemeriksaan belum lolos.", backToStage: "Kembali ke tahap {n}", checkUsage: "Uji koneksi",
     lgPending: "Menunggu", lgRun: "Berjalan", lgDone: "Selesai", lgFail: "Gagal", activity: "Aktivitas", runLog: "Log proses",
     topicTitle: "Topik riset", topicHint: "Jelaskan hal yang ingin Anda teliti. Kata kunci berbahasa Inggris biasanya menemukan lebih banyak paper.", topicLabel: "Topik",
     topicPh: "mis. infrastruktur jalan, kualitas tata kelola, dan kemiskinan", planBtn: "Buat rencana riset",
@@ -538,6 +633,7 @@ const T = {
     doi: "DOI artikel", pdfFile: "PDF yang boleh Anda gunakan", importPdf: "Impor PDF",
     approveTitle: "Periksa rencana", approveHint: "Periksa judul, pertanyaan, asumsi, dan cakupan. Hapus lokasi atau periode yang tidak Anda minta.",
     wTitle: "Judul sementara", rqs: "Pertanyaan riset", onePerLine: "Satu pertanyaan per baris.", scope: "Cakupan yang disetujui", terms: "Kata kunci pencarian", commaSep: "Pisahkan dengan koma.",
+    problemStatement: "Rumusan masalah", problemStatementHint: "Usulan masalah untuk diteliti, bukan celah riset atau temuan yang terverifikasi. Edit sebelum menyetujui rencana.",
     authorSecs: "Bagian naskah dari penulis (opsional)", authorHint: "Bagian Metode dan Hasil Anda disalin ke naskah kerja apa adanya, tanpa verifikasi.",
     methods: "Metode", results: "Hasil", confirmScope: "Saya sudah memeriksa dan menyetujui rencana serta cakupan riset ini.", approveBtn: "Setujui dan lanjutkan", redoBtn: "Buat ulang rencana",
     progressTitle: "Proses riset", toFlow: "Buka alur kerja", again: "Coba lagi",
@@ -583,16 +679,17 @@ const T = {
     status: "Status", st_pending: "Belum mulai", st_current: "Berjalan", st_waiting: "Menunggu persetujuan Anda", st_done: "Selesai", st_failed: "Gagal",
     st_optional: "Opsional", filters: "Filter pencarian", years: "Tahun", type: "Jenis dokumen", oa: "Hanya akses terbuka", yes: "Ya", no: "Tidak",
     minCitShort: "Sitasi min.", candShort: "Kandidat", edit: "Ubah pengaturan riset", topicNode: "Topik riset", topicNone: "Belum ada topik",
-    library: "Pustaka PDF", pdfCount: "{n} PDF", noPdfs: "Belum ada PDF. Proses akan memakai abstrak saja.", managePdfs: "Tambah atau lihat PDF",
+    library: "Pustaka PDF", pdfCount: "{n} PDF", noPdfs: "Belum ada PDF lokal. Tambahkan berkas atau aktifkan pengambilan teks lengkap akses terbuka.", managePdfs: "Tambah atau lihat PDF",
     approveTag: "persetujuan Anda", loopTag: "revisi ≤ {n}×", close: "Tutup",
-    nextIdle: ["Mulai dari pertanyaan riset", "Masukkan topik, periksa pengaturan riset, lalu tinjau rencananya.", "Masukkan topik riset"],
+    nextIdle: ["Mulai dari ide", "Diskusikan arah riset dengan AI, atau langsung masukkan topik yang sudah Anda miliki.", "Eksplorasi ide & topik"],
+    nextBrainstorming: ["Mengeksplorasi arah riset", "AI sedang mempertimbangkan minat Anda. Pertajam usulannya sebelum membuat rencana.", "Lihat brainstorming"],
     nextPlanning: ["Menyiapkan rencana riset", "Rencana akan muncul untuk ditinjau sebentar lagi.", "Lihat riset"],
     nextApprove: ["Rencana siap ditinjau", "Periksa cakupan dan kata kunci sebelum pencarian dimulai.", "Tinjau rencana"],
     nextRunning: ["Riset sedang berjalan", "Ikuti tahap yang disorot. Draf muncul setelah proses selesai.", "Lihat detail"],
     nextDone: ["Draf dan bukti sudah siap", "Tinjau temuan audit dan sumber asli sebelum memakai draf.", "Tinjau draf & bukti"],
     nextFailed: ["Riset berhenti", "Baca pesan galat dan log proses sebelum mencoba lagi.", "Lihat detail"],
     liveNote: "Mode langsung memakai layanan dan kuota penyedia.",
-    noActivity: "Belum ada aktivitas. Buat rencana riset untuk memulai.",
+    noActivity: "Belum ada aktivitas. Eksplorasi ide atau buat rencana riset.",
     progressRun: "Proses tetap berjalan di server. Anda bisa memuat ulang halaman ini kapan saja.", progressDone: "Semua tahap selesai.",
     runFailed: "Proses berhenti.", runDone: "Selesai. Permintaan API AI yang terpakai: {n}.",
     needTopic: "Masukkan topik riset terlebih dahulu.", needConfirm: "Periksa dan konfirmasi cakupan terlebih dahulu.", needPlan: "Isi judul, pertanyaan riset, cakupan, dan kata kunci.",
@@ -613,7 +710,7 @@ const T = {
 };
 // Stage texts come from the server in English; Indonesian versions live here.
 const STAGE_ID = {
-  1: ["Rencana riset", "Menyusun pertanyaan dan menyetujui cakupan", "Topik riset", "Rencana riset yang disetujui"],
+  1: ["Rencana riset", "Merumuskan masalah, pertanyaan dan cakupan untuk disetujui", "Topik riset", "Rencana riset yang disetujui"],
   2: ["Penelusuran literatur", "Mencari publikasi relevan di OpenAlex", "Kata kunci dan filter tahun", "Kandidat artikel"],
   3: ["Metadata & PDF", "Mencocokkan metadata Crossref dan menemukan PDF unggahan", "Kandidat artikel dan PDF lokal", "Artikel dengan metadata cocok"],
   4: ["Seleksi sumber", "Memilih artikel yang relevan dengan pertanyaan riset", "Artikel dengan metadata cocok", "Artikel terpilih"],
@@ -631,7 +728,7 @@ const CRIT = { en: {abstract_consistency: "Abstract matches the paper", coherenc
                id: {abstract_consistency: "Kesesuaian abstrak", coherence: "Koherensi argumen", claim_support: "Dukungan klaim", no_fabrication: "Tanpa fabrikasi", academic_style: "Gaya akademik",
                     synthesis: "Sintesis antarstudi", research_gap: "Celah riset", coverage: "Cakupan pertanyaan riset", evidence_use: "Dukungan bukti", clarity: "Kejelasan tulisan", scope_fidelity: "Kesetiaan cakupan"} };
 const SLOT_INFO = {
-  PLAN_MODEL: {stage: 1, en: "Drafts the research plan", id: "Menyusun rencana riset"},
+  PLAN_MODEL: {stage: 1, en: "Explores ideas and drafts the research plan", id: "Mengeksplorasi ide dan menyusun rencana riset"},
   SCREEN_MODEL: {stage: 4, en: "Selects relevant papers", id: "Memilih paper yang relevan"},
   EVIDENCE_MODEL: {stage: 5, en: "Extracts quotes and findings", id: "Mengekstrak kutipan dan temuan"},
   OUTLINE_MODEL: {stage: 6, en: "Plans themes (falls back to Writer)", id: "Merancang tema (cadangan: Writer)"},
@@ -690,7 +787,6 @@ function show(view) {
   for (const id of ["workflow", "research", "results", "setup"]) $(id).classList.toggle("hidden", id !== view);
   document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));
   if (view === "results") loadResults();
-  if (view === "workflow") requestAnimationFrame(() => layoutFlow(true));
   window.scrollTo({top: 0});
 }
 document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => show(b.dataset.view));
@@ -807,12 +903,14 @@ $("loadModels").onclick = async () => {
 $("planBtn").onclick = async () => {
   const topic = $("topic").value.trim();
   if (!topic) return note("researchMsg", t("needTopic"), false);
-  try { await api("/api/plan", { topic, research: researchPayload() }); await loadSettings(); startPolling(); show("workflow"); }
+  const seed_questions = $("seedQuestions").value.split("\n").map(q => q.trim()).filter(Boolean);
+  try { await api("/api/plan", { topic, seed_questions, research: researchPayload() }); await loadSettings(); startPolling(); show("workflow"); }
   catch (e) { note("researchMsg", e.message, false); }
 };
 $("approveBtn").onclick = async () => {
   if (!$("confirmScope").checked) return alert(t("needConfirm"));
   const plan = { ...(latest?.plan || {}), title: $("approvedTitle").value.trim(),
+    problem_statement: $("approvedProblem").value.trim(),
     research_questions: $("approvedQuestions").value.split("\n").map(q => q.trim()).filter(Boolean),
     scope_note: $("approvedScope").value.trim(), author_methods: $("authorMethods").value.trim(),
     author_results: $("authorResults").value.trim(), keywords: $("keywords").value.split(",").map(k => k.trim()).filter(Boolean) };
@@ -822,11 +920,12 @@ $("approveBtn").onclick = async () => {
 };
 $("redoBtn").onclick = async () => {
   const topic = latest?.topic || $("topic").value.trim();
+  const seed_questions = $("approvedQuestions").value.split("\n").map(q => q.trim()).filter(Boolean);
   await api("/api/reset", {}); $("topic").value = topic;
-  await api("/api/plan", { topic }); lastPhase = ""; startPolling();
+  await api("/api/plan", { topic, seed_questions }); lastPhase = ""; startPolling();
 };
 $("againBtn").onclick = async () => { await api("/api/reset", {}); render(await api("/api/status")); };
-$("newBtn").onclick = async () => { await api("/api/reset", {}); $("topic").value = ""; render(await api("/api/status")); show("research"); };
+$("newBtn").onclick = async () => { await api("/api/reset", {}); $("topic").value = ""; $("seedQuestions").value = ""; $("brainstormInput").value = ""; note("ideaSelectedMsg", ""); render(await api("/api/status")); show("research"); };
 $("openFolderBtn").onclick = () => api("/api/open-folder", {});
 $("toFlowBtn").onclick = () => show("workflow");
 
@@ -835,7 +934,7 @@ let poller = null, lastPhase = "", latest = null;
 function startPolling() {
   clearInterval(poller);
   const tick = async () => {
-    try { const s = await api("/api/status"); render(s); if (!["planning", "running"].includes(s.phase)) clearInterval(poller); } catch (_) {}
+    try { const s = await api("/api/status"); render(s); if (!["brainstorming", "planning", "running"].includes(s.phase)) clearInterval(poller); } catch (_) {}
   };
   tick(); poller = setInterval(tick, 1500);
 }
@@ -843,24 +942,30 @@ async function refreshStatus() { try { render(await api("/api/status")); } catch
 
 function render(s) {
   latest = s;
-  const busy = ["planning", "running"].includes(s.phase);
+  const busy = ["brainstorming", "planning", "running"].includes(s.phase);
   $("topicCard").classList.toggle("hidden", !["idle", "failed", "done"].includes(s.phase));
   $("researchCard").querySelectorAll("input,select,button").forEach(el => el.disabled = busy);
   $("pdfCard").classList.toggle("hidden", !["idle", "failed", "done"].includes(s.phase));
   $("approveCard").classList.toggle("hidden", s.phase !== "approve");
-  $("progressCard").classList.toggle("hidden", !busy && !["failed", "done"].includes(s.phase));
+  $("progressCard").classList.toggle("hidden", s.phase === "brainstorming" || (!busy && !["failed", "done"].includes(s.phase)));
   $("againBtn").classList.toggle("hidden", !["failed", "done"].includes(s.phase));
   $("againBtn").textContent = s.phase === "done" ? t("newTopic") : t("again");
   $("progressHint").textContent = s.phase === "done" ? t("progressDone") : t("progressRun");
   if (s.phase === "failed") note("runMsg", t("runFailed") + "\n" + s.error, false);
   else if (s.phase === "done") note("runMsg", t("runDone", {n: s.requests}), true);
   else note("runMsg", "");
-  $("log").textContent = (s.log || []).join("\n");
+  const log = $("log"), text = (s.log || []).join("\n");
+  if (log.textContent !== text) {
+    const following = log.scrollHeight - log.clientHeight - log.scrollTop < 24;
+    log.textContent = text;
+    if (following) log.scrollTop = log.scrollHeight;
+  }
 
   if (s.phase === "approve" && s.plan && lastPhase !== "approve") {
     $("planView").innerHTML = `<b>${esc(t("origTopic"))}</b><p>${esc(s.topic)}</p><b>${esc(t("assumptions"))}</b><ul>${(s.plan.assumptions || []).length ?
       s.plan.assumptions.map(a => `<li>${esc(a)}</li>`).join("") : `<li>${esc(t("notReportedLi"))}</li>`}</ul>`;
     $("approvedTitle").value = s.plan.title || ""; $("approvedQuestions").value = (s.plan.research_questions || []).join("\n");
+    $("approvedProblem").value = s.plan.problem_statement || "";
     $("approvedScope").value = s.plan.scope_note || ""; $("authorMethods").value = s.plan.author_methods || "";
     $("authorResults").value = s.plan.author_results || ""; $("keywords").value = (s.plan.keywords || []).join(", ");
     $("confirmScope").checked = false;
@@ -872,26 +977,105 @@ function render(s) {
   const demo = (s.pipeline?.[0]?.model || "").startsWith("Demo simulator");
   $("modePill").textContent = demo ? t("demoPill") : t("livePill");
   $("modePill").classList.toggle("live", !demo);
-  const key = {idle: "nextIdle", planning: "nextPlanning", approve: "nextApprove", running: "nextRunning", done: "nextDone", failed: "nextFailed"}[s.phase] || "nextIdle";
-  const nx = t(key), target = {idle: "research", planning: "research", approve: "research", running: null, done: "results", failed: "research"}[s.phase];
+  const key = {brainstorming: "nextBrainstorming", idle: "nextIdle", planning: "nextPlanning", approve: "nextApprove", running: "nextRunning", done: "nextDone", failed: "nextFailed"}[s.phase] || "nextIdle";
+  const nx = t(key), target = {brainstorming: "research", idle: "research", planning: "research", approve: "research", running: null, done: "results", failed: "research"}[s.phase];
   $("nextTitle").textContent = nx[0];
   $("nextDesc").textContent = nx[1] + (s.phase === "idle" && !demo ? " " + t("liveNote") : "");
   $("nextBtn").textContent = nx[2];
-  $("nextBtn").onclick = () => target ? show(target) : selectNode(s.stage || 1, true);
+  $("nextBtn").onclick = () => { if (target) { show(target); if (s.phase === "idle") $("brainstormInput").focus(); } else selectNode(s.stage || 1, true); };
   $("errorBanner").classList.toggle("hidden", s.phase !== "failed");
   $("errorBanner").textContent = s.phase === "failed" ? (s.error || "") : "";
   if (!slotsRendered && s.pipeline) { slotsRendered = true; renderSlotsTable(); }
   renderFlow(s);
   renderActivity(s);
+  renderUsage(s);
+  renderBrainstorm(s);
 }
 let slotsRendered = false;
 
+let activityStamp = "";
 function renderActivity(s) {
   const events = (s.events || []).slice(-40).reverse();
+  const stamp = JSON.stringify([events, LANG]);
+  if (stamp === activityStamp) return;
+  activityStamp = stamp;
+  const list = $("activityList"), previousTop = list.scrollTop, previousHeight = list.scrollHeight;
   $("activityList").innerHTML = events.length ? events.map(e =>
     `<div class="act"><time>${esc(e.time)}</time><div><b>${esc(e.message)}</b>${e.model ? `<br><em class="mono">${esc(e.model)}</em>` : ""}</div></div>`).join("")
     : `<div class="act"><div class="hint" style="margin:0">${esc(t("noActivity"))}</div></div>`;
+  if (previousTop > 0) list.scrollTop = previousTop + list.scrollHeight - previousHeight;
 }
+
+function renderUsage(s) {
+  const u = s.usage_totals || {};
+  const count = (value, reports, responses) => reports > 0 ? Number(value || 0).toLocaleString() + (reports < responses ? "+" : "") : "—";
+  $("tokenTotal").textContent = count(u.total_tokens, u.token_reports, u.real_responses);
+  $("tokenInput").textContent = count(u.prompt_tokens, u.prompt_reports, u.real_responses);
+  $("tokenOutput").textContent = count(u.completion_tokens, u.completion_reports, u.real_responses);
+  $("usageCost").textContent = u.has_cost ? "$" + Number(u.cost).toFixed(5) + (u.partial_cost ? "+" : "") : "—";
+  $("apiRequests").textContent = Number(s.requests || 0).toLocaleString();
+  const demo = (s.pipeline?.[0]?.model || "").startsWith("Demo simulator");
+  const incomplete = u.real_responses > 0 && (u.token_reports < u.real_responses || u.cost_reports < u.real_responses || u.prompt_reports < u.real_responses || u.completion_reports < u.real_responses);
+  $("usageNote").textContent = t(demo && !u.real_responses ? "usageDemo" : incomplete ? "usagePartial" : "usageUnreported");
+  $("usageStages").innerHTML = Object.entries(s.usage_by_stage || {}).map(([id, row]) => {
+    const name = id === "brainstorm" ? t("brainstormTitle") : id === "check" ? t("checkUsage") : stepInfo(Number(id), s).name || id;
+    const real = row.calls - (row.simulated_calls || 0);
+    const tokens = count(row.total_tokens, row.token_reports, real);
+    return `<div class="usage-stage"><strong>${esc(name)}</strong><span>${esc(row.calls)} ${esc(t("responses"))} · ${esc(tokens)} ${esc(t("tokens"))}${row.has_cost ? " · $" + Number(row.cost).toFixed(5) + (row.cost_reports < real ? "+" : "") : ""}</span></div>`;
+  }).join("") || `<p class="hint">${esc(t("notReported"))}</p>`;
+}
+
+let brainstormStamp = "";
+let brainstormMessages = "";
+function renderBrainstorm(s) {
+  const state = s.brainstorm || {messages: [], ideas: []};
+  const running = s.phase === "brainstorming";
+  const available = ["idle", "failed", "brainstorming"].includes(s.phase);
+  $("brainstormCard").classList.toggle("hidden", !available);
+  $("brainstormBtn").disabled = running;
+  $("brainstormInput").disabled = running;
+  $("skipBrainstorm").disabled = running;
+  $("brainstormBtn").textContent = t(running ? "brainstorming" : state.messages.length ? "brainstormRefine" : "brainstormBtn");
+  $("brainstormConversation").setAttribute("aria-busy", String(running));
+  $("brainstormConversation").querySelectorAll("[data-choose-idea]").forEach(button => button.disabled = running);
+  note("brainstormMsg", state.error || (running ? t("brainstorming") : ""), state.error ? false : "info");
+  const stamp = JSON.stringify([state.messages, state.ideas, LANG]);
+  if (brainstormStamp === stamp) return;
+  brainstormStamp = stamp;
+  const messages = JSON.stringify(state.messages), conversationChanged = messages !== brainstormMessages;
+  brainstormMessages = messages;
+  const lastUser = state.messages.filter(message => message.role === "user").slice(-1)[0];
+  if (!running && !state.error && lastUser?.content === $("brainstormInput").value.trim()) $("brainstormInput").value = "";
+  $("brainstormConversation").innerHTML = state.messages.map(message => {
+    let content = message.content;
+    if (message.role === "assistant") { try { content = JSON.parse(content).reply; } catch (_) { content = ""; } }
+    return `<div class="brain-turn"><small>${esc(t(message.role === "user" ? "you" : "ideaAssistant"))}</small><p>${esc(content)}</p></div>`;
+  }).join("") + `<div class="idea-grid">${state.ideas.map((idea, i) => `<article class="idea-card">
+      <h3>${esc(idea.title)}</h3><p>${esc(idea.angle)}</p>
+      <b>${esc(t("suggestedQuestions"))}</b><ol>${idea.questions.map(q => `<li>${esc(q)}</li>`).join("")}</ol>
+      <b>${esc(t("feasibility"))}</b><p class="hint">${esc(idea.feasibility)}</p>
+      <button class="btn small" type="button" data-choose-idea="${i}" ${running ? "disabled" : ""}>${esc(t("chooseIdea"))}</button></article>`).join("")}</div>`;
+  $("brainstormConversation").querySelectorAll("[data-choose-idea]").forEach(button => button.onclick = () => {
+    const idea = state.ideas[Number(button.dataset.chooseIdea)];
+    $("topic").value = idea.title + "\n\n" + idea.angle;
+    $("seedQuestions").value = idea.questions.join("\n");
+    note("ideaSelectedMsg", t("ideaSelected"), true);
+    $("topicCard").scrollIntoView({behavior: "smooth", block: "start"});
+    $("topic").focus({preventScroll: true});
+  });
+  if (conversationChanged && state.messages.length && !running && currentView === "research")
+    $("brainstormConversation").scrollIntoView({behavior: "smooth", block: "start"});
+}
+$("skipBrainstorm").onclick = () => { $("topicCard").scrollIntoView({behavior: "smooth", block: "start"}); $("topic").focus({preventScroll: true}); };
+$("brainstormBtn").onclick = async () => {
+  const message = $("brainstormInput").value.trim();
+  if (!message) return note("brainstormMsg", t("needInterest"), false);
+  $("brainstormBtn").disabled = true;
+  try {
+    await api("/api/brainstorm", {message, language: $("language").value});
+    startPolling();
+  } catch (error) { note("brainstormMsg", error.message, false); $("brainstormBtn").disabled = false; }
+};
 
 /* ---------------- flowchart ---------------- */
 const ICONS = {
@@ -911,19 +1095,13 @@ const ICONS = {
   12: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
 };
 const svgIcon = (k, cls = "icon") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>`;
-// col = position along the flow, row = lane (0 = side input, 1 = main line)
-const NODES = [
-  {id: "topic", col: 0, row: 1, kind: "start"}, {id: 1, col: 1, row: 1}, {id: 2, col: 2, row: 1},
-  {id: "library", col: 2, row: 0, kind: "source"}, {id: 3, col: 3, row: 1}, {id: 4, col: 4, row: 1},
-  {id: 5, col: 5, row: 1}, {id: 6, col: 6, row: 1}, {id: 7, col: 7, row: 1}, {id: 8, col: 8, row: 1},
-  {id: 9, col: 9, row: 1}, {id: 10, col: 10, row: 1}, {id: 11, col: 11, row: 1}, {id: 12, col: 12, row: 1, kind: "end"},
-];
-const EDGES = [["topic", 1], [1, 2, "approve"], [2, 3], ["library", 3, "side"], [3, 4], [4, 5], ["library", 5, "side"],
-               [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [9, 7, "loop"], [11, 10, "loop"]];
-const LAST_COL = Math.max(...NODES.map(n => n.col));
-let selected = null, followActive = true, zoom = 1, userZoomed = false, pdfCount = 0, geo = null;
+ICONS.brainstorm = ICONS.topic;
+const NODES = Array.from({length: 12}, (_, i) => ({id: i + 1}));
+let selected = "brainstorm", followActive = true, pdfCount = 0;
+let detailsOpen = window.innerWidth >= 1250;
 
 function nodeStatus(id, s) {
+  if (id === "brainstorm") return s.phase === "brainstorming" ? "current" : (s.brainstorm?.messages || []).length || s.topic ? "done" : "optional";
   if (id === "topic") return s.topic ? "done" : "pending";
   if (id === "library") return pdfCount ? "done" : "optional";
   if (s.phase === "failed" && id === s.stage) return "failed";
@@ -940,142 +1118,50 @@ function liveModel(step, s) {
   const recent = (s.events || []).filter(e => e.kind === "model" && e.step === step.id).slice(-1)[0];
   return recent?.model || step.model || "";
 }
-function subline(id, s) {
-  if (id === "topic") return s.topic ? s.topic : t("topicNone");
-  if (id === "library") return pdfCount ? t("pdfCount", {n: pdfCount}) : t("st_optional");
-  const step = (s.pipeline || []).find(x => x.id === id) || {};
-  const m = liveModel(step, s);
-  return m.startsWith("Demo simulator") ? "demo simulator" : m;
-}
-
-function geometry() {
-  const vp = $("viewport"), vertical = vp.clientWidth < 720;
-  if (!vertical) {
-    const N = 76, dx = 124, x0 = 34, rows = [34, 168];
-    const pos = {}; NODES.forEach(n => pos[n.id] = {x: x0 + n.col * dx, y: rows[n.row], w: N, h: N});
-    return {vertical, N, pos, width: x0 + LAST_COL * dx + N + 44, height: 360};
-  }
-  const N = 56, dy = 108, y0 = 26, pos = {};
-  NODES.forEach(n => pos[n.id] = n.row === 1 ? {x: 44, y: y0 + n.col * dy, w: N, h: N} : {x: 262, y: y0 + 1.75 * dy, w: N, h: N});
-  return {vertical, N, pos, width: 340, height: y0 + LAST_COL * dy + N + 40};
-}
-function port(p, side) {
-  return {right: [p.x + p.w, p.y + p.h / 2, 1, 0], left: [p.x, p.y + p.h / 2, -1, 0],
-          top: [p.x + p.w / 2, p.y, 0, -1], bottom: [p.x + p.w / 2, p.y + p.h, 0, 1]}[side];
-}
-function edgePath(a, b, d, d2 = d) {
-  const c1 = [a[0] + a[2] * d, a[1] + a[3] * d], c2 = [b[0] + b[2] * d2, b[1] + b[3] * d2];
-  const mid = (t) => [0, 1].map(i => (1 - t) ** 3 * a[i] + 3 * (1 - t) ** 2 * t * c1[i] + 3 * (1 - t) * t ** 2 * c2[i] + t ** 3 * b[i]);
-  return {d: `M${a[0]},${a[1]} C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${b[0]},${b[1]}`, mid: mid(.5)};
-}
-function edgeEnds(from, to, kind, g) {
-  const A = g.pos[from], B = g.pos[to];
-  if (!g.vertical) {
-    if (kind === "loop") return [port(A, "bottom"), port(B, "bottom"), 92];
-    return [port(A, "right"), port(B, "left"), Math.max(40, Math.abs(B.x - A.x) * .45)];
-  }
-  if (kind === "loop") return [port(A, "left"), port(B, "left"), 40];
-  if (kind === "side") {  // drop down beside the labels, then enter under the label text
-    const a = port(A, "bottom"), b = [B.x + B.w, B.y + B.h - 6, 1, 0];
-    return [a, b, (b[1] - a[1]) * .9, (a[0] - b[0]) * .6];
-  }
-  return [port(A, "bottom"), port(B, "top"), 30];
-}
-function edgeState(from, to, kind, s) {
-  if (kind === "loop") {
-    // A loop is active while the run is back at its target after visiting its source.
-    const active = s.phase === "running" && (s.completed_steps || []).includes(from) && s.stage >= to && s.stage < from;
-    return "loop" + (active ? " active" : "");
-  }
-  const st = nodeStatus(to, s);
-  if (st === "current" && s.phase === "running") return "active";
-  if (st === "done" || st === "current" || st === "failed") return "done";
-  if (from === "library" && pdfCount) return "done";
-  return "";
-}
-
 function renderFlow(s) {
-  geo = geometry();
-  const g = geo, board = $("board");
-  board.classList.toggle("vertical", g.vertical);
-  board.style.width = g.width + "px"; board.style.height = g.height + "px";
-  const svg = $("edges"); svg.setAttribute("width", g.width); svg.setAttribute("height", g.height);
   if (followActive && ["planning", "approve", "running", "failed"].includes(s.phase) && s.stage) selected = s.stage;
-  let paths = "", tags = "";
-  for (const [from, to, kind] of EDGES) {
-    const [a, b, d, d2] = edgeEnds(from, to, kind, g), p = edgePath(a, b, d, d2);
-    paths += `<path class="edge ${edgeState(from, to, kind, s)}" d="${p.d}"/>`;
-    if (kind === "approve") tags += `<span class="edge-tag ${s.phase === "approve" ? "wait" : ""}" style="${g.vertical ? `left:${p.mid[0] + 14}px;top:${p.mid[1]}px;transform:translate(0,-50%)` : `left:${p.mid[0]}px;top:${p.mid[1] - 58}px`}">${esc(t("approveTag"))}</span>`;
-    if (kind === "loop" && !g.vertical) tags += `<span class="edge-tag" style="left:${p.mid[0]}px;top:${p.mid[1] - 2}px">${esc(t("loopTag", {n: SETTINGS.revision_rounds ?? 3}))}</span>`;
-  }
-  svg.innerHTML = paths;
-  const focused = board.contains(document.activeElement) ? document.activeElement.dataset.node : null;
-  const nodes = NODES.map(n => {
-    const p = g.pos[n.id], st = nodeStatus(n.id, s);
-    const step = typeof n.id === "number" ? stepInfo(n.id, s) : null;
-    const name = n.id === "topic" ? t("topicNode") : n.id === "library" ? t("library") : step?.name || "";
-    const ai = step && (step.model_slots || []).length;
-    const stLabel = st === "current" && s.phase === "approve" ? t("st_waiting") : t("st_" + st);
-    const kindCls = n.kind === "start" ? "start" : n.kind === "end" ? "end" : "";
-    const ports = (g.vertical ? `<span class="port" style="left:${p.w / 2 - 5}px;top:-6px"></span><span class="port" style="left:${p.w / 2 - 5}px;bottom:-6px"></span>`
-                               : `<span class="port" style="left:-6px;top:${p.h / 2 - 5}px"></span><span class="port" style="right:-6px;top:${p.h / 2 - 5}px"></span>`);
-    const badge = ["done", "current", "failed"].includes(st) ? `<span class="badge ${st}">${st === "done" ? "✓" : st === "failed" ? "!" : ""}</span>` : "";
-    const label = g.vertical ? `left:${p.x + p.w + 14}px;top:${p.y + 6}px;width:${n.row === 1 ? 168 : 74}px` : `left:${p.x + p.w / 2 - 58}px;top:${p.y + p.h + 10}px;width:116px`;
-    const labelV = n.row !== 0 ? label : g.vertical ? `left:${p.x - 9}px;top:${p.y - 40}px;width:74px;text-align:center`
-      : `left:${p.x - 136}px;top:${p.y + p.h / 2 - 17}px;width:122px;text-align:right`;
-    return `<button type="button" class="node ${kindCls} ${st === "optional" ? "optional" : st} ${selected === n.id ? "selected" : ""}" data-node="${n.id}"
-        style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px" aria-pressed="${selected === n.id}"
-        aria-label="${esc(name)}: ${esc(stLabel)}">${ai && !g.vertical ? '<span class="ai-tag">AI</span>' : ""}${svgIcon(n.id)}${ports}${badge}</button>
-      <div class="label" style="${labelV}"><b>${typeof n.id === "number" ? n.id + ". " : ""}${esc(name)}</b><i class="mono" title="${esc(subline(n.id, s))}">${esc(subline(n.id, s))}</i></div>`;
+  const focused = document.activeElement?.dataset.node;
+  const button = (id, name, description) => {
+    const st = nodeStatus(id, s);
+    const label = st === "current" && s.phase === "approve" ? t("st_waiting") : t("st_" + st);
+    return `<button type="button" class="node ${st} ${selected === id && detailsOpen ? "selected" : ""}" data-node="${id}" aria-pressed="${selected === id && detailsOpen}">
+      <span class="node-number">${typeof id === "number" ? st === "done" ? "✓" : id : svgIcon(id)}</span>
+      <span class="node-copy"><strong>${esc(name)}</strong><span class="node-description">${esc(description)}</span><span class="node-state">${esc(label)}</span></span></button>`;
+  };
+  $("flowInputs").innerHTML = button("brainstorm", t("brainstormTitle"), t("brainstormFlowHint")) + button("library", t("library"), pdfCount ? t("pdfCount", {n: pdfCount}) : t("noPdfs"));
+  $("board").innerHTML = NODES.map(({id}) => {
+    const step = stepInfo(id, s);
+    let note = id === 1 ? `<p class="flow-note approval">${esc(t("approveTag"))}</p>` : "";
+    if ([9,11].includes(id)) note += `<p class="flow-note">${esc(t("revisionNote", {n: SETTINGS.revision_rounds ?? 3}))} <a href="#stage-${id === 9 ? 7 : 10}">${esc(t("backToStage", {n: id === 9 ? 7 : 10}))}</a></p>`;
+    return `<li class="flow-row" id="stage-${id}">${button(id, step.name, step.summary)}${note}</li>`;
   }).join("");
-  board.querySelectorAll(".node,.label,.edge-tag").forEach(el => el.remove());
-  board.insertAdjacentHTML("beforeend", nodes + tags);
-  board.querySelectorAll("[data-node]").forEach(el => el.onclick = () => selectNode(el.dataset.node, true));
-  if (focused) board.querySelector(`[data-node="${focused}"]`)?.focus({preventScroll: true});
-  layoutFlow(false);
+  document.querySelectorAll("[data-node]").forEach(el => el.onclick = () => selectNode(el.dataset.node, true));
+  if (focused) document.querySelector(`[data-node="${focused}"]`)?.focus({preventScroll: true});
   renderInspector(s);
 }
-function layoutFlow(refit) {
-  if (!geo) return;
-  const vp = $("viewport"), vertical = vp.clientWidth < 720;
-  if (vertical !== geo.vertical && latest) { renderFlow(latest); return; }
-  if (refit || !userZoomed) zoom = Math.max(.82, Math.min(1, (vp.clientWidth - 8) / geo.width));
-  $("board").style.transform = `scale(${zoom})`;
-  vp.style.height = Math.min(geo.vertical ? 620 : 520, Math.ceil(geo.height * zoom) + 16) + "px";
-  $("spacer").style.width = geo.width * zoom + "px"; $("spacer").style.height = geo.height * zoom + "px";
-}
-function setZoom(z) { userZoomed = true; zoom = Math.max(.4, Math.min(1.6, z)); layoutFlow(false); }
-$("zoomIn").onclick = () => setZoom(zoom + .1);
-$("zoomOut").onclick = () => setZoom(zoom - .1);
-$("zoomFit").onclick = () => { userZoomed = false; layoutFlow(true); };
-window.addEventListener("resize", () => layoutFlow(false));
-// drag the empty canvas to pan
-(() => {
-  const vp = $("viewport"); let start = null;
-  vp.addEventListener("pointerdown", e => { if (e.target.closest(".node") || e.pointerType === "touch") return; start = [e.clientX, e.clientY, vp.scrollLeft, vp.scrollTop]; vp.classList.add("dragging"); });
-  window.addEventListener("pointermove", e => { if (!start) return; vp.scrollLeft = start[2] - (e.clientX - start[0]); vp.scrollTop = start[3] - (e.clientY - start[1]); });
-  window.addEventListener("pointerup", () => { start = null; vp.classList.remove("dragging"); });
-})();
 
 function selectNode(id, user) {
   id = /^\d+$/.test(String(id)) ? Number(id) : id;
   if (user) followActive = selected === id ? followActive : false;
   selected = id;
-  $("flowWrap").classList.remove("closed");
+  detailsOpen = true;
   if (latest) renderFlow(latest);
-  if (user && window.innerWidth <= 1100) $("inspector").scrollIntoView({behavior: "smooth", block: "start"});
+
 }
 
 function renderInspector(s) {
   const el = $("inspector");
-  if (selected === null) { $("flowWrap").classList.add("closed"); el.innerHTML = ""; return; }
+  if (selected === null || !detailsOpen) { $("flowWrap").classList.add("closed"); el.innerHTML = ""; return; }
+  $("flowWrap").classList.remove("closed");
   const id = selected, st = nodeStatus(id, s);
   const stLabel = st === "current" && s.phase === "approve" ? t("st_waiting") : t("st_" + st);
   const head = (name, sub) => `<div class="insp-head"><div class="insp-icon">${svgIcon(id, "")}</div><div><strong>${esc(name)}</strong><small>${esc(sub)}</small></div>
     <button class="icon-btn insp-close" id="inspClose" aria-label="${esc(t("close"))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div style="margin-top:10px"><span class="status-chip ${st}">${esc(stLabel)}</span></div><div class="insp-body">`;
   let html = "";
-  if (id === "topic") {
+  if (id === "brainstorm") {
+    html = head(t("brainstormTitle"), t("beforeYouBegin")) + `<div class="insp-sec"><p>${esc(t("brainstormFlowHint"))}</p><div class="actions"><button class="btn small" data-jump="research">${esc(t("brainstormBtn"))}</button></div></div>`;
+  } else if (id === "topic") {
     html = head(t("topicNode"), "") + `<div class="insp-sec"><p>${esc(s.topic || t("topicNone"))}</p>${s.plan?.title ? `<p class="hint" style="margin-top:6px">${esc(s.plan.title)}</p>` : ""}
       <div class="actions"><button class="btn small" data-jump="research">${esc(t("edit"))}</button></div></div>`;
   } else if (id === "library") {
@@ -1083,7 +1169,6 @@ function renderInspector(s) {
       <ul class="checks" id="inspPdfs"></ul><div class="actions"><button class="btn small" data-jump="research">${esc(t("managePdfs"))}</button></div></div>`;
   } else {
     const step = stepInfo(id, s);
-    const usage = (s.usage_by_stage || {})[id] || {};
     const demo = (s.pipeline?.[0]?.model || "").startsWith("Demo simulator");
     html = head(step.name, `${t("stage")} ${id} ${t("of")} ${(s.pipeline || []).length || 12}`) +
       `<div class="insp-sec"><h3>${esc(t("whatHappens"))}</h3><p>${esc(step.summary)}</p></div>
@@ -1109,18 +1194,14 @@ function renderInspector(s) {
     } else {
       html += `<div class="insp-sec"><h3>${esc(t("service"))}</h3><p class="mono">${esc(step.model || "")}</p></div>`;
     }
-    if (slots.length) html += `<div class="insp-sec"><h3>${esc(t("usage"))}</h3>
-      <div class="kv"><span>${esc(t("responses"))}</span><b>${usage.calls ?? "—"}</b></div>
-      <div class="kv"><span>${esc(t("tokens"))}</span><b>${usage.has_tokens ? Number(usage.total_tokens || (usage.prompt_tokens + usage.completion_tokens)).toLocaleString() : esc(t("notReported"))}</b></div>
-      <div class="kv"><span>${esc(t("cost"))}</span><b>${usage.has_cost ? "$" + Number(usage.cost).toFixed(5) : esc(t("notReported"))}</b></div>
-      ${liveModel(step, s) && st !== "pending" ? `<p class="hint mono" style="margin-top:8px">${esc(liveModel(step, s))}</p>` : ""}</div>`;
+
   }
   html += "</div>";
   // Keep a half-typed model value when the poller re-renders the panel.
   const typing = el.contains(document.activeElement) && document.activeElement.tagName === "INPUT" ? [document.activeElement.id, document.activeElement.value] : null;
   el.innerHTML = html;
   if (typing) { const input = $(typing[0]); if (input) { input.value = typing[1]; input.focus(); } }
-  $("inspClose").onclick = () => { selected = null; followActive = false; renderFlow(latest); };
+  $("inspClose").onclick = () => { detailsOpen = false; renderFlow(latest); };
   el.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => show(b.dataset.jump));
   el.querySelectorAll("[data-save-slot]").forEach(b => b.onclick = async () => {
     const key = b.dataset.saveSlot, value = $("slot-" + key).value.trim();
@@ -1259,12 +1340,14 @@ $("saveVerification").onclick = async () => {
 
 /* ---------------- start ---------------- */
 (async () => {
+  $("monitorPanel").open = store.get("pm-monitor-open") === "true" || (store.get("pm-monitor-open") === null && window.innerWidth > 800);
+  $("monitorPanel").ontoggle = () => store.set("pm-monitor-open", String($("monitorPanel").open));
   applyLang();
   await loadSettings().catch(() => {});
   const status = await api("/api/status");
-  selected = ["planning", "approve", "running", "failed"].includes(status.phase) ? status.stage : 1;
+  selected = ["planning", "approve", "running", "failed"].includes(status.phase) ? status.stage : "brainstorm";
   render(status);
-  if (["planning", "running"].includes(status.phase)) startPolling();
+  if (["brainstorming", "planning", "running"].includes(status.phase)) startPolling();
   refreshLibrary().catch(() => {});
 })();
 </script>
