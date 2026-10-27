@@ -394,7 +394,8 @@ th { background: var(--panel-2); position: sticky; top: 0; }
       <span data-i18n="demoHint">Fictional sample data, no API calls or charges. Turn off to use live services.</span></div></label>
     <div id="realFields">
       <div class="grid2">
-        <div><label for="orKey"><span data-i18n="orKey">OpenRouter API key</span><small>openrouter.ai → Keys (sk-or-…)</small></label><input type="password" id="orKey" autocomplete="off"></div>
+        <div><label for="orKey"><span data-i18n="orKey">AI provider API key</span><small>OpenRouter, WFLabs, or OpenAI-compatible</small></label><input type="password" id="orKey" autocomplete="off"></div>
+        <div><label for="llmBaseUrl">AI API base URL</label><input type="url" id="llmBaseUrl" placeholder="https://api.wflabs.ai.id/v1" autocomplete="off"><small class="hint">OpenRouter: https://openrouter.ai/api/v1 · WFLabs: https://api.wflabs.ai.id/v1</small></div>
         <div><label for="oaKey"><span data-i18n="oaKey">OpenAlex API key</span><small>openalex.org/settings/api</small></label><input type="password" id="oaKey" autocomplete="off"></div>
       </div>
       <label for="email"><span>Email</span><small data-i18n="emailHint">Optional, for polite OpenAlex access.</small></label><input type="email" id="email" autocomplete="off">
@@ -405,7 +406,7 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <p class="hint" data-i18n="modelsHint">The default model is used by every AI stage unless a stage has its own. Use provider/model IDs; separate fallbacks with commas.</p>
     <label for="model"><span data-i18n="defaultModel">Default model</span><small data-i18n="defaultModelHint">openrouter/free uses free models only; openrouter/auto may choose paid models.</small></label>
     <input type="text" id="model" list="modelList" spellcheck="false" class="mono">
-    <div class="actions" style="margin-top:10px"><button class="btn small" id="loadModels" data-i18n="loadModels">Load model list from OpenRouter</button>
+    <div class="actions" style="margin-top:10px"><button class="btn small" id="loadModels" data-i18n="loadModels">Load model list from provider</button>
       <label class="check" style="margin:0;align-items:center"><input type="checkbox" id="showPaid"><span data-i18n="showPaid">Include paid models</span></label></div>
     <div id="modelsMsg"></div>
     <h3 style="font-size:14px;margin:20px 0 4px" data-i18n="stageModels">Per-stage models</h3>
@@ -473,11 +474,11 @@ const T = {
     reviewTitle: "Researcher review", reviewHint: "Tick each item after reading the sources. This records your review; it does not certify validation.",
     notes: "Review notes", saveChecklist: "Save review checklist", files: "Download files", openFolder: "Open results folder (Windows)", newTopic: "Research a new topic",
     connTitle: "Connections", connHint: "Settings and API keys are stored in .env on the machine running the app.", demoMode: "Demo mode",
-    demoHint: "Fictional sample data, no API calls or charges. Turn off to use live services.", orKey: "OpenRouter API key", oaKey: "OpenAlex API key",
+    demoHint: "Fictional sample data, no API calls or charges. Turn off to use live services.", orKey: "AI provider API key", oaKey: "OpenAlex API key",
     emailHint: "Optional, for polite OpenAlex access.", modelsTitle: "AI models",
     modelsHint: "The default model is used by every AI stage unless a stage has its own. Use provider/model IDs; separate fallbacks with commas.",
-    defaultModel: "Default model", defaultModelHint: "openrouter/free uses free models only; openrouter/auto may choose paid models.",
-    loadModels: "Load model list from OpenRouter", showPaid: "Include paid models", stageModels: "Per-stage models",
+    defaultModel: "Default model", defaultModelHint: "Enter a model ID supported by your configured provider.",
+    loadModels: "Load model list from provider", showPaid: "Include paid models", stageModels: "Per-stage models",
     stageModelsHint: "Leave blank to inherit. You can also set these by selecting a stage on the workflow.", saveSettings: "Save settings", testConn: "Test connections",
     // dynamic
     demoPill: "Demo · offline", livePill: "Live API", stage: "Stage", of: "of", whatHappens: "What happens", input: "Input", output: "Output",
@@ -558,11 +559,11 @@ const T = {
     reviewTitle: "Pemeriksaan peneliti", reviewHint: "Centang setiap butir setelah membaca sumber. Ini mencatat pemeriksaan Anda, bukan sertifikasi validasi.",
     notes: "Catatan pemeriksaan", saveChecklist: "Simpan daftar periksa", files: "Unduh berkas", openFolder: "Buka folder hasil (Windows)", newTopic: "Riset topik baru",
     connTitle: "Koneksi", connHint: "Pengaturan dan kunci API disimpan di berkas .env pada komputer yang menjalankan aplikasi.", demoMode: "Mode demo",
-    demoHint: "Data contoh fiktif, tanpa panggilan API dan tanpa biaya. Matikan untuk memakai layanan sungguhan.", orKey: "Kunci API OpenRouter", oaKey: "Kunci API OpenAlex",
+    demoHint: "Data contoh fiktif, tanpa panggilan API dan tanpa biaya. Matikan untuk memakai layanan sungguhan.", orKey: "Kunci API provider", oaKey: "Kunci API OpenAlex",
     emailHint: "Opsional, untuk akses OpenAlex yang sopan.", modelsTitle: "Model AI",
     modelsHint: "Model bawaan dipakai semua tahap AI, kecuali tahap yang punya model sendiri. Gunakan ID provider/model; pisahkan model cadangan dengan koma.",
-    defaultModel: "Model bawaan", defaultModelHint: "openrouter/free hanya memakai model gratis; openrouter/auto bisa memilih model berbayar.",
-    loadModels: "Muat daftar model dari OpenRouter", showPaid: "Sertakan model berbayar", stageModels: "Model per tahap",
+    defaultModel: "Model bawaan", defaultModelHint: "Masukkan ID model yang tersedia di provider pilihan.",
+    loadModels: "Muat daftar model dari provider", showPaid: "Sertakan model berbayar", stageModels: "Model per tahap",
     stageModelsHint: "Kosongkan untuk mewarisi. Anda juga bisa mengaturnya dengan memilih tahap di alur kerja.", saveSettings: "Simpan pengaturan", testConn: "Uji koneksi",
     demoPill: "Demo · luring", livePill: "API langsung", stage: "Tahap", of: "dari", whatHappens: "Yang dilakukan", input: "Masukan", output: "Keluaran",
     service: "Layanan", model: "Model AI", modelFor: "Model untuk tahap ini", inherit: "Kosong = mewarisi", uses: "Memakai", inheritsFrom: "diwarisi dari",
@@ -700,7 +701,8 @@ $("demo").onchange = toggleReal;
 function fillSettings(s) {
   SETTINGS = s;
   $("demo").checked = s.demo;
-  $("orKey").placeholder = s.has_openrouter_key ? "••••• (saved)" : "sk-or-...";
+  $("orKey").placeholder = s.has_openrouter_key ? "••••• (saved)" : "Provider API key";
+  $("llmBaseUrl").value = s.llm_base_url || "https://openrouter.ai/api/v1";
   $("oaKey").placeholder = s.has_openalex_key ? "••••• (saved)" : "";
   $("email").value = s.email || "";
   $("model").value = s.model || "openrouter/free";
@@ -725,7 +727,7 @@ $("saveResearch").onclick = async () => {
   catch (e) { note("researchMsg", e.message, false); }
 };
 $("saveBtn").onclick = async () => {
-  const data = { demo: $("demo").checked, openrouter_key: $("orKey").value, openalex_key: $("oaKey").value,
+  const data = { demo: $("demo").checked, openrouter_key: $("orKey").value, llm_base_url: $("llmBaseUrl").value, openalex_key: $("oaKey").value,
                  email: $("email").value, model: $("model").value.trim() };
   document.querySelectorAll("[data-slot]").forEach(el => data[fieldOf(el.dataset.slot)] = el.value.trim());
   try {

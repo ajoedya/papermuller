@@ -85,7 +85,7 @@ def read_settings():
 
 # Fields the page may change: request field -> .env key. Values are checked by
 # harness.parse_settings before anything is written.
-TEXT_FIELDS = {"model": "MODEL", "language": "LANGUAGE", "email": "EMAIL",
+TEXT_FIELDS = {"llm_base_url": "LLM_BASE_URL", "model": "MODEL", "language": "LANGUAGE", "email": "EMAIL",
                "plan_model": "PLAN_MODEL", "screen_model": "SCREEN_MODEL",
                "evidence_model": "EVIDENCE_MODEL", "outline_model": "OUTLINE_MODEL",
                "writer_model": "WRITER_MODEL", "verifier_model": "VERIFIER_MODEL",
@@ -125,7 +125,7 @@ def save_settings(data, allowed=None):
         if field in data and (allowed is None or field in allowed):
             updates[key] = "true" if data[field] else "false"
     if allowed is None:  # API keys are only replaced when the user typed a new one
-        for field, key in (("openrouter_key", "OPENROUTER_API_KEY"), ("openalex_key", "OPENALEX_API_KEY")):
+        for field, key in (("openrouter_key", "LLM_API_KEY"), ("openalex_key", "OPENALEX_API_KEY")):
             value = str(data.get(field, "") or "").strip()
             if value:
                 if len(value) > 300 or any(c.isspace() for c in value):
@@ -136,7 +136,7 @@ def save_settings(data, allowed=None):
         harness.parse_settings(merged)
     except ValueError as problem:
         # A missing live key is reported, not blocking, so demo users can switch modes later.
-        if "OPENROUTER_API_KEY" not in str(problem):
+        if "LLM_API_KEY" not in str(problem):
             raise
     if updates:
         update_env(updates)
@@ -146,7 +146,7 @@ def public_settings():
     raw = raw_env()
     settings, problem = read_settings()
     data = {"demo": raw.get("DEMO_MODE", "true").lower() == "true",
-            "has_openrouter_key": raw.get("OPENROUTER_API_KEY", "").startswith("sk-or-"),
+            "has_openrouter_key": bool(raw.get("LLM_API_KEY") or raw.get("OPENROUTER_API_KEY")),
             "has_openalex_key": bool(raw.get("OPENALEX_API_KEY")),
             "fetch_fulltext": raw.get("FETCH_FULLTEXT", "true").lower() == "true",
             "require_fulltext": raw.get("REQUIRE_FULLTEXT", "false").lower() == "true",
@@ -312,9 +312,9 @@ def run_checks():
     results = []
     try:
         reply = llm.ask("Reply with the single word: OK", settings, stage="check")
-        results.append({"name": "AI model (OpenRouter)", "ok": True, "note": f"Response: {reply.strip()[:40]}"})
+        results.append({"name": "AI model (configured provider)", "ok": True, "note": f"Response: {reply.strip()[:40]}"})
     except SystemExit as stop:
-        results.append({"name": "AI model (OpenRouter)", "ok": False, "note": str(stop).strip()})
+        results.append({"name": "AI model (configured provider)", "ok": False, "note": str(stop).strip()})
     try:
         found = tools.search_papers("public policy", settings, how_many=2)
         results.append({"name": "Literature search (OpenAlex)", "ok": bool(found),

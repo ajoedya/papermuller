@@ -15,6 +15,7 @@ The flow:
 """
 
 import sys
+from urllib.parse import urlparse
 import json
 from datetime import datetime
 from pathlib import Path
@@ -57,7 +58,9 @@ def parse_settings(raw):
         raise ValueError("WORK_TYPE must be one of: " + ", ".join(WORK_TYPES) + ".")
     settings = {
         "DEMO_MODE": str(raw.get("DEMO_MODE", "true")).lower() == "true",
-        "OPENROUTER_API_KEY": raw.get("OPENROUTER_API_KEY", ""),
+        "OPENROUTER_API_KEY": raw.get("LLM_API_KEY") or raw.get("OPENROUTER_API_KEY", ""),
+        "LLM_API_KEY": raw.get("LLM_API_KEY") or raw.get("OPENROUTER_API_KEY", ""),
+        "LLM_BASE_URL": (raw.get("LLM_BASE_URL") or "https://openrouter.ai/api/v1").rstrip("/"),
         "MODEL": raw.get("MODEL", "") or "openrouter/free",
         "LANGUAGE": writing.validate_language(raw.get("LANGUAGE", "English")),
         # Publication window and document filters for the literature search
@@ -86,8 +89,11 @@ def parse_settings(raw):
         settings[key] = raw.get(key, "")
     if settings["MIN_VERIFIED"] > settings["MAX_PAPERS"]:
         raise ValueError("MIN_VERIFIED cannot be larger than MAX_PAPERS.")
-    if not settings["DEMO_MODE"] and not settings["OPENROUTER_API_KEY"].startswith("sk-or-"):
-        raise ValueError("Real mode needs a valid OPENROUTER_API_KEY in .env (it starts with sk-or-).")
+    url = urlparse(settings["LLM_BASE_URL"])
+    if url.scheme != "https" or not url.hostname or url.username or url.password or url.query or url.fragment:
+        raise ValueError("LLM_BASE_URL must be a valid HTTPS API base URL.")
+    if not settings["DEMO_MODE"] and not str(settings["LLM_API_KEY"]).strip():
+        raise ValueError("Real mode needs LLM_API_KEY (or legacy OPENROUTER_API_KEY).")
     return settings
 
 
