@@ -1,259 +1,325 @@
 # Papermuller
 
-**Papermuller is an evidence AI Research & Writing Lab** that runs locally on your computer. It helps researchers discover and screen academic literature, inspect text-based PDF sources, build an auditable evidence ledger, draft a literature review, and assemble a working manuscript—all through a visual, interactive research pipeline.
+Papermuller is a local research and writing app for finding literature, reading
+available paper text, drafting a review, and tracing claims back to source
+passages. It runs in your browser with a Python server on your computer.
 
-> **Research prototype, not an autonomous researcher.** AI-generated claims, citations, methods, results, and interpretations require human verification. An AI review score is not a substitute for peer review or the requirements of your institution or journal.
-
-## Features
-
-- **Interactive research pipeline:** Twelve connected stages show what is running, complete, pending, or blocked. Click a node to inspect its inputs, outputs, model configuration, and execution telemetry.
-- **Literature discovery and verification:** Search OpenAlex and check publication identifiers against Crossref.
-- **PDF-assisted evidence extraction:** Upload text-based academic PDFs, link them to a DOI, and trace extracted passages to their PDF page.
-- **Evidence-first checks:** Flag unknown citation IDs, missing references, unsupported or incomplete evidence mapping, and high-risk reviewer findings.
-- **Researcher-approved scope:** Review and edit the research questions and scope before the pipeline continues.
-- **Working manuscript:** Produce a literature review and an IMRaD-oriented manuscript scaffold without inventing empirical methods or results.
-- **Full paper with a release gate:** After the literature review passes, AI drafts the title, abstract, introduction, discussion and conclusion. Methods and Results come only from your own text. A final AI review (scored by code, with no-fabrication and scope gates) must pass, both author Methods/Results must be filled, and your saved checklist must cover every required source before `9_paper_final.md` and `.docx` are written; otherwise the paper is saved as a stamped draft.
-- **Multi-model routing:** Choose different OpenRouter models for evidence extraction, writing, claim verification, and review.
-- **Local demo mode:** Explore the workflow with simulated data before configuring live APIs.
-
-## Quick start
-
-**Requirements:** Python 3.11 or newer. Internet access and API credentials are needed for live research; demo mode runs offline once the dependencies are installed.
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-Create your local settings file:
-
-```bash
-# macOS / Linux
-cp env.example .env
-
-# Windows Command Prompt
-copy env.example .env
-```
-
-Then start the local server:
-
-```bash
-python app.py
-```
-
-Open **http://localhost:8765** in your browser. By default, the server binds to **127.0.0.1** (your own computer).
-
-On Windows, extract the project and double-click `Setup.bat` once, then `Start.bat`.
-The launchers use a local `.venv`, preserve existing settings and research files,
-and require Python 3.11 or newer. See [the laptop setup guide](docs/LOCAL-LAPTOP.md).
-
-### Demo mode vs. live mode
-
-`DEMO_MODE=true` is the default. It uses simulated research data and does **not** make actual AI or literature-database requests.
-
-To run a live research project:
-
-1. Copy `env.example` to `.env`.
-2. Enter your `OPENROUTER_API_KEY` and, where applicable, your `OPENALEX_API_KEY`.
-3. Set `DEMO_MODE=false`.
-4. Review the model settings and provider pricing before starting.
-
-You can configure supported settings from the local app interface as well.
-
-**Security:** Never commit `.env`, API keys, licensed article PDFs, or the contents of `projects/` and `library/`. If a credential has previously been exposed, rotate it.
-
-## The visual research pipeline
+AI can draft the surrounding sections of a working paper. **Methods and Results
+come from the researcher**, and a final export requires both the review checks
+and the saved researcher checklist. These checks do not certify scientific accuracy
+or publication readiness.
 
 ![Papermuller research workflow](docs/screenshots/workspace-desktop.png)
 
-The workflow is drawn as a node flowchart: the research topic and the optional PDF library feed the ten stages, the researcher's approval sits between planning and the search, and a dashed loop shows the draft → audit → review revision cycle. On narrow screens the same graph is drawn top to bottom.
+[Windows setup](#windows) · [Paper language](#choose-the-paper-language) ·
+[Full-text reading](#read-selected-papers-in-full-text) ·
+[Outputs](#outputs-and-final-release) · [Tests](#development-and-validation)
 
-| Step | Stage | What happens |
+## What it does
+
+- Search OpenAlex with publication-year, work-type, open-access, and citation filters.
+- Match DOI/title metadata against Crossref and select relevant articles.
+- Use uploaded PDFs or retrieve available open-access PDFs for selected papers.
+- Read extracted PDF text in page-labelled chunks and record processing coverage.
+- Build a source matrix, literature review, claim audit, and evidence ledger.
+- Draft a working paper with localized headings and a configurable writing language.
+- Route each AI stage to its own OpenRouter model or inherit a default model.
+- Export Markdown, Word, BibTeX metadata, editorial diagnostics, and a research ZIP.
+
+## Install and run
+
+**Requirements:** Python 3.11 or newer. Installing packages needs Internet access.
+Live AI and literature search also need Internet access; demo mode runs offline
+once packages are installed. You do not need Node.js or Codex CLI to run the app.
+
+[Download the latest source ZIP](https://github.com/ajoedya/papermuller/archive/refs/heads/main.zip),
+or clone the repository:
+
+```sh
+git clone https://github.com/ajoedya/papermuller.git
+cd papermuller
+```
+
+### Windows
+
+1. Install [Python 3.11 or newer](https://www.python.org/downloads/windows/) and
+   enable **Add python.exe to PATH**.
+2. Extract the entire ZIP, or open the cloned folder. The working folder contains
+   `app.py`, `requirements.txt`, `Setup.bat`, and `Start.bat`.
+3. Double-click **Setup.bat** once, then **Start.bat**.
+
+From PowerShell in that folder, the equivalent commands are:
+
+```powershell
+.\Setup.bat
+.\Start.bat
+```
+
+Setup creates a local `.venv` and preserves an existing `.env`, `projects/`, and
+`library/`. Keep the terminal window open while using the app. See the
+[Windows setup and update guide](docs/LOCAL-LAPTOP.md) for more detail.
+
+### macOS and Linux
+
+From the project folder:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+[ -e .env ] || cp env.example .env
+.venv/bin/python app.py
+```
+
+On your computer, open the address printed by the app, normally
+`http://localhost:8765`. The server binds to `127.0.0.1`. Press Ctrl+C in the
+terminal to stop it.
+
+### Demo and live research
+
+| Mode | What happens | Internet during a run |
 | --- | --- | --- |
-| 1 | **Research setup** | Propose a title, research questions, keywords, and scope; obtain researcher approval. |
-| 2 | **Literature discovery** | Search OpenAlex for candidate publications. |
-| 3 | **Source verification & PDF matching** | Check DOI metadata via Crossref and associate uploaded local PDFs when the DOI matches. |
-| 4 | **Relevance screening** | Select publications related to the approved questions and scope. |
-| 5 | **Evidence extraction** | Build an evidence matrix from abstracts or selected PDF text and record the source location. |
-| 6 | **Literature synthesis** | Identify themes, comparisons, and research gaps; construct an outline. |
-| 7 | **Drafting** | Write the literature review and prepare revisions. |
-| 8 | **Citation & claim audit** | Validate citation identifiers and assess evidence support. |
-| 9 | **Adversarial review** | Critique the draft, research scope, and methodology-related claims. |
-| 10 | **Export & human verification** | Save the draft, working manuscript, evidence ledger, audit results, and researcher checklist. |
+| Demo, the default | Fictional papers and scripted English AI responses | Not required |
+| Live research | OpenRouter models, OpenAlex search, Crossref checks, and available OA PDFs | Required |
+| Fully offline local AI | Ollama/LM Studio integration is not implemented | Not available |
 
-Select any node in the flowchart to inspect its **inputs, outputs, status, configured/reported AI model, request count, and token or cost figures when available**. AI stages can be given their own model directly from that panel, and the literature-discovery node shows the active search filters.
+To use live research, open **Settings**, enter your `OPENROUTER_API_KEY` and an
+`OPENALEX_API_KEY` where needed, turn **Demo mode** off, then save and test the
+connections. You can also configure these in `.env`; see [env.example](env.example).
+Existing `.env` settings are preserved by setup.
 
-The node status is derived from backend events rather than a fabricated progress animation. Steps 7–9 may repeat during revision cycles. Demo activity is explicitly identified as simulated.
+The default model for a new configuration is `openrouter/free`, subject to provider
+availability and quotas. `openrouter/auto` may choose paid models. Existing model
+choices are preserved. Review pricing before starting live runs.
 
-## Configure AI models
+## Research workflow
 
-Papermuller uses [OpenRouter](https://openrouter.ai/) to connect to AI models. The default `MODEL` is `openrouter/free`, which routes only to free models (subject to availability and daily limits). `openrouter/auto` may select **paid** models. You can override the default for each AI stage:
+Start under **Topic & sources**. Enter your topic, adjust research settings, and
+add PDFs if you have them. Generate a plan, review its questions and scope, and
+approve it before the search proceeds.
 
-| Environment setting | Stage | Falls back to |
-| --- | --- | --- |
-| `PLAN_MODEL` | 1 Research plan | `MODEL` |
-| `SCREEN_MODEL` | 4 Source selection | `MODEL` |
-| `EVIDENCE_MODEL` | 5 Evidence extraction | `MODEL` |
-| `OUTLINE_MODEL` | 6 Literature synthesis | `WRITER_MODEL`, then `MODEL` |
-| `WRITER_MODEL` | 7 Draft writing | `MODEL` |
-| `VERIFIER_MODEL` | 8 Citation & claim audit | `MODEL` |
-| `REVIEW_MODEL` | 9 Critical review (scoring) | `MODEL` |
-| `REDTEAM_MODEL` | 9 Critical review (red-team pass) | `REVIEW_MODEL`, then `MODEL` |
-| `PAPER_MODEL` | 10 Full paper draft | `WRITER_MODEL`, then `MODEL` |
-| `PAPER_REVIEW_MODEL` | 11 Final paper review | `REVIEW_MODEL`, then `MODEL` |
-
-Set them by clicking a stage on the flowchart or under **Settings → AI models**. **Load model list from OpenRouter** fills the model fields with suggestions from OpenRouter's public catalogue (free models by default). Comma-separated entries act as fallbacks.
-
-The inspector displays the actual model reported by OpenRouter **when that information is available**; before a request runs, it shows the configured model. With router models such as `openrouter/free` or `openrouter/auto`, a specific model is not guaranteed for every request.
-
-## Research settings
-
-Under **Topic & sources → Research settings** (or in `.env`):
-
-| Setting | Meaning |
+| Stage | What happens |
 | --- | --- |
-| `FROM_YEAR`, `TO_YEAR` | Publication-year window for the OpenAlex search (inclusive). Blank `TO_YEAR` means the current year. |
-| `WORK_TYPE` | `any`, `article`, `review`, or `article_review`. |
-| `OPEN_ACCESS_ONLY` | Only open-access works, which makes full-text PDFs easier to obtain. |
-| `MIN_CITATIONS` | Skip works with fewer citations (0 = no minimum). |
-| `CANDIDATES`, `MAX_PAPERS`, `MIN_VERIFIED` | How many works to check, keep, and require before drafting. |
-| `REVISION_ROUNDS`, `TARGET_SCORE` | Revision limit and AI review threshold. |
-| `LANGUAGE` | Free-form paper language or locale, e.g. `French`, `English (UK)`, `Portuguese (Brazil)`, `日本語`. Independent of the interface language. |
+| 1. Research plan | Propose questions, scope, and search terms for researcher approval. |
+| 2. Literature discovery | Search OpenAlex using the selected filters. |
+| 3. Metadata & PDFs | Match DOI/title metadata and locate existing PDF sources. |
+| 4. Source selection | Select articles relevant to the approved questions. |
+| 5. Evidence extraction | Retrieve available OA PDFs, process extracted text, and record source/page evidence. |
+| 6. Literature synthesis | Organize themes and gaps from the source matrix. |
+| 7. Draft writing | Write or revise the literature review. |
+| 8. Citation & claim audit | Check source IDs and assess paragraph support. |
+| 9. Critical review | Score the draft and flag methodological concerns. |
+| 10. Full paper draft | Draft title, abstract, introduction, discussion, and conclusion around the review. |
+| 11. Final paper review | Check the assembled paper and revise within the configured limit. |
+| 12. Export & review | Save research artifacts for researcher inspection and possible final release. |
 
-The filters are sent to OpenAlex and the year range is re-checked locally. Each run saves the filters it used in `2_search_settings.json`.
-
-**Usage reporting:** Token counts and costs appear only when the provider returns them. “Not reported” does not mean free. Simulated numbers in demo mode are not real usage or billing records.
+Select a workflow node to inspect its inputs, outputs, model settings, and activity.
+Revision cycles can revisit stages 7–9 and 10–11. Tokens and costs appear only when
+reported by the provider; missing values do not mean a request was free.
 
 ## Choose the paper language
 
-Under **Topic & sources → Research settings → Paper language**, pick a suggestion
-or type another language/locale. Saved custom values survive reloads and switching
-between the English/Indonesian interface. The output language is passed to research
-planning, synthesis, literature-review writing, and full-paper drafting.
+Under **Topic & sources → Research settings → Paper language**, choose a suggestion
+or type another language or locale, such as:
 
-Generated paper prose, title, keywords, and section headings follow that setting
-subject to the selected model's capabilities. Common languages have built-in
-heading labels; the model supplies labels for other languages. Word exports keep
-Unicode text and language metadata, with an Arabic paragraph-direction default.
-Actual Word rendering still depends on installed fonts and the document editor.
+- `English`, `English (UK)`, or `Indonesian`
+- `French`, `Spanish`, or `Portuguese (Brazil)`
+- `Arabic`, `日本語`, `Chinese (Traditional)`, or another language your model supports
 
-Source titles/quotes, citation IDs, and author-supplied Methods/Results are kept
-unchanged. If you want those author sections in the target language, provide them
-in that language. Discovery keywords remain separately editable and the planner
-suggests English search strings for coverage; sources need not use the writing
-language. Author notes and provisional workflow markers may remain in English.
+![Paper language and research settings](docs/screenshots/paper-language.png)
 
-Validation uses character lengths for unspaced scripts rather than treating an
-entire Chinese/Japanese paragraph as one word. Quotes and citation auditing also
-accept substantive unspaced text. `[PENDING_AUTHOR_RESULTS]` is a language-neutral
-marker used until actual results exist; it cannot appear in a released final paper.
-Demo prose is still scripted in English and does not test a model's translation.
+The writing language is separate from the **EN/ID interface switch**. Custom values
+survive reloads and UI-language changes. The setting is passed to planning,
+synthesis, literature-review writing, and full-paper drafting. Common languages
+have built-in heading labels; the drafting model can supply labels for others.
+Word exports retain Unicode text and language metadata.
 
-See [the optimization review](docs/OPTIMIZATION-REVIEW.md) for changes, validation,
-and remaining priorities.
+Source titles, quotations, citation IDs, numbers, and author-supplied Methods/Results
+remain unchanged. Provide your own sections in the target language if you want
+them to match. Discovery keywords are separately editable; the planner suggests
+English search terms for coverage. Provisional workflow annotations may remain
+English. Demo prose is scripted English, not a translation test.
 
-## Researcher controls and outputs
+Length and evidence checks account for unspaced scripts such as Chinese/Japanese.
+Language quality still depends on the selected model and human review; Word
+rendering depends on fonts and the editor.
 
-**Approve the research plan.** Edit the working title, research questions, assumptions, and search terms before proceeding. The assistant must not silently invent a study location, time period, or research population.
+## Read selected papers in full text
 
-**Read selected papers in full text.** Papermuller first uses uploaded PDFs, then
-tries up to three OpenAlex locations explicitly marked open access for each selected
-paper. It does not bypass logins or paywalls. Downloaded files must match the
-selected DOI or title in their first pages. Available extracted text is sent to
-the evidence model in page-labelled chunks, including the final chunk; validated
-chunk notes are combined into a source summary. This uses more API calls than
-abstract-only extraction. Other stages use the resulting evidence summary and
-page-grounded excerpts, not every full PDF in one prompt.
+Papermuller first uses an uploaded or cached PDF. In live mode, automatic retrieval
+then tries up to three PDF locations explicitly marked open access by OpenAlex.
+It does not bypass logins or paywalls. Automatically downloaded PDFs must match
+the selected DOI or title in their first pages; this is a heuristic identity check.
 
-Under **Topic & sources → Research settings**, automatic retrieval is enabled by
-`FETCH_FULLTEXT=true`. Enable **Require full text** (`REQUIRE_FULLTEXT=true`) to stop
-before drafting when any selected paper lacks usable PDF text. Otherwise unavailable
-sources remain explicitly **abstract only**, with a reason. In demo mode, no PDFs
-are fetched and reading is simulated. Uploaded PDFs can also be used offline.
+The evidence model receives **all available extracted PDF text in page-labelled
+chunks**, including the final chunk. Grounded notes are combined into a source
+summary. Later writing and auditing use summaries and selected source passages;
+every PDF is not sent again in every prompt. Chunked reading can use substantially
+more model calls than abstract-only processing.
 
-**Full-text access & reading** in the results shows access status, extracted text
-pages, and processed/total chunks. `4_source_manifest.json` records access and
-provenance; `4_fulltext_reading.json` records chunk coverage and grounded notes.
-Failed model calls leave the reading status **incomplete**. Downloads are cached
-in the ignored local PDF library. A PDF without an abstract is eligible if an
-uploaded PDF or an open-access PDF location exists.
+| Setting | Behavior |
+| --- | --- |
+| `FETCH_FULLTEXT=true` | Try OA PDF retrieval for selected papers; uploaded/cached PDFs take priority. |
+| `REQUIRE_FULLTEXT=false` | Allow explicit abstract-only fallback, with a reason. |
+| `REQUIRE_FULLTEXT=true` | Stop before drafting if a selected paper lacks usable full text. |
 
-PDFs are limited to 12 MB, 150 pages, and 900,000 extracted characters. Text is not
-silently truncated per page. Scanned pages, visual figures, and non-extractable
-tables require separate OCR/visual review. Full-text availability does not certify
-scientific accuracy or that extracted text includes every visual detail.
+**Draft & evidence → Full-text access & reading** shows access status, text/PDF page
+counts, and processed/total chunks. Failed model calls leave reading incomplete.
+Demo mode performs no PDF downloads and marks model reading as simulated.
 
-**Inspect the evidence ledger.** Check quotations, source identifiers, and PDF page or abstract provenance. A matching text span establishes traceability, **not necessarily that a claim is scientifically justified**.
+Limits are **12 MB, 150 pages, and 900,000 extracted characters per PDF**. Pages are
+not silently shortened. Scans, figures, and tables without extractable text need
+separate OCR or visual review. A readable file or matching quote does not prove
+that an interpretation is scientifically justified.
 
-**Prepare a working manuscript.** The AI drafts the literature review; Methods and Results must come from researcher-supplied information or remain clearly marked placeholders. Papermuller does not fabricate empirical findings.
+See [the full-text implementation guide](docs/FULLTEXT.md) for provenance,
+networking, and coverage details.
 
-**Complete human verification.** The author must read the cited sources, verify interpretations, and follow applicable disclosure and research-integrity requirements.
+## Research settings and models
 
-Files are stored locally under `projects/<timestamp>/`. Depending on the workflow, useful artifacts include:
+Research settings live under **Topic & sources → Research settings** and in `.env`.
+Each run records its search filters in `2_search_settings.json`.
 
-- `7_final_draft.md` — literature-review draft.
-- `7_final_evidence_audit.json` — evidence audit results.
-- `8_manuscript_working.md` — working manuscript.
-- `8_evidence_ledger.csv` — source-linked evidence entries, if generated.
-- `8_human_verification.json` — human-review checklist.
+| Setting | Purpose |
+| --- | --- |
+| `FROM_YEAR`, `TO_YEAR` | Inclusive publication-year window; blank end year defaults to the current year. |
+| `WORK_TYPE` | `any`, `article`, `review`, or `article_review`. |
+| `OPEN_ACCESS_ONLY`, `MIN_CITATIONS` | Open-access and citation-count filters. |
+| `CANDIDATES`, `MAX_PAPERS`, `MIN_VERIFIED` | Candidate limit, selection limit, and minimum usable sources. |
+| `REVISION_ROUNDS`, `TARGET_SCORE` | Revision limit and AI review threshold. |
+| `LANGUAGE` | Paper language or locale, independent of the interface language. |
+| `FETCH_FULLTEXT`, `REQUIRE_FULLTEXT` | Automatic PDF retrieval and strict full-text requirement. |
 
-## Editorial checks and portable research files
+Set models under **Settings → AI models** or by selecting an AI stage in the
+workflow. Comma-separated model IDs provide fallbacks. Blank stage settings inherit
+from the following chain:
 
-After a run, **Draft & evidence → Editorial checks** shows local writing suggestions,
-heading gaps, unknown citation IDs, missing author sections, and approximate prose
-statistics. Each finding names the checked Markdown file and its line number.
-The checker never rewrites text and is not an AI detector or scientific review.
+| Setting | Stage | Fallback |
+| --- | --- | --- |
+| `PLAN_MODEL` | Research plan | `MODEL` |
+| `SCREEN_MODEL` | Source selection | `MODEL` |
+| `EVIDENCE_MODEL` | Evidence extraction | `MODEL` |
+| `OUTLINE_MODEL` | Literature synthesis | `WRITER_MODEL`, then `MODEL` |
+| `WRITER_MODEL` | Draft writing | `MODEL` |
+| `VERIFIER_MODEL` | Citation & claim audit | `MODEL` |
+| `REVIEW_MODEL` | Critical review | `MODEL` |
+| `REDTEAM_MODEL` | Challenge pass | `REVIEW_MODEL`, then `MODEL` |
+| `PAPER_MODEL` | Full paper draft | `WRITER_MODEL`, then `MODEL` |
+| `PAPER_REVIEW_MODEL` | Final paper review | `REVIEW_MODEL`, then `MODEL` |
 
-Download `9_editorial_report.json` for the complete report and `9_references.bib`
-for BibTeX metadata keyed by source IDs such as `P1`. Author displays may be
-incomplete; check the records before using them in a submission.
-**Download research bundle (ZIP)** packages the current numbered research outputs,
-including available Markdown, Word, evidence files, and BibTeX. It excludes API
-settings, logs, original PDFs, and symlinks. The archive reflects the current
-run's review/release status; it does not certify that the manuscript is complete.
+**Load model list from OpenRouter** provides catalogue suggestions. Configured and
+provider-reported model names are shown separately when available. Separate passes
+can use the same model and are not independent scientific validation.
 
-These additions adopt document-checking and packaging ideas from
-[MenulisCep4t](https://github.com/FRCHN-GSTN/MenulisCep4t) using an original Python
-implementation. See [the comparison and adoption review](docs/MENULISCEPAT-ADOPTION.md)
-for source snapshots, implementation scope, and remaining issues.
+## Outputs and final release
 
-## Development and tests
+Runs save files in `projects/<timestamp>/`. Uploaded/downloaded PDFs and extracted
+text are cached in `library/`. Available outputs depend on how far the run completes.
 
-Install the test dependencies and run the unit tests:
+| File | Contents |
+| --- | --- |
+| `4_literature_matrix.csv` | Extracted methods, findings, limitations, and source quotes. |
+| `4_source_manifest.json` | Source access, identity/provenance, page counts, and reading status. |
+| `4_fulltext_reading.json` | Per-chunk coverage and grounded notes. |
+| `7_final_draft.md` | Selected literature-review draft and references; inspect its provisional status. |
+| `7_final_evidence_audit.json` | Paragraph-level literature-review audit. |
+| `8_manuscript_working.md` | Working manuscript scaffold. |
+| `8_evidence_ledger.csv` | Traceable evidence entries, when generated. |
+| `8_human_verification.json` | Saved researcher checklist. |
+| `9_paper_draft.md` / `.docx` | Assembled paper with a draft/review banner. |
+| `9_paper_review.json` | Review scores, deterministic checks, and completion status. |
+| `9_paper_final.md` / `.docx` | Final export, created only after release requirements pass. |
+| `9_editorial_report.json` | Local editorial findings with file and line references. |
+| `9_references.bib` | Metadata-only BibTeX export using P-number source keys. |
 
-```bash
+To release a final paper, both author Methods/Results must be filled, the AI and
+literature-review gates must pass, and the saved checklist must cover every required
+source and global review item. Completion placeholders block release. Earlier saved
+runs without the new completion metadata may need regeneration. “Final” records the
+app's release conditions, not journal acceptance or independent verification.
+
+**Editorial checks** flag selected writing patterns, heading gaps, unknown citation
+IDs, and incomplete sections. They suggest changes without rewriting your text and
+are not an AI-authorship detector. BibTeX author display strings may be incomplete;
+verify publication details before submission.
+
+**Download research bundle (ZIP)** packages current numbered Markdown, Word, CSV,
+JSON, and BibTeX outputs. It excludes `.env`, logs, original PDFs, and symlinks.
+The archive retains the run's draft/release state.
+
+## Updates and troubleshooting
+
+For a Git checkout without unfinished local changes:
+
+```sh
+git pull --ff-only origin main
+```
+
+Then rerun setup to refresh packages. A folder extracted from GitHub's ZIP cannot
+be updated with `git pull`: extract a new ZIP and carefully transfer your `.env`,
+`projects/`, and `library/`. Keep the old folder until the transfer is verified.
+Create a new `.venv` rather than copying one between folders or operating systems.
+
+On Windows, if setup reports missing `pip` metadata, close the app and rename the
+virtual environment before rerunning setup:
+
+```powershell
+Rename-Item -Path ".venv" -NewName (".venv-backup-" + (Get-Date -Format "yyyyMMdd-HHmmss"))
+.\Setup.bat
+```
+
+This preserves the old environment as a backup and leaves settings/research files
+in place. Run commands from the project folder, not `C:\Windows\System32`.
+
+Live use needs HTTPS access to `openrouter.ai`, `api.openalex.org`,
+`api.crossref.org`, and the selected PDF hosts/redirect destinations. Restricted
+networks may need those hosts allowed. Literature-service authorization, quota,
+and connection failures are reported as unavailable lookups, not missing papers.
+
+## Development and validation
+
+Install test dependencies into the virtual environment and run:
+
+```sh
 python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
-The tests cover evidence checks, PDF import, local endpoints, model routing, and pipeline telemetry. **Live integration with OpenRouter, OpenAlex, and Crossref must still be tested using your own credentials.**
+Use `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows if
+the virtual environment is not activated.
 
-The project currently uses a lightweight Python backend (`app.py`, `harness.py`, `stages.py`, `llm.py`, and related modules) with a local HTML interface.
+The latest implementation checks passed **68 Python tests**, plus Chromium checks
+for the demo, custom-language persistence, full-text status, and incomplete-paper
+release prevention. A real five-page PLOS PDF was fetched and extracted in the
+full-text validation. Provider calls are mocked in the regression suite; live
+multilingual model quality and native Windows launcher execution remain unverified.
 
-## Limitations and responsible use
+The app uses Python's standard-library HTTP server with a local HTML/JavaScript
+interface. Runtime dependencies are pypdf, python-docx, and fontTools. Extracted PDF
+text has a bounded revision-aware cache, and the results API sends reading counters
+rather than all chunk notes; complete notes remain downloadable.
 
-- Full-text extraction processes all available PDF text in chunks. Later drafting and auditing use summaries and selected page-grounded excerpts; figures and scanned content still need human review.
-- OCR for scanned/image-only PDFs is **not yet included**.
-- Matching DOI metadata or locating a quotation does **not** guarantee that an interpretation is correct.
-- Literature selection may omit important studies, and AI review scores do **not** guarantee publishable academic quality.
-- Empirical study design, data collection, analysis, methods, and results remain the researcher's responsibility.
-- Real-model pricing, quotas, and availability depend on the provider. Check them before live use.
-- The interface is available in **English and Indonesian** (switch with EN/ID in the top bar; the choice is remembered in your browser). Run-log lines and server error messages are still English. Draft output language is configured separately. `i18n.py` is retained for future localization of the command-line harness.
+## Current limits
+
+- Search coverage is capped and Crossref does not cover every DOI registration agency.
+- OCR, visual understanding, and a full Markdown/Word typesetting engine are not included.
+- Active run state is process-local; saved folders cannot yet be reopened/resumed through the UI after a restart.
+- There is no enforced run-cost budget. Long PDFs and revision cycles can multiply API calls.
+- Full-paper claim support still needs researcher review beyond valid citation IDs and model scores.
+- `.env` contains plaintext local credentials. Keep it, source PDFs, and research data out of public commits.
+
+## Documentation and credits
+
+- [Laptop setup and updates](docs/LOCAL-LAPTOP.md)
+- [Full-text access and coverage](docs/FULLTEXT.md)
+- [Optimization review and remaining priorities](docs/OPTIMIZATION-REVIEW.md)
+- [MenulisCep4t comparison and adoption](docs/MENULISCEPAT-ADOPTION.md)
+- [Changelog](CHANGELOG.md)
+
+Document inspection and packaging ideas were informed by
+[MenulisCep4t](https://github.com/FRCHN-GSTN/MenulisCep4t); Papermuller's integration
+uses an original Python implementation. The comparison document records the
+reviewed sources and scope.
 
 ## License
 
-See [LICENSE](LICENSE) for the repository's license.
-
----
-
-**Papermuller's guiding principle:** make AI-assisted research easier to inspect and audit—not harder to question.
-
-### Network access for full text
-
-Live use needs HTTPS access to `api.openalex.org`, `api.crossref.org`,
-`openrouter.ai`, and the actual open-access PDF hosts and their redirect
-destinations. For example, PLOS uses `journals.plos.org`. Restricted cloud
-allowlists must include each needed host. Unknown PDF hosts fail closed when
-public DNS cannot be checked; managed proxy-side DNS is supported only for a
-small explicit set of public publishing services (see `fulltext.py`). Keep TLS
-verification enabled. Server error pages and inaccessible PDFs are reported as
-abstract-only access failures, not as successfully read full text.
+[MIT](LICENSE).
