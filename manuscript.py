@@ -1,9 +1,11 @@
 """A manuscript scaffold that does not invent methods, observations or results."""
 import json
+import writing
 from datetime import datetime, timezone
 
 
-def compile_manuscript(plan, draft, matrix, audit):
+def compile_manuscript(plan, draft, matrix, audit, language="English"):
+    heading = writing.labels(language)
     author_methods = (plan.get('author_methods') or '').strip()
     author_results = (plan.get('author_results') or '').strip()
     questions = '\n'.join(f'- {q}' for q in plan['research_questions'])
@@ -17,11 +19,11 @@ def compile_manuscript(plan, draft, matrix, audit):
 > **WORKING MANUSCRIPT — REQUIRES AUTHOR REVIEW AND COMPLETION.** Literature review: {status}.
 > Sections without supporting data are left unfilled. Author-supplied methods and results have not been audited by AI or independently validated.
 
-## Abstract
+## {heading['abstract']}
 
 > **[AUTHOR TO COMPLETE AFTER ANALYSIS]** Objectives, methods, key findings, implications, and limitations.
 
-## 1. Introduction
+## 1. {heading['introduction']}
 
 **Topic:** {plan['original_topic'] or plan['title']}
 
@@ -33,27 +35,27 @@ def compile_manuscript(plan, draft, matrix, audit):
 
 > **[AUTHOR TO WRITE]** Background, motivation, contribution, and significance, supported by checked references.
 
-## 2. Literature Review
+## 2. {heading['literature_review']}
 
 {draft}
 
-## 3. Methods
+## 3. {heading['methods']}
 
 {methods}
 
-## 4. Results
+## 4. {heading['results']}
 
 {results}
 
-## 5. Discussion
+## 5. {heading['discussion']}
 
 > **[AUTHOR TO WRITE]** Interpret actual findings, compare them with checked sources, and assess claims and uncertainty. Do not invent results.
 
-## 6. Conclusion
+## 6. {heading['conclusion']}
 
 > **[AUTHOR TO WRITE]** Conclusions based on actual results, limitations, and directions for further research.
 
-## References
+## {heading['references']}
 
 '''
     for r in matrix:

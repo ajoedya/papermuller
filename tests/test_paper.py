@@ -8,6 +8,7 @@ from unittest.mock import patch
 import llm
 import paper
 import stages
+import manuscript
 
 CONFIG = {'DEMO_MODE': True, 'MAX_PAPERS': 12, 'MIN_VERIFIED': 5, 'REVISION_ROUNDS': 3,
           'TARGET_SCORE': 8, 'LANGUAGE': 'English', 'CANDIDATES': 30}
@@ -65,7 +66,22 @@ class PaperTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             folder = Path(name)
             plan = stages.stage_plan('road infrastructure governance', CONFIG, folder)
+            plan.update(author_methods='We used panel data.', author_results='The estimated coefficient is 0.4.')
             stages.run_research(plan, CONFIG, folder, say=lambda _x: None)
+            self.assertFalse(paper.release_final(folder, say=lambda _x: None))
+            record = json.loads((folder/'8_human_verification.json').read_text())
+            for flags in record['papers'].values():
+                for key in flags:
+                    flags[key] = True
+            for key in record['checks']:
+                record['checks'][key] = True
+            removed = record['papers'].pop(next(iter(record['papers'])))
+            (folder/'8_human_verification.json').write_text(json.dumps(record))
+            self.assertFalse(paper.release_final(folder, say=lambda _x: None))
+            saved = json.loads((folder/'9_paper_sections.json').read_text())
+            missing = set(saved['required_source_ids']) - set(record['papers'])
+            record['papers'][missing.pop()] = removed
+            (folder/'8_human_verification.json').write_text(json.dumps(record))
             self.assertTrue(paper.release_final(folder, say=lambda _x: None))
             final = (folder / '9_paper_final.md').read_text(encoding='utf-8')
             self.assertNotIn('DRAFT —', final)

@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 import stages
+import writing
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +59,7 @@ def parse_settings(raw):
         "DEMO_MODE": str(raw.get("DEMO_MODE", "true")).lower() == "true",
         "OPENROUTER_API_KEY": raw.get("OPENROUTER_API_KEY", ""),
         "MODEL": raw.get("MODEL", "") or "openrouter/free",
-        "LANGUAGE": raw.get("LANGUAGE", "English") or "English",
+        "LANGUAGE": writing.validate_language(raw.get("LANGUAGE", "English")),
         # Publication window and document filters for the literature search
         "FROM_YEAR": from_year,
         "TO_YEAR": to_year,

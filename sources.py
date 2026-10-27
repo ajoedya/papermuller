@@ -4,9 +4,11 @@ No shadow downloads or paywall bypassing. User-supplied PDFs remain local except
 text chunks included in prompts sent to the configured model provider.
 """
 import hashlib
+from functools import lru_cache
 import io
 import json
 import re
+import writing
 from pathlib import Path
 
 from quality import normalize_doi, normalize_text, quote_is_in_abstract
@@ -89,6 +91,17 @@ def import_pdf(folder, doi, filename, content, *, expected_paper=None, source_ur
     return {'doi': doi, **index[doi]}
 
 
+@lru_cache(maxsize=16)
+def _cached_pages(filename, modified_ns, size):
+    """Bounded cache keyed by file revision; unchanged PDFs are not reparsed each round."""
+    return json.loads(Path(filename).read_text(encoding='utf-8'))
+
+
+def _read_pages(path):
+    stat = path.stat()
+    return _cached_pages(str(path.resolve()), stat.st_mtime_ns, stat.st_size)
+
+
 def source_for_paper(paper, settings=None):
     """Always return a source object; known PDF DOI takes precedence over abstract."""
     doi = normalize_doi(paper.get('doi', ''))
@@ -98,7 +111,7 @@ def source_for_paper(paper, settings=None):
         path = folder / (item['sha256'] + '.json')
         if path.is_file():
             return {'id': paper['id'], 'source_type': 'full_text_pdf', 'doi': doi,
-                    'sha256': item['sha256'], 'pages': json.loads(path.read_text(encoding='utf-8')),
+                    'sha256': item['sha256'], 'pages': _read_pages(path),
                     'origin': item.get('origin', 'uploaded'), 'source_url': item.get('source_url', '')}
     return {'id': paper['id'], 'source_type': 'abstract_only', 'doi': doi,
             'sha256': '', 'pages': [{'page': 0, 'text': paper.get('abstract', '')}]}
@@ -116,8 +129,7 @@ def quote_location(source, quote, requested_page=None):
 
 def relevant_snippets(source, plan, limit=4):
     """Select limited page-grounded text to manage token costs, not entire PDF."""
-    terms = set(re.findall(r'\w{4,}', normalize_text(
-        plan.get('title', '') + ' ' + ' '.join(plan.get('research_questions', [])))))
+    terms = writing.search_terms(plan.get('title', '') + ' ' + ' '.join(plan.get('research_questions', [])))
     candidates = []
     for item in source['pages']:
         page = item['page']
@@ -128,7 +140,7 @@ def relevant_snippets(source, plan, limit=4):
             chunk = text[start:start + 1700]
             if len(chunk) < 80:
                 continue
-            hits = set(re.findall(r'\w{4,}', normalize_text(chunk))) & terms
+            hits = writing.search_terms(chunk) & terms
             candidates.append((len(hits), -start, -page, page, chunk))
     candidates.sort(reverse=True)
     selected = []

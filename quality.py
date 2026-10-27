@@ -5,6 +5,8 @@ The complementary AI-assisted assessment lives in stages.py, with explicit
 provisional status when this human-review step cannot be passed.
 """
 import re
+
+from writing import length_measure
 import unicodedata
 from difflib import SequenceMatcher
 
@@ -26,7 +28,9 @@ def normalize_text(text):
 def quote_is_in_abstract(quote, abstract):
     """Require a substantial, contiguous, verbatim passage (whitespace-insensitive)."""
     q = normalize_text(quote)
-    return len(q) >= 25 and len(q.split()) >= 5 and q in normalize_text(abstract)
+    count, unit = length_measure(q)
+    substantial = count >= 20 if unit == 'characters' else len(q) >= 25 and count >= 5
+    return substantial and q in normalize_text(abstract)
 
 
 def title_similarity(expected, actual):
@@ -57,7 +61,8 @@ def prose_paragraphs(draft):
                 continue
             lines.append(line.strip())
         text = " ".join(lines).strip()
-        if text and len(re.sub(r"\[[^]]+\]", "", text).split()) >= 8:
+        count, unit = length_measure(text)
+        if text and count >= (20 if unit == "characters" else 8):
             paragraphs.append({"number": len(paragraphs) + 1, "text": text})
     return paragraphs
 

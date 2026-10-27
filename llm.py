@@ -113,7 +113,7 @@ def _send(body, settings, stage="general"):
             data = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         detail = error.read().decode("utf-8", errors="ignore")
-        if error.code in (404, 429, 500, 502, 503):
+        if error.code in (429, 500, 502, 503, 504):
             try:  # pull out OpenRouter's own explanation so you can see the real cause
                 err = json.loads(detail)["error"]
                 reason = err["message"]
@@ -129,11 +129,19 @@ def _send(body, settings, stage="general"):
         }
         raise SystemExit(f"\n[AI ERROR {error.code}] {hints.get(error.code, detail)}\n")
 
-    if "choices" not in data:  # some providers return an error inside a normal reply
-        raise _Retry(f"Provider error: {str(data.get('error', data))[:150]}.")
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeDecodeError):
+        raise _Retry('Model connection failed or returned invalid JSON.') from None
+
+    if not isinstance(data, dict):
+        raise _Retry('Provider returned an invalid response object.')
+    choices = data.get('choices')
+    message = choices[0].get('message') if isinstance(choices, list) and choices and isinstance(choices[0], dict) else None
+    content = message.get('content') if isinstance(message, dict) else None
+    if not isinstance(content, str) or not content.strip():
+        raise _Retry('Provider returned no usable text. Try another model or inspect provider availability.')
     _report({"stage": stage, "model": str(data.get("model") or body["model"]),
-             "simulated": False, "usage": data.get("usage") or {}})
-    return data["choices"][0]["message"]["content"]
+             "simulated": False, "usage": data.get("usage") if isinstance(data.get("usage"), dict) else {}})
+    return content
 
 
 MODELS_URL = "https://openrouter.ai/api/v1/models"

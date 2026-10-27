@@ -1,5 +1,18 @@
 # Changelog
 
+## Paper languages and reliability optimizations
+
+- Free-form paper language/locale with persistent custom values, independent of
+  interface language. Localized headings and Word language metadata; script-aware
+  abstract length, citation/quote checks, and page retrieval for unspaced scripts.
+- Require actual author Methods/Results and the full saved source checklist before
+  releasing a final paper. Keep source quotations and author text unchanged.
+- Separate failed literature lookups from genuine 404s, with bounded transient
+  retries. Validate model response text before use; do not retry unknown models.
+- Reuse unchanged extracted PDF text through a bounded revision-aware cache and
+  send only full-text reading counters, not large chunk notes, to the results UI.
+
+
 ## Full-text reading, editorial outputs, and Windows setup
 
 - Retrieve available open-access PDFs for selected papers, with uploaded/cached

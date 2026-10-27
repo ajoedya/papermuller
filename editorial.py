@@ -10,6 +10,7 @@ import zipfile
 from pathlib import Path
 
 from quality import paragraph_ids
+import writing
 
 RULES = [
     ('generic-opening', r'\bin (?:today[’\x27]s|the modern|the digital) (?:world|era|landscape)\b',
@@ -27,29 +28,30 @@ RULES = [
 ]
 
 
-def prose(text, protect_quotes=True):
+def prose(text, protect_quotes=True, reference_labels=()):
     """Mask protected material without moving source line numbers."""
     blank = lambda m: re.sub(r'[^\n]', ' ', m.group())
     text = re.sub(r'^(`{3,}|~{3,})[^\n]*\n.*?^\1[^\n]*(?:\n|$)', blank, text, flags=re.M | re.S)
     text = re.sub(r'`[^`\n]+`|<!--.*?-->|https?://[^\s<>]+', blank, text, flags=re.S)
     if protect_quotes:
         text = re.sub(r'^\s*>.*$', blank, text, flags=re.M)
-    text = re.sub(r'^#{1,6}\s+(?:\d+\.?\s+)?(?:references|bibliography|daftar pustaka)\s*$.*',
+    text = re.sub(r'^#{1,6}\s+(?:\d+\.?\s+)?(?:' + '|'.join(re.escape(value) for value in {labels[-1] for labels in writing.LABELS.values()} | set(reference_labels)) + r'|bibliography)\s*$.*',
                   blank, text, flags=re.M | re.S | re.I)
     return re.sub(r'"[^"\n]*"|“[^”\n]*”', blank, text) if protect_quotes else text
 
 
-def inspect_manuscript(text, matrix, filename='manuscript.md', language='English'):
-    clean = prose(text)
-    structural = prose(text, protect_quotes=False)
+def inspect_manuscript(text, matrix, filename='manuscript.md', language='English', section_labels=None):
+    references = (writing.labels(language, section_labels)['references'],)
+    clean = prose(text, reference_labels=references)
+    structural = prose(text, protect_quotes=False, reference_labels=references)
     findings = []
     def add(rule, start, excerpt, suggestion, category='style'):
         findings.append(dict(rule=rule, category=category, line=text.count('\n', 0, start) + 1,
                              excerpt=excerpt[:180], suggestion=suggestion))
     for rule, pattern, suggestion in RULES:
-        if rule.endswith('-id') and language != 'Indonesian':
+        if rule.endswith('-id') and writing.family(language) != 'id':
             continue
-        if rule in {'generic-opening', 'inflated-language'} and language == 'Indonesian':
+        if rule in {'generic-opening', 'inflated-language'} and writing.family(language) != 'en':
             continue
         for match in re.finditer(pattern, clean, re.I):
             add(rule, match.start(), match.group(), suggestion)
@@ -67,9 +69,10 @@ def inspect_manuscript(text, matrix, filename='manuscript.md', language='English
             add('unknown-citation', match.start(), match.group(),
                 'Check unknown source IDs: ' + ', '.join(sorted(unknown)), 'citation')
     findings.sort(key=lambda item: (item['line'], item['rule']))
+    length, unit = writing.length_measure(clean)
     return dict(filename=filename, language=language,
                 note='Review suggestions only. These checks do not identify AI authorship or verify scientific accuracy. No text was changed.',
-                stats=dict(words=len(re.findall(r'\b[\w’\x27-]+\b', clean)), headings=len(headings),
+                stats=dict(words=length if unit == 'words' else 0, prose_length=length, length_unit=unit, headings=len(headings),
                            cited_sources=len(used & allowed), available_sources=len(allowed)),
                 uncited_sources=sorted(allowed - used), findings=findings)
 
@@ -99,7 +102,9 @@ def save_outputs(folder, matrix, language='English'):
     target = next((folder / name for name in ('9_paper_final.md', '9_paper_draft.md', '7_final_draft.md')
                    if (folder / name).is_file()), None)
     if target:
-        report = inspect_manuscript(target.read_text(encoding='utf-8'), matrix, target.name, language)
+        sections_file = folder / '9_paper_sections.json'
+        saved = json.loads(sections_file.read_text(encoding='utf-8')).get('sections', {}) if sections_file.exists() else {}
+        report = inspect_manuscript(target.read_text(encoding='utf-8'), matrix, target.name, language, saved.get('section_labels'))
         (folder / '9_editorial_report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     (folder / '9_references.bib').write_text(bibtex(matrix), encoding='utf-8')
 

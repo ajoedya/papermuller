@@ -131,9 +131,15 @@ def fake_llm_answer(stage, prompt):
             "regions, while the returns to public investment are weaker where oversight is poor and "
             "project costs overrun. Evidence on fiscal transfers points in the same direction, and the "
             "measurement of subnational governance remains contested. " + invented +
+            "Fiscal transfers and local capacity offer an additional perspective on service delivery, while "
+            "project audits connect oversight to cost overruns. These themes motivate closer attention to "
+            "how governance indicators are chosen and interpreted. "
             "The study is designed to test whether governance quality conditions the association between "
             "road investment and poverty at district level, a relationship that few studies have examined "
             "directly. Results: [pending author analysis]")
+        supplied = re.search(r'^AUTHOR TEXT - Results: (.*)$', prompt, re.M)
+        if supplied and supplied[1] != '(not supplied)':
+            abstract = abstract.replace('Results: [pending author analysis]', 'Author-supplied findings are presented in the Results section.')
         return json.dumps({
             "title": "Road Infrastructure, Governance Quality and Poverty Outcomes: A Review and Research Design",
             "abstract": abstract,

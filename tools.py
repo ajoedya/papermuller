@@ -12,6 +12,9 @@ In DEMO mode, they return sample data instead of going online.
 """
 
 import json
+import math
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 from quality import normalize_doi, title_similarity
 import time
@@ -20,26 +23,48 @@ import urllib.request
 import urllib.error
 
 
+class LiteratureServiceError(RuntimeError):
+    """A lookup failed; this is not evidence that a DOI or paper does not exist."""
+    def __init__(self, service, status=None, reason='unavailable'):
+        self.service, self.status, self.reason = service, status, reason
+        detail = f'HTTP {status}' if status else reason
+        super().__init__(f'{service}: {detail}. The lookup is unavailable; source existence was not determined.')
+
+
 def _get_json(url):
-    """Download a web address and read it as JSON. Returns None on failure."""
-    request = urllib.request.Request(url, headers={"User-Agent": "riset-harness/1.0"})
-    try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        hints = {401: "API key rejected", 403: "access refused (API key may be required)",
-                 404: "not found", 429: "daily limit reached or too many requests"}
-        print(f"   ! Server said {error.code}: {hints.get(error.code, error.reason)}")
-        detail = error.read().decode("utf-8", errors="ignore").strip()
-        if detail:
-            print(f"     details: {detail[:200]}")  # the server's own explanation
-        return None
-    except urllib.error.URLError as error:
-        print(f"   ! Could not connect: {error.reason}")  # e.g. no internet, firewall, SSL problem
-        return None
-    except (TimeoutError, json.JSONDecodeError) as error:
-        print(f"   ! Bad or slow answer: {error}")
-        return None
+    """Only a genuine 404 returns None; transient failures get bounded retries."""
+    service = urllib.parse.urlsplit(url).hostname or 'Literature service'
+    for attempt in range(3):
+        request = urllib.request.Request(url, headers={"User-Agent": "Papermuller/1.0"})
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                payload = json.load(response)
+            if not isinstance(payload, dict):
+                raise LiteratureServiceError(service, reason='invalid JSON response')
+            return payload
+        except urllib.error.HTTPError as error:
+            code, retry_after = error.code, error.headers.get('Retry-After', '') if error.headers else ''
+            error.close()
+            if code == 404:
+                return None
+            if code not in (429, 500, 502, 503, 504) or attempt == 2:
+                raise LiteratureServiceError(service, code) from None
+            try:
+                delay = max(0, float(retry_after)) if retry_after else 2 ** attempt
+            except ValueError:
+                try:
+                    delay = max(0, (parsedate_to_datetime(retry_after) - datetime.now(timezone.utc)).total_seconds())
+                except (TypeError, ValueError, OverflowError):
+                    delay = 2 ** attempt
+            if not math.isfinite(delay) or delay > 5:
+                raise LiteratureServiceError(service, code, 'retry later') from None
+        except (urllib.error.URLError, TimeoutError, OSError):
+            if attempt == 2:
+                raise LiteratureServiceError(service, reason='connection failed') from None
+            delay = 2 ** attempt
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            raise LiteratureServiceError(service, reason='invalid JSON response') from None
+        time.sleep(delay)
 
 
 def _rebuild_abstract(inverted_index):

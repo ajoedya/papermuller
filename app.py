@@ -315,12 +315,15 @@ def run_checks():
         results.append({"name": "AI model (OpenRouter)", "ok": True, "note": f"Response: {reply.strip()[:40]}"})
     except SystemExit as stop:
         results.append({"name": "AI model (OpenRouter)", "ok": False, "note": str(stop).strip()})
-    found = tools.search_papers("public policy", settings, how_many=2)
-    results.append({"name": "Literature search (OpenAlex)", "ok": bool(found),
-                    "note": f"{len(found)} articles found" if found else "No results received. Check the service connection and OpenAlex credentials."})
-    if found:
-        ok, note = tools.verify_doi(found[0]["doi"], found[0]["title"], settings)
-        results.append({"name": "Metadata check (Crossref)", "ok": ok, "note": note})
+    try:
+        found = tools.search_papers("public policy", settings, how_many=2)
+        results.append({"name": "Literature search (OpenAlex)", "ok": bool(found),
+                        "note": f"{len(found)} articles found" if found else "No results received. Check the service connection and OpenAlex credentials."})
+        if found:
+            ok, note = tools.verify_doi(found[0]["doi"], found[0]["title"], settings)
+            results.append({"name": "Metadata check (Crossref)", "ok": ok, "note": note})
+    except tools.LiteratureServiceError as error:
+        results.append({'name': error.service, 'ok': False, 'note': str(error)})
     set_state()
     return results
 
@@ -345,7 +348,8 @@ def read_results():
     paper_file = folder / '9_paper_review.json'
     return {
         "source_access": json.loads((folder / "4_source_manifest.json").read_text(encoding="utf-8")) if (folder / "4_source_manifest.json").exists() else [],
-        "fulltext_reading": json.loads((folder / "4_fulltext_reading.json").read_text(encoding="utf-8")) if (folder / "4_fulltext_reading.json").exists() else [],
+        "fulltext_reading": [{k: item[k] for k in ('id', 'total_chunks', 'processed_chunks', 'text_pages', 'total_pages', 'status', 'simulated') if k in item}
+                             for item in json.loads((folder / "4_fulltext_reading.json").read_text(encoding="utf-8"))] if (folder / "4_fulltext_reading.json").exists() else [],
         "editorial": json.loads((folder / "9_editorial_report.json").read_text(encoding="utf-8")) if (folder / "9_editorial_report.json").exists() else None,
         "paper_review": json.loads(paper_file.read_text(encoding='utf-8')) if paper_file.exists() else None,
         "verification": verification,

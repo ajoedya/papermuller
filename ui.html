@@ -300,7 +300,9 @@ th { background: var(--panel-2); position: sticky; top: 0; }
       <div><label for="rounds"><span data-i18n="rounds">Revision rounds</span><small>0–10</small></label><input type="number" id="rounds" min="0" max="10"></div>
       <div><label for="target"><span data-i18n="target">AI review threshold</span><small data-i18n="targetHint">Not a measure of accuracy.</small></label><input type="number" id="target" min="1" max="10" step="0.5"></div>
       <div><label for="language" data-i18n="draftLang">Draft language</label>
-        <select id="language"><option value="English">English</option><option value="Indonesian">Indonesian</option></select></div>
+        <input type="text" id="language" list="paperLanguages" maxlength="80" placeholder="e.g. English (UK), Indonesian, French, Japanese">
+        <datalist id="paperLanguages"><option value="English"></option><option value="English (UK)"></option><option value="Indonesian"></option><option value="French"></option><option value="Spanish"></option><option value="German"></option><option value="Portuguese (Brazil)"></option><option value="Arabic"></option><option value="Japanese"></option><option value="Chinese"></option><option value="Korean"></option></datalist>
+        <small data-i18n="paperLanguageHint">Choose a suggestion or type another language or locale. This changes the paper, not the interface. Source quotes and author-supplied text remain unchanged. Model language support varies. Demo prose is scripted in English.</small></div>
     </div>
     <div class="actions"><button class="btn" id="saveResearch" data-i18n="saveResearch">Save research settings</button></div>
     <div id="researchMsg"></div>
@@ -308,7 +310,7 @@ th { background: var(--panel-2); position: sticky; top: 0; }
 
   <div class="card" id="pdfCard">
     <h2 data-i18n="pdfTitle">Full-text PDFs (optional)</h2>
-    <p class="hint" data-i18n="pdfHint">Add PDFs before starting. Enter the article's exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). In live mode, selected excerpts are sent to your AI provider.</p>
+    <p class="hint" data-i18n="pdfHint">Add PDFs before starting. Enter the article's exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). In live mode, all extracted PDF text is sent to your AI provider in page-labelled chunks.</p>
     <div class="grid2">
       <div><label for="paperDoi" data-i18n="doi">Article DOI</label><input type="text" id="paperDoi" placeholder="10.xxxx/identifier"></div>
       <div><label for="paperFile" data-i18n="pdfFile">PDF you have permission to use</label><input type="file" id="paperFile" accept=".pdf,application/pdf"></div>
@@ -329,7 +331,7 @@ th { background: var(--panel-2); position: sticky; top: 0; }
     <label for="keywords"><span data-i18n="terms">Search terms</span><small data-i18n="commaSep">Separate with commas.</small></label>
     <textarea id="keywords" style="min-height:64px"></textarea>
     <details class="more"><summary data-i18n="authorSecs">Author-supplied manuscript sections (optional)</summary>
-      <p class="hint" data-i18n="authorHint">Your Methods and Results are copied into the working manuscript as supplied, without verification.</p>
+      <p class="hint" data-i18n="authorHint">Your Methods and Results are copied as supplied, without translation or verification. Both sections are required for final release; drafts may leave them unfilled.</p>
       <label for="authorMethods" data-i18n="methods">Methods</label><textarea id="authorMethods" maxlength="12000"></textarea>
       <label for="authorResults" data-i18n="results">Results</label><textarea id="authorResults" maxlength="12000"></textarea>
     </details>
@@ -438,12 +440,13 @@ const T = {
     wtReview: "Review articles", wtBoth: "Articles and reviews", minCit: "Minimum citations", minCitHint: "0 = no minimum; recent papers have few citations.",
     oaOnly: "Open-access papers only (easier to get full-text PDFs)", cand: "Candidates to check", maxPapers: "Papers to keep", minVer: "Minimum usable papers",
     minVerHint: "The run stops below this.", rounds: "Revision rounds", target: "AI review threshold", targetHint: "Not a measure of accuracy.",
-    draftLang: "Draft language", saveResearch: "Save research settings",
-    pdfTitle: "Full-text PDFs (optional)", pdfHint: "Add PDFs before starting. Enter the article's exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). In live mode, selected excerpts are sent to your AI provider.",
+    paperLanguageHint: "Choose a suggestion or type another language or locale. This changes the paper, not the interface. Source quotes and author-supplied text remain unchanged. Model language support varies. Demo prose is scripted in English.",
+    draftLang: "Paper language", saveResearch: "Save research settings",
+    pdfTitle: "Full-text PDFs (optional)", pdfHint: "Add PDFs before starting. Enter the article's exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). In live mode, all extracted PDF text is sent to your AI provider in page-labelled chunks.",
     doi: "Article DOI", pdfFile: "PDF you have permission to use", importPdf: "Import PDF",
     approveTitle: "Review the plan", approveHint: "Check the title, questions, assumptions, and scope. Remove any location or time period you did not ask for.",
     wTitle: "Working title", rqs: "Research questions", onePerLine: "One per line.", scope: "Approved scope", terms: "Search terms", commaSep: "Separate with commas.",
-    authorSecs: "Author-supplied manuscript sections (optional)", authorHint: "Your Methods and Results are copied into the working manuscript as supplied, without verification.",
+    authorSecs: "Author-supplied manuscript sections (optional)", authorHint: "Your Methods and Results are copied as supplied, without translation or verification. Both sections are required for final release; drafts may leave them unfilled.",
     methods: "Methods", results: "Results", confirmScope: "I have reviewed and approved this research plan and scope.", approveBtn: "Approve and continue", redoBtn: "Regenerate plan",
     progressTitle: "Research run", toFlow: "Open the workflow", again: "Try again",
     noResults: "No results yet", noResultsHint: "Your draft and evidence appear here when the run finishes.", startResearch: "Start research",
@@ -452,12 +455,14 @@ const T = {
     accessTitle: "Full-text access & reading", accessHint: "Full text means extracted PDF text, not visual inspection of figures or scanned pages. The report shows what reached the model; it does not certify comprehension.",
     accessSource: "Source", accessStatus: "Access / reading", accessPages: "Text pages / PDF pages", accessChunks: "Chunks processed", accessReason: "Details", accessDemo: "Demo simulation", accessAbstract: "Abstract only", accessFull: "Full text processed", accessPending: "Not completed", accessUploaded: "Uploaded / cached PDF", accessDownload: "Open-access PDF",
     editorialTitle: "Editorial checks", editorialHint: "Local suggestions with source line numbers. Quotes, numbers, citations, and author text are never rewritten. This is not an AI detector or a scientific review.",
+    editorialStatsChars: "{words} prose characters · {headings} headings · {cited}/{available} sources cited",
     editorialStats: "{words} prose words · {headings} headings · {cited}/{available} sources cited",
     editorialSource: "Checked file: {file}. Line numbers refer to this Markdown file.",
     editorialClear: "No issues matched the local checks. This does not establish publication readiness.",
     editorialLine: "Line {n}", editorialMore: "Showing the first 50 findings; download the JSON report for the complete list.",
     researchBundle: "Download research bundle (ZIP)",
     paperTitle: "Full paper", paperGate: "Final AI review gate",
+    paperIncomplete: "AI review finished, but author Methods/Results are incomplete. Supply the actual sections and run again before releasing a final paper.",
     paperPassed: "Passed the AI review gate. Complete and save the researcher checklist below to release the final version.",
     paperFailed: "Did not pass the AI review gate. The draft is stamped and cannot be released; see the fixes below.",
     paperReleased: "Released: the final version passed the AI review gate and your checklist.",
@@ -521,7 +526,7 @@ const T = {
     oaOnly: "Hanya paper akses terbuka (lebih mudah mendapat PDF lengkap)", cand: "Kandidat yang diperiksa", maxPapers: "Paper yang dipertahankan", minVer: "Paper layak minimum",
     minVerHint: "Proses berhenti jika di bawah angka ini.", rounds: "Putaran revisi", target: "Ambang skor reviu AI", targetHint: "Bukan ukuran ketepatan ilmiah.",
     draftLang: "Bahasa draf", saveResearch: "Simpan pengaturan riset",
-    pdfTitle: "PDF teks lengkap (opsional)", pdfHint: "Tambahkan PDF sebelum mulai. Masukkan DOI artikel yang tepat. PDF harus memiliki lapisan teks (maks. 12 MB dan 150 halaman). Pada mode langsung, kutipan terpilih dikirim ke penyedia AI Anda.",
+    pdfTitle: "PDF teks lengkap (opsional)", pdfHint: "Tambahkan PDF sebelum mulai. Masukkan DOI artikel yang tepat. PDF harus memiliki lapisan teks (maks. 12 MB dan 150 halaman). Pada mode langsung, seluruh teks PDF yang diekstrak dikirim ke penyedia AI per bagian berlabel halaman.",
     doi: "DOI artikel", pdfFile: "PDF yang boleh Anda gunakan", importPdf: "Impor PDF",
     approveTitle: "Periksa rencana", approveHint: "Periksa judul, pertanyaan, asumsi, dan cakupan. Hapus lokasi atau periode yang tidak Anda minta.",
     wTitle: "Judul sementara", rqs: "Pertanyaan riset", onePerLine: "Satu pertanyaan per baris.", scope: "Cakupan yang disetujui", terms: "Kata kunci pencarian", commaSep: "Pisahkan dengan koma.",
@@ -534,12 +539,15 @@ const T = {
     accessTitle: "Akses & pembacaan full text", accessHint: "Full text berarti teks hasil ekstraksi PDF, bukan pemeriksaan visual gambar atau halaman pindai. Laporan menunjukkan bagian yang dikirim ke model, bukan menjamin pemahaman.",
     accessSource: "Sumber", accessStatus: "Akses / pembacaan", accessPages: "Halaman teks / PDF", accessChunks: "Bagian diproses", accessReason: "Rincian", accessDemo: "Simulasi demo", accessAbstract: "Hanya abstrak", accessFull: "Full text diproses", accessPending: "Belum selesai", accessUploaded: "PDF unggahan / cache", accessDownload: "PDF open access",
     editorialTitle: "Pemeriksaan editorial", editorialHint: "Saran lokal disertai nomor baris. Kutipan, angka, sitasi, dan teks penulis tidak ditulis ulang. Ini bukan detektor AI atau telaah ilmiah.",
+    editorialStatsChars: "{words} karakter prosa · {headings} judul · {cited}/{available} sumber disitasi",
     editorialStats: "{words} kata prosa · {headings} judul · {cited}/{available} sumber disitasi",
     editorialSource: "Berkas diperiksa: {file}. Nomor baris merujuk ke berkas Markdown ini.",
     editorialClear: "Tidak ada masalah yang cocok dengan pemeriksaan lokal. Ini tidak menjamin kesiapan publikasi.",
     editorialLine: "Baris {n}", editorialMore: "Menampilkan 50 temuan pertama; unduh laporan JSON untuk daftar lengkap.",
     researchBundle: "Unduh paket riset (ZIP)",
+    paperLanguageHint: "Pilih saran atau ketik bahasa maupun ragam lain. Ini mengubah bahasa paper, bukan antarmuka. Kutipan sumber dan teks penulis dipertahankan. Dukungan bahasa bergantung pada model. Prosa demo menggunakan skrip bahasa Inggris.",
     paperTitle: "Naskah lengkap", paperGate: "Gerbang reviu akhir AI",
+    paperIncomplete: "Reviu AI selesai, tetapi Metode/Hasil penulis belum lengkap. Isi bagian yang sebenarnya lalu jalankan ulang sebelum merilis naskah final.",
     paperPassed: "Lolos gerbang reviu AI. Lengkapi dan simpan daftar periksa peneliti di bawah untuk merilis versi final.",
     paperFailed: "Tidak lolos gerbang reviu AI. Draf diberi cap dan tidak dapat dirilis; lihat perbaikan di bawah.",
     paperReleased: "Dirilis: versi final lolos gerbang reviu AI dan daftar periksa Anda.",
@@ -702,7 +710,7 @@ function fillSettings(s) {
   $("fetchFulltext").checked = s.fetch_fulltext !== false; $("requireFulltext").checked = !!s.require_fulltext;
   $("minCitations").value = s.min_citations; $("candidates").value = s.candidates; $("maxPapers").value = s.max_papers;
   $("minVerified").value = s.min_verified; $("rounds").value = s.revision_rounds; $("target").value = s.target;
-  $("language").value = s.language === "Indonesian" ? "Indonesian" : "English";
+  $("language").value = s.language || "English";
   renderSlotsTable(); toggleReal();
 }
 async function loadSettings() { const s = await api("/api/settings"); fillSettings(s); return s; }
@@ -1153,7 +1161,7 @@ function renderEditorial(report) {
   $("editorialCard").classList.toggle("hidden", !report);
   if (!report) return;
   const stats = report.stats;
-  $("editorialStats").textContent = t("editorialStats", {words:stats.words, headings:stats.headings, cited:stats.cited_sources, available:stats.available_sources});
+  $("editorialStats").textContent = t(stats.length_unit === "characters" ? "editorialStatsChars" : "editorialStats", {words:stats.prose_length ?? stats.words, headings:stats.headings, cited:stats.cited_sources, available:stats.available_sources});
   $("editorialSource").textContent = t("editorialSource", {file:report.filename});
   $("editorialFindings").innerHTML = report.findings.length
     ? `<ol>${report.findings.slice(0,50).map(f => `<li><b>${esc(t("editorialLine", {n:f.line}))}</b> · ${esc(f.category)}<br><q>${esc(f.excerpt)}</q><p>${esc(f.suggestion)}</p></li>`).join("")}</ol>`
@@ -1166,7 +1174,7 @@ function renderPaper(r) {
   $("fullPaperCard").classList.toggle("hidden", !pr && !failed);
   if (!pr) { $("paperScore").textContent = "-"; $("paperNote").textContent = failed ? t("paperError") : ""; $("paperNotes").innerHTML = ""; $("paperFiles").innerHTML = ""; return; }
   $("paperScore").textContent = `${pr.score}/10`;
-  $("paperNote").textContent = (pr.status === "released" ? t("paperReleased") : pr.passed && pr.literature_review_accepted ? t("paperPassed") : t("paperFailed"))
+  $("paperNote").textContent = (pr.status === "released" ? t("paperReleased") : pr.completion_gate_passed === false ? t("paperIncomplete") : pr.passed && pr.literature_review_accepted ? t("paperPassed") : t("paperFailed"))
     + (pr.from_round ? " " + t("round", {n: pr.from_round}) : "");
   const problems = pr.checks?.problems || [], fixes = pr.fixes || [];
   $("paperNotes").innerHTML = `<div class="bars">${Object.entries(pr.scores || {}).map(([k, v]) => `<div class="bar"><span>${esc(CRIT[LANG][k] || k)}</span><i><b style="width:${v * 10}%"></b></i><em>${v}</em></div>`).join("")}</div>`

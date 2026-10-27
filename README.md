@@ -12,7 +12,7 @@
 - **Evidence-first checks:** Flag unknown citation IDs, missing references, unsupported or incomplete evidence mapping, and high-risk reviewer findings.
 - **Researcher-approved scope:** Review and edit the research questions and scope before the pipeline continues.
 - **Working manuscript:** Produce a literature review and an IMRaD-oriented manuscript scaffold without inventing empirical methods or results.
-- **Full paper with a release gate:** After the literature review passes, AI drafts the title, abstract, introduction, discussion and conclusion. Methods and Results come only from your own text. A final AI review (scored by code, with no-fabrication and scope gates) must pass, and your checklist must be complete, before `9_paper_final.md` and `.docx` are written; otherwise the paper is saved as a stamped draft.
+- **Full paper with a release gate:** After the literature review passes, AI drafts the title, abstract, introduction, discussion and conclusion. Methods and Results come only from your own text. A final AI review (scored by code, with no-fabrication and scope gates) must pass, both author Methods/Results must be filled, and your saved checklist must cover every required source before `9_paper_final.md` and `.docx` are written; otherwise the paper is saved as a stamped draft.
 - **Multi-model routing:** Choose different OpenRouter models for evidence extraction, writing, claim verification, and review.
 - **Local demo mode:** Explore the workflow with simulated data before configuring live APIs.
 
@@ -117,11 +117,39 @@ Under **Topic & sources → Research settings** (or in `.env`):
 | `MIN_CITATIONS` | Skip works with fewer citations (0 = no minimum). |
 | `CANDIDATES`, `MAX_PAPERS`, `MIN_VERIFIED` | How many works to check, keep, and require before drafting. |
 | `REVISION_ROUNDS`, `TARGET_SCORE` | Revision limit and AI review threshold. |
-| `LANGUAGE` | Draft language (English or Indonesian). |
+| `LANGUAGE` | Free-form paper language or locale, e.g. `French`, `English (UK)`, `Portuguese (Brazil)`, `日本語`. Independent of the interface language. |
 
 The filters are sent to OpenAlex and the year range is re-checked locally. Each run saves the filters it used in `2_search_settings.json`.
 
 **Usage reporting:** Token counts and costs appear only when the provider returns them. “Not reported” does not mean free. Simulated numbers in demo mode are not real usage or billing records.
+
+## Choose the paper language
+
+Under **Topic & sources → Research settings → Paper language**, pick a suggestion
+or type another language/locale. Saved custom values survive reloads and switching
+between the English/Indonesian interface. The output language is passed to research
+planning, synthesis, literature-review writing, and full-paper drafting.
+
+Generated paper prose, title, keywords, and section headings follow that setting
+subject to the selected model's capabilities. Common languages have built-in
+heading labels; the model supplies labels for other languages. Word exports keep
+Unicode text and language metadata, with an Arabic paragraph-direction default.
+Actual Word rendering still depends on installed fonts and the document editor.
+
+Source titles/quotes, citation IDs, and author-supplied Methods/Results are kept
+unchanged. If you want those author sections in the target language, provide them
+in that language. Discovery keywords remain separately editable and the planner
+suggests English search strings for coverage; sources need not use the writing
+language. Author notes and provisional workflow markers may remain in English.
+
+Validation uses character lengths for unspaced scripts rather than treating an
+entire Chinese/Japanese paragraph as one word. Quotes and citation auditing also
+accept substantive unspaced text. `[PENDING_AUTHOR_RESULTS]` is a language-neutral
+marker used until actual results exist; it cannot appear in a released final paper.
+Demo prose is still scripted in English and does not test a model's translation.
+
+See [the optimization review](docs/OPTIMIZATION-REVIEW.md) for changes, validation,
+and remaining priorities.
 
 ## Researcher controls and outputs
 
