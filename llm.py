@@ -43,7 +43,11 @@ def model_for_stage(stage, settings):
 import urllib.request
 import urllib.error
 
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
+def _base(settings):
+    return str(settings.get("LLM_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
+def _is_openrouter(settings):
+    return _base(settings) == DEFAULT_BASE_URL
 
 
 def ask(prompt, settings, stage="general", system="You are a careful academic research assistant."):
@@ -73,11 +77,11 @@ def ask(prompt, settings, stage="general", system="You are a careful academic re
         ],
         "temperature": 0.3,  # low = more careful, less "creative"
     }
-    if len(models) > 1:
-        body["models"] = models  # the backup list
+    if len(models) > 1 and _is_openrouter(settings):
+        body["models"] = models  # OpenRouter-only fallback mechanism
     skip = [p.strip() for p in settings.get("IGNORE_PROVIDERS", "").split(",") if p.strip()]
-    if skip:
-        body["provider"] = {"ignore": skip}  # never send requests to these servers
+    if skip and _is_openrouter(settings):
+        body["provider"] = {"ignore": skip}
 
     for attempt in (1, 2, 3):  # try up to 3 times if the model is busy or down
         try:
@@ -99,10 +103,10 @@ REQUESTS_USED = [0]  # counts real requests, so you can watch your daily free qu
 def _send(body, settings, stage="general"):
     REQUESTS_USED[0] += 1
     request = urllib.request.Request(
-        OPENROUTER_URL,
+        _base(settings) + "/chat/completions",
         data=json.dumps(body).encode("utf-8"),
         headers={
-            "Authorization": "Bearer " + settings["OPENROUTER_API_KEY"],
+            "Authorization": "Bearer " + str(settings.get("LLM_API_KEY") or settings.get("OPENROUTER_API_KEY") or ""),
             "Content-Type": "application/json",
         },
     )
@@ -144,12 +148,20 @@ def _send(body, settings, stage="general"):
     return content
 
 
-MODELS_URL = "https://openrouter.ai/api/v1/models"
+MODELS_URL = DEFAULT_BASE_URL + "/models"
 
 
-def list_models(free_only=True):
+def list_models(free_only=True, settings=None):
     """Fetch OpenRouter's public model catalogue (no API key is sent)."""
-    request = urllib.request.Request(MODELS_URL, headers={"User-Agent": "papermuller/1.0"})
+    if settings is None:
+        import harness
+        settings = harness.load_settings()
+    headers = {"User-Agent": "papermuller/1.0"}
+    if not _is_openrouter(settings):
+        key = str(settings.get("LLM_API_KEY") or settings.get("OPENROUTER_API_KEY") or "")
+        if key:
+            headers["Authorization"] = "Bearer " + key
+    request = urllib.request.Request(_base(settings) + "/models", headers=headers)
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             data = json.loads(response.read().decode("utf-8"))
@@ -165,8 +177,8 @@ def list_models(free_only=True):
             models.append({"id": model_id, "name": str(item.get("name") or model_id)[:120],
                            "free": free, "context": item.get("context_length")})
     models.sort(key=lambda m: (not m["free"], m["id"]))
-    routers = [{"id": "openrouter/free", "name": "OpenRouter Free router", "free": True, "context": None}]
-    if not free_only:
+    routers = [{"id": "openrouter/free", "name": "OpenRouter Free router", "free": True, "context": None}] if _is_openrouter(settings) else []
+    if not free_only and _is_openrouter(settings):
         routers.append({"id": "openrouter/auto", "name": "OpenRouter Auto (may be paid)", "free": False, "context": None})
     return routers + [m for m in models if m["id"] not in ("openrouter/free", "openrouter/auto")]
 
