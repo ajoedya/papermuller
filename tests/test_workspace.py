@@ -112,7 +112,7 @@ class WorkspaceApiTests(unittest.TestCase):
         llm.REQUESTS_USED[0] = 0
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.settings = harness.parse_settings({})
+        self.settings = harness.parse_settings({"LANGUAGE": "English"})
         self.patches = [patch.object(app, "read_settings", return_value=(self.settings, "")),
                         patch.object(app, "PROJECTS", self.root)]
         for item in self.patches:
@@ -227,6 +227,29 @@ class WorkspaceApiTests(unittest.TestCase):
         state = self.request("/api/status")
         self.assertEqual(state["usage_totals"]["total_tokens"], 0)
         self.assertEqual(state["brainstorm"]["messages"], [])
+
+    def test_unselected_language_blocks_generation_before_model_calls(self):
+        self.settings["LANGUAGE"] = ""
+        with patch("ideation.brainstorm") as brainstorm, patch("stages.stage_plan") as plan:
+            for path, payload in (("/api/brainstorm", {"message": "Help me explore"}),
+                                  ("/api/brainstorm", {"message": "Help me explore", "language": ""}),
+                                  ("/api/plan", {"topic": "Governance"}),
+                                  ("/api/plan", {"topic": "Governance", "research": {"language": ""}})):
+                with self.assertRaises(HTTPError) as error:
+                    self.request(path, payload)
+                self.assertEqual(error.exception.code, 400)
+                self.assertIn("Choose a paper language", json.load(error.exception)["error"])
+            brainstorm.assert_not_called()
+            plan.assert_not_called()
+        self.assertFalse(app.JOB_LOCK.locked())
+        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_selected_language_overrides_previous_language_for_brainstorming(self):
+        with patch("ideation.brainstorm", return_value=IDEAS) as brainstorm:
+            self.request("/api/brainstorm", {"message": "Explore governance", "language": "Indonesian"})
+            self.wait_idle()
+            self.assertEqual(brainstorm.call_args.args[2]["LANGUAGE"], "Indonesian")
+        self.assertEqual(self.settings["LANGUAGE"], "English")
 
 
 if __name__ == "__main__":

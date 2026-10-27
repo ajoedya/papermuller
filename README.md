@@ -172,8 +172,10 @@ reported by the provider; missing values do not mean a request was free.
 
 ## Choose the paper language
 
-Under **Topic & sources → Research settings → Paper language**, choose a suggestion
-or type another language or locale, such as:
+**Paper language** is the first card under **Topic & sources**, before
+brainstorming. The workflow header also shows the selected language and links to
+this card. Choose a common language from the list, or select **Another language
+or locale…** and enter your own, such as:
 
 - `English`, `English (UK)`, or `Indonesian`
 - `French`, `Spanish`, or `Portuguese (Brazil)`
@@ -181,8 +183,14 @@ or type another language or locale, such as:
 
 ![Paper language and research settings](docs/screenshots/paper-language.png)
 
+New configurations start with no paper language selected. Choose one before
+brainstorming or creating a plan. **Save language** remembers the choice, and
+starting brainstorming or planning also saves it. An existing `LANGUAGE=English`
+or another saved preference is preserved; change it in this card to use a different
+language. Command-line users must set `LANGUAGE` in `.env` before generating a plan.
+
 The writing language is separate from the **EN/ID interface switch**. Custom values
-survive reloads and UI-language changes. The setting is passed to planning,
+survive reloads and UI-language changes. The setting is passed to brainstorming, planning,
 synthesis, literature-review writing, and full-paper drafting. Common languages
 have built-in heading labels; the drafting model can supply labels for others.
 Word exports retain Unicode text and language metadata.
@@ -191,7 +199,9 @@ Source titles, quotations, citation IDs, numbers, and author-supplied Methods/Re
 remain unchanged. Provide your own sections in the target language if you want
 them to match. Discovery keywords are separately editable; the planner suggests
 English search terms for coverage. Provisional workflow annotations may remain
-English. Demo prose is scripted English, not a translation test.
+English. Changes apply to newly generated content; existing drafts are not
+translated automatically. Demo prose is scripted English; a notice appears for
+other selected languages. Use live mode for generation in the selected language.
 
 Length and evidence checks account for unspaced scripts such as Chinese/Japanese.
 Language quality still depends on the selected model and human review; Word
@@ -346,13 +356,16 @@ python -m unittest discover -s tests -v
 Use `.venv/bin/python` on macOS/Linux or `.venv\Scripts\python.exe` on Windows if
 the virtual environment is not activated.
 
-The latest implementation checks passed **89 Python tests**, plus Chromium checks
+The latest implementation checks passed **92 Python tests**, plus Chromium checks
 for the demo, custom-language persistence, full-text status, and incomplete-paper
 release prevention. Router checks cover unsaved connection edits, WFLabs Bearer
 authentication, provider-specific errors, saved/reloaded settings, and OpenRouter
 and custom gateways. Workspace checks cover brainstorming/refinement, editable
 idea selection, problem approval, a full demo run, session usage, and vertical
-layouts at 1366, 1280, 1024, 768, and 390 pixels. A real five-page PLOS PDF was fetched and extracted in the
+layouts at 1366, 1280, 1024, 768, and 390 pixels. Language checks also cover an
+unselected initial state, required selection before model calls, Indonesian
+persistence, custom locales, EN/ID independence, and language propagation to AI
+prompts. A real five-page PLOS PDF was fetched and extracted in the
 full-text validation. Provider calls are mocked in the regression suite; live
 WFLabs account access, multilingual model quality, and native Windows launcher
 execution remain unverified.

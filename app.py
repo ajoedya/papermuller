@@ -580,11 +580,10 @@ class Handler(BaseHTTPRequestHandler):
             settings, problem = read_settings()
             if problem:
                 return self.send({"error": problem}, 400)
-            if "language" in data:
-                try:
-                    settings = dict(settings, LANGUAGE=writing.validate_language(data["language"]))
-                except ValueError as error:
-                    return self.send({"error": str(error)}, 400)
+            try:
+                settings = dict(settings, LANGUAGE=writing.validate_language(data.get("language", settings["LANGUAGE"])))
+            except ValueError as error:
+                return self.send({"error": str(error)}, 400)
             previous_phase = STATE["phase"]
             if not claim_job(("idle", "failed"), phase="brainstorming"):
                 return self.send({"error": "Finish the current task or start a new research session before brainstorming."}, 409)
@@ -597,6 +596,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send({"error": "Enter a research topic."}, 400)
             if STATE["phase"] not in ("idle", "failed", "done") or JOB_LOCK.locked():
                 return self.send({"error": "Finish or reset the current plan before starting another."}, 409)
+            research = data.get("research") if isinstance(data.get("research"), dict) else {}
+            settings, _ = read_settings()
+            try:
+                writing.validate_language(research.get("language", (settings or {}).get("LANGUAGE", "")))
+            except ValueError as error:
+                return self.send({"error": str(error)}, 400)
             questions = data.get("seed_questions", [])
             if not isinstance(questions, list) or len(questions) > 5 or any(
                 not isinstance(q, str) or not q.strip() or len(q) > 500 for q in questions

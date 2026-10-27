@@ -1,5 +1,20 @@
 # Changelog
 
+## Visible paper-language selection
+
+- Move paper language above brainstorming and show the selected language in the
+  workflow header. Provide a language list, a free-text custom language/locale,
+  and a separate save action; preserve the choice when reloading or switching
+  the interface language.
+- New configurations leave `LANGUAGE` empty. Require a choice before brainstorming
+  or planning, while allowing connection setup without one. Preserve existing
+  explicit preferences, including English, and save a new choice when generating.
+- Show a notice when a non-English language is selected in the scripted demo.
+  Existing drafts and source quotations are not automatically translated.
+- Validate with 92 Python tests and Chromium checks for required selection,
+  Indonesian, custom Sundanese/fr-CA, Japanese planning, English (UK), responsive
+  layout, and a full demo workflow. Provider calls remain simulated.
+
 ## Laptop workflow, session panel, and idea exploration
 
 - Replace the wide zoomable canvas with vertical, readable stage cards, approval

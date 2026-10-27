@@ -35,12 +35,14 @@ UNSPACED = re.compile(r'[\u3040-\u30ff\u3400-\u9fff\u0e00-\u0fff\u1000-\u109f\u1
 PENDING_RESULTS = '[PENDING_AUTHOR_RESULTS]'
 
 
-def validate_language(value):
+def validate_language(value, allow_empty=False):
     if not isinstance(value, str):
         raise ValueError('Paper language must be a language name or locale.')
     value = value.strip()
     if not value:
-        return 'English'
+        if allow_empty:
+            return ''
+        raise ValueError('Choose a paper language before generating content.')
     if len(value) > 80 or not any(c.isalpha() for c in value):
         raise ValueError('Paper language must be a name or locale of at most 80 characters.')
     if any(not (unicodedata.category(c)[0] in 'LMN' or c in " -().,'") for c in value):

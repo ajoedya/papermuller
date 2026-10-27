@@ -211,6 +211,11 @@ details.more summary { cursor: pointer; color: var(--accent); }
 .idea-card p { margin: 8px 0; }
 .idea-card ol { padding-left: 20px; }
 #topicCard, #brainstormCard { scroll-margin-top: 90px; }
+.paper-language-card { scroll-margin-top: 90px; }
+.language-controls { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; align-items: end; }
+.language-controls .btn { margin-bottom: 0; }
+.language-controls label { margin-top: 0; }
+@media (max-width: 540px) { .language-controls { grid-template-columns: minmax(0,1fr); } }
 
 /* results */
 .score { display: flex; align-items: center; gap: 14px; }
@@ -291,7 +296,8 @@ th { background: var(--panel-2); position: sticky; top: 0; }
 <!-- ================= WORKFLOW ================= -->
 <section id="workflow">
   <div class="flow-head"><div><h1 data-i18n="flowTitle">Research workflow</h1>
-    <p data-i18n="flowSub">Each box is one stage. Select a stage to see what it does and to choose its AI model.</p></div></div>
+    <p data-i18n="flowSub">Each box is one stage. Select a stage to see what it does and to choose its AI model.</p></div>
+    <button class="btn small" id="paperLanguageShortcut" type="button" data-i18n="choosePaperLanguage">Choose paper language</button></div>
   <div id="errorBanner" class="notice bad hidden" role="alert"></div>
   <div class="next" id="next"><div><b id="nextTitle">Start with a research question</b><span id="nextDesc"></span></div>
     <button class="btn primary" id="nextBtn">Enter a research topic</button></div>
@@ -309,6 +315,32 @@ th { background: var(--panel-2); position: sticky; top: 0; }
 
 <!-- ================= RESEARCH ================= -->
 <section id="research" class="hidden page">
+  <div class="card paper-language-card" id="paperLanguageCard">
+    <h2 data-i18n="draftLang">Paper language</h2>
+    <p class="hint" data-i18n="paperLanguageIntro">Choose the language for brainstorming, problem formulation, and the paper. The interface language stays separate.</p>
+    <div class="language-controls">
+      <div><label for="paperLanguagePreset" data-i18n="paperLanguageChoice">Language or locale</label>
+        <select id="paperLanguagePreset">
+          <option value="" data-i18n="choosePaperLanguage">Choose paper language</option>
+          <option value="Indonesian">Bahasa Indonesia (Indonesian)</option>
+          <option value="English">English</option><option value="English (UK)">English (UK)</option><option value="English (US)">English (US)</option>
+          <option value="French">Français (French)</option><option value="Spanish">Español (Spanish)</option><option value="German">Deutsch (German)</option>
+          <option value="Portuguese (Brazil)">Português (Brasil)</option><option value="Arabic">العربية (Arabic)</option>
+          <option value="Japanese">日本語 (Japanese)</option><option value="Chinese">中文 (Chinese)</option><option value="Chinese (Traditional)">繁體中文 (Traditional Chinese)</option>
+          <option value="Korean">한국어 (Korean)</option><option value="custom" data-i18n="otherPaperLanguage">Another language or locale…</option>
+        </select>
+      </div>
+      <button class="btn" type="button" id="savePaperLanguage" data-i18n="savePaperLanguage">Save language</button>
+    </div>
+    <div id="customLanguageField" class="hidden">
+      <label for="language" data-i18n="customPaperLanguage">Language name or locale</label>
+      <input type="text" id="language" list="paperLanguages" maxlength="80" placeholder="e.g. Sundanese, Turkish, fr-CA">
+      <datalist id="paperLanguages"><option value="Sundanese"></option><option value="Javanese"></option><option value="Turkish"></option><option value="Russian"></option><option value="Italian"></option><option value="Vietnamese"></option><option value="Thai"></option><option value="Hindi"></option><option value="fr-CA"></option><option value="pt-PT"></option><option value="zh-TW"></option></datalist>
+    </div>
+    <p class="hint" data-i18n="paperLanguageHint" style="margin:12px 0 0">Choose a listed language or enter another language or locale. Source quotations and author-supplied text are preserved. Changes apply to new content; existing drafts are not translated automatically. Model language support varies.</p>
+    <div class="notice info hidden" id="demoLanguageNote" data-i18n="demoLanguageNote">Demo prose is scripted in English. Use live mode to generate prose in your chosen language, subject to model support.</div>
+    <div id="paperLanguageMsg" role="status"></div>
+  </div>
   <div class="card" id="brainstormCard">
     <span class="eyebrow" data-i18n="beforeYouBegin">Before the research plan</span>
     <h2 data-i18n="brainstormTitle">Explore ideas with AI</h2>
@@ -356,13 +388,9 @@ th { background: var(--panel-2); position: sticky; top: 0; }
       <div><label for="maxPapers"><span data-i18n="maxPapers">Papers to keep</span><small>1–40</small></label><input type="number" id="maxPapers" min="1" max="40"></div>
       <div><label for="minVerified"><span data-i18n="minVer">Minimum usable papers</span><small data-i18n="minVerHint">The run stops below this.</small></label><input type="number" id="minVerified" min="1" max="40"></div>
     </div>
-    <div class="grid3">
+    <div class="grid2">
       <div><label for="rounds"><span data-i18n="rounds">Revision rounds</span><small>0–10</small></label><input type="number" id="rounds" min="0" max="10"></div>
       <div><label for="target"><span data-i18n="target">AI review threshold</span><small data-i18n="targetHint">Not a measure of accuracy.</small></label><input type="number" id="target" min="1" max="10" step="0.5"></div>
-      <div><label for="language" data-i18n="draftLang">Draft language</label>
-        <input type="text" id="language" list="paperLanguages" maxlength="80" placeholder="e.g. English (UK), Indonesian, French, Japanese">
-        <datalist id="paperLanguages"><option value="English"></option><option value="English (UK)"></option><option value="Indonesian"></option><option value="French"></option><option value="Spanish"></option><option value="German"></option><option value="Portuguese (Brazil)"></option><option value="Arabic"></option><option value="Japanese"></option><option value="Chinese"></option><option value="Korean"></option></datalist>
-        <small data-i18n="paperLanguageHint">Choose a suggestion or type another language or locale. This changes the paper, not the interface. Source quotes and author-supplied text remain unchanged. Model language support varies. Demo prose is scripted in English.</small></div>
     </div>
     <div class="actions"><button class="btn" id="saveResearch" data-i18n="saveResearch">Save research settings</button></div>
     <div id="researchMsg"></div>
@@ -522,7 +550,11 @@ const T = {
     wtReview: "Review articles", wtBoth: "Articles and reviews", minCit: "Minimum citations", minCitHint: "0 = no minimum; recent papers have few citations.",
     oaOnly: "Open-access papers only (easier to get full-text PDFs)", cand: "Candidates to check", maxPapers: "Papers to keep", minVer: "Minimum usable papers",
     minVerHint: "The run stops below this.", rounds: "Revision rounds", target: "AI review threshold", targetHint: "Not a measure of accuracy.",
-    paperLanguageHint: "Choose a suggestion or type another language or locale. This changes the paper, not the interface. Source quotes and author-supplied text remain unchanged. Model language support varies. Demo prose is scripted in English.",
+    paperLanguageHint: "Choose a listed language or enter another language or locale. Source quotations and author-supplied text are preserved. Changes apply to new content; existing drafts are not translated automatically. Model language support varies.",
+    paperLanguageIntro: "Choose the language for brainstorming, problem formulation, and the paper. The interface language stays separate.",
+    paperLanguageChoice: "Language or locale", choosePaperLanguage: "Choose paper language", otherPaperLanguage: "Another language or locale…",
+    customPaperLanguage: "Language name or locale", savePaperLanguage: "Save language", paperLanguageSaved: "Paper language saved: {language}.",
+    paperLanguageStatus: "Paper: {language}", demoLanguageNote: "Demo prose is scripted in English. Use live mode to generate prose in your chosen language, subject to model support.",
     draftLang: "Paper language", saveResearch: "Save research settings",
     pdfTitle: "Full-text PDFs (optional)", pdfHint: "Add PDFs before starting. Enter the article's exact DOI. PDFs need a text layer (up to 12 MB and 150 pages). In live mode, all extracted PDF text is sent to your AI provider in page-labelled chunks.",
     doi: "Article DOI", pdfFile: "PDF you have permission to use", importPdf: "Import PDF",
@@ -628,7 +660,7 @@ const T = {
     wtReview: "Artikel tinjauan (review)", wtBoth: "Artikel dan tinjauan", minCit: "Sitasi minimum", minCitHint: "0 = tanpa batas; paper terbaru biasanya masih sedikit sitasinya.",
     oaOnly: "Hanya paper akses terbuka (lebih mudah mendapat PDF lengkap)", cand: "Kandidat yang diperiksa", maxPapers: "Paper yang dipertahankan", minVer: "Paper layak minimum",
     minVerHint: "Proses berhenti jika di bawah angka ini.", rounds: "Putaran revisi", target: "Ambang skor reviu AI", targetHint: "Bukan ukuran ketepatan ilmiah.",
-    draftLang: "Bahasa draf", saveResearch: "Simpan pengaturan riset",
+    draftLang: "Bahasa paper", saveResearch: "Simpan pengaturan riset",
     pdfTitle: "PDF teks lengkap (opsional)", pdfHint: "Tambahkan PDF sebelum mulai. Masukkan DOI artikel yang tepat. PDF harus memiliki lapisan teks (maks. 12 MB dan 150 halaman). Pada mode langsung, seluruh teks PDF yang diekstrak dikirim ke penyedia AI per bagian berlabel halaman.",
     doi: "DOI artikel", pdfFile: "PDF yang boleh Anda gunakan", importPdf: "Impor PDF",
     approveTitle: "Periksa rencana", approveHint: "Periksa judul, pertanyaan, asumsi, dan cakupan. Hapus lokasi atau periode yang tidak Anda minta.",
@@ -649,7 +681,11 @@ const T = {
     editorialClear: "Tidak ada masalah yang cocok dengan pemeriksaan lokal. Ini tidak menjamin kesiapan publikasi.",
     editorialLine: "Baris {n}", editorialMore: "Menampilkan 50 temuan pertama; unduh laporan JSON untuk daftar lengkap.",
     researchBundle: "Unduh paket riset (ZIP)",
-    paperLanguageHint: "Pilih saran atau ketik bahasa maupun ragam lain. Ini mengubah bahasa paper, bukan antarmuka. Kutipan sumber dan teks penulis dipertahankan. Dukungan bahasa bergantung pada model. Prosa demo menggunakan skrip bahasa Inggris.",
+    paperLanguageHint: "Pilih bahasa dari daftar atau ketik bahasa maupun ragam lain. Kutipan sumber dan teks penulis dipertahankan. Perubahan berlaku untuk konten baru; draf yang sudah ada tidak diterjemahkan otomatis. Dukungan bahasa bergantung pada model.",
+    paperLanguageIntro: "Pilih bahasa untuk brainstorming, perumusan masalah, dan paper. Bahasa antarmuka tetap terpisah.",
+    paperLanguageChoice: "Bahasa atau ragam", choosePaperLanguage: "Pilih bahasa paper", otherPaperLanguage: "Bahasa atau ragam lain…",
+    customPaperLanguage: "Nama bahasa atau ragam", savePaperLanguage: "Simpan bahasa", paperLanguageSaved: "Bahasa paper tersimpan: {language}.",
+    paperLanguageStatus: "Paper: {language}", demoLanguageNote: "Prosa demo menggunakan skrip bahasa Inggris. Gunakan mode langsung untuk menghasilkan prosa dalam bahasa pilihan Anda, sesuai dukungan model.",
     paperTitle: "Naskah lengkap", paperGate: "Gerbang reviu akhir AI",
     paperIncomplete: "Reviu AI selesai, tetapi Metode/Hasil penulis belum lengkap. Isi bagian yang sebenarnya lalu jalankan ulang sebelum merilis naskah final.",
     paperPassed: "Lolos gerbang reviu AI. Lengkapi dan simpan daftar periksa peneliti di bawah untuk merilis versi final.",
@@ -752,6 +788,7 @@ function applyLang() {
   document.querySelectorAll("[data-lang]").forEach(b => b.classList.toggle("on", b.dataset.lang === LANG));
   renderSlotsTable();
   updateProviderInfo();
+  syncPaperLanguage();
   if (latest) render(latest);
   if (currentView === "results") loadResults();
   refreshLibrary().catch(() => {});
@@ -794,6 +831,7 @@ document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dat
 
 /* ---------------- settings ---------------- */
 let SETTINGS = {};
+let languageDirty = false, customLanguage = "", languageSavePromise = null;
 const SLOT_KEYS = Object.keys(SLOT_INFO);
 const fieldOf = (key) => key.toLowerCase();  // PLAN_MODEL -> plan_model
 function renderSlotsTable() {
@@ -849,10 +887,59 @@ function fillSettings(s) {
   $("fetchFulltext").checked = s.fetch_fulltext !== false; $("requireFulltext").checked = !!s.require_fulltext;
   $("minCitations").value = s.min_citations; $("candidates").value = s.candidates; $("maxPapers").value = s.max_papers;
   $("minVerified").value = s.min_verified; $("rounds").value = s.revision_rounds; $("target").value = s.target;
-  $("language").value = s.language || "English";
+  if (!languageDirty || (s.language || "") === $("language").value) {
+    $("language").value = s.language || "";
+    languageDirty = false;
+  }
+  syncPaperLanguage();
   renderSlotsTable(); toggleReal(); updateProviderInfo(endpointChanged);
 }
 async function loadSettings() { const s = await api("/api/settings"); fillSettings(s); return s; }
+function syncPaperLanguage(keepCustom = false) {
+  const value = $("language").value.trim();
+  keepCustom = keepCustom || (languageDirty && !value && $("paperLanguagePreset").value === "custom");
+  const known = Array.from($("paperLanguagePreset").options).some(option => option.value === value && option.value !== "custom");
+  $("paperLanguagePreset").value = keepCustom ? "custom" : known ? value : value ? "custom" : "";
+  $("customLanguageField").classList.toggle("hidden", $("paperLanguagePreset").value !== "custom");
+  if ($("paperLanguagePreset").value === "custom") customLanguage = value;
+  $("paperLanguageShortcut").textContent = value ? t("paperLanguageStatus", {language: value}) : t("choosePaperLanguage");
+  const english = /^(english(?:\s*\((?:uk|us)\))?|(?:british|american|uk|us) english|en(?:-[a-z0-9-]+)?)$/i.test(value);
+  $("demoLanguageNote").classList.toggle("hidden", !SETTINGS.demo || !value || english);
+}
+function requirePaperLanguage() {
+  const value = $("language").value.trim();
+  if (!value) {
+    show("research"); $("paperLanguageCard").scrollIntoView({block: "start"});
+    ($("paperLanguagePreset").value === "custom" ? $("language") : $("paperLanguagePreset")).focus({preventScroll: true});
+    note("paperLanguageMsg", t("choosePaperLanguage"), false);
+    throw Error(t("choosePaperLanguage"));
+  }
+  return value;
+}
+$("paperLanguagePreset").onchange = () => {
+  const preset = $("paperLanguagePreset").value;
+  $("language").value = preset === "custom" ? customLanguage : preset;
+  languageDirty = true; note("paperLanguageMsg", ""); syncPaperLanguage(preset === "custom");
+  if (preset === "custom") $("language").focus();
+};
+$("language").oninput = () => { languageDirty = true; syncPaperLanguage(true); note("paperLanguageMsg", ""); };
+$("paperLanguageShortcut").onclick = () => { show("research"); $("paperLanguageCard").scrollIntoView({block: "start"}); $("paperLanguagePreset").focus({preventScroll: true}); };
+async function persistPaperLanguage() {
+  const value = requirePaperLanguage();
+  if (languageSavePromise) await languageSavePromise;
+  if (!languageDirty && SETTINGS.language === value) return value;
+  $("savePaperLanguage").disabled = true;
+  languageSavePromise = api("/api/settings", {language: value});
+  try {
+    const saved = await languageSavePromise;
+    SETTINGS.language = saved.language;
+    if ($("language").value.trim() === value) languageDirty = false;
+    syncPaperLanguage();
+    note("paperLanguageMsg", t("paperLanguageSaved", {language: value}), true);
+    return value;
+  } finally { languageSavePromise = null; $("savePaperLanguage").disabled = false; }
+}
+$("savePaperLanguage").onclick = async () => { try { await persistPaperLanguage(); } catch (error) { note("paperLanguageMsg", error.message, false); } };
 function researchPayload() {
   return { from_year: $("fromYear").value, to_year: $("toYear").value, work_type: $("workType").value,
            open_access_only: $("openAccess").checked, fetch_fulltext: $("fetchFulltext").checked, require_fulltext: $("requireFulltext").checked, min_citations: $("minCitations").value,
@@ -904,7 +991,7 @@ $("planBtn").onclick = async () => {
   const topic = $("topic").value.trim();
   if (!topic) return note("researchMsg", t("needTopic"), false);
   const seed_questions = $("seedQuestions").value.split("\n").map(q => q.trim()).filter(Boolean);
-  try { await api("/api/plan", { topic, seed_questions, research: researchPayload() }); await loadSettings(); startPolling(); show("workflow"); }
+  try { requirePaperLanguage(); if (languageSavePromise) await languageSavePromise; await api("/api/plan", { topic, seed_questions, research: researchPayload() }); await loadSettings(); startPolling(); show("workflow"); }
   catch (e) { note("researchMsg", e.message, false); }
 };
 $("approveBtn").onclick = async () => {
@@ -945,6 +1032,7 @@ function render(s) {
   const busy = ["brainstorming", "planning", "running"].includes(s.phase);
   $("topicCard").classList.toggle("hidden", !["idle", "failed", "done"].includes(s.phase));
   $("researchCard").querySelectorAll("input,select,button").forEach(el => el.disabled = busy);
+  $("paperLanguageCard").querySelectorAll("input,select,button").forEach(el => el.disabled = busy);
   $("pdfCard").classList.toggle("hidden", !["idle", "failed", "done"].includes(s.phase));
   $("approveCard").classList.toggle("hidden", s.phase !== "approve");
   $("progressCard").classList.toggle("hidden", s.phase === "brainstorming" || (!busy && !["failed", "done"].includes(s.phase)));
@@ -1072,7 +1160,8 @@ $("brainstormBtn").onclick = async () => {
   if (!message) return note("brainstormMsg", t("needInterest"), false);
   $("brainstormBtn").disabled = true;
   try {
-    await api("/api/brainstorm", {message, language: $("language").value});
+    const language = await persistPaperLanguage();
+    await api("/api/brainstorm", {message, language});
     startPolling();
   } catch (error) { note("brainstormMsg", error.message, false); $("brainstormBtn").disabled = false; }
 };

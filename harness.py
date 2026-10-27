@@ -66,7 +66,8 @@ def parse_settings(raw):
         "LLM_API_KEY": raw.get("LLM_API_KEY") or raw.get("OPENROUTER_API_KEY", ""),
         "LLM_BASE_URL": str(raw.get("LLM_BASE_URL") or "https://openrouter.ai/api/v1").strip().rstrip("/"),
         "MODEL": raw.get("MODEL", "") or "openrouter/free",
-        "LANGUAGE": writing.validate_language(raw.get("LANGUAGE", "English")),
+        # Connections can be configured before choosing a writing language.
+        "LANGUAGE": writing.validate_language(raw.get("LANGUAGE", ""), allow_empty=True),
         # Publication window and document filters for the literature search
         "FROM_YEAR": from_year,
         "TO_YEAR": to_year,
@@ -165,6 +166,10 @@ def main():
         sys.exit('Usage: python harness.py "your research topic"')
     topic = sys.argv[1]
     settings = load_settings()
+    try:
+        settings["LANGUAGE"] = writing.validate_language(settings["LANGUAGE"])
+    except ValueError as problem:
+        sys.exit(str(problem) + " Set LANGUAGE in .env.")
 
     # Every run gets its own folder, so nothing is ever overwritten
     folder = Path(__file__).parent / "projects" / datetime.now().strftime("%Y%m%d_%H%M%S")
